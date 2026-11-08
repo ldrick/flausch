@@ -1,0 +1,44 @@
+# nøste
+
+An Android app for crocheting, written in Rust. *Nøste* is Norwegian for winding yarn into a ball.
+
+The UI uses [Slint](https://slint.dev) (`ui/*.slint`), which runs on Android via its `android-activity` backend and
+on the desktop via winit – so most development happens with a plain `cargo run`. APKs are built with
+[cargo-apk](https://github.com/rust-mobile/cargo-apk). `minSdk` 29 (Android 10).
+
+## Layout
+
+- `src/lib.rs` – app logic, `android_main` entry point (built as `cdylib` for Android)
+- `src/main.rs` – desktop entry point
+- `ui/app.slint` – UI, compiled by `build.rs`
+- `android/res/` – Android resources (launcher icon)
+
+## Setup
+
+- Rust via [rustup](https://rustup.rs) with the Android targets:
+  `rustup target add aarch64-linux-android x86_64-linux-android`
+- `cargo install cargo-apk`
+- Android SDK in `~/Android/Sdk` with `platforms;android-36`, `build-tools;36.0.0`, `ndk;<version>`
+  (and `emulator` plus a system image for an emulator)
+- A JDK (`javac`) for Slint's Android Java helper, by default in `~/.local/opt/jdk-21`
+
+The `Makefile` defaults to these paths; override them via `ANDROID_HOME`, `ANDROID_NDK_ROOT`, `JAVA_HOME`.
+
+## Build
+
+```sh
+make run                 # desktop window
+make test                # unit tests
+make check               # rustfmt + clippy
+make apk                 # target/debug/apk/noste.apk (arm64)
+make install             # build, install and start on a connected device
+make emulator            # start the AVD "noste"; then: make install TARGET=x86_64-linux-android
+```
+
+On Linux the desktop build loads fontconfig at runtime (`fontique/fontconfig-dlopen`), so no `-dev` packages are
+needed.
+
+## License
+
+Slint is used under its Royalty-free License 2.0 (mobile apps allowed; requires an attribution, e.g. the
+"Made with Slint" badge in the app or on its web page) – alternatively GPLv3.

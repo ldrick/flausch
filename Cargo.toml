@@ -1,0 +1,42 @@
+[package]
+name = "noste"
+version = "0.1.0"
+edition = "2024"
+description = "A crochet app for Android"
+publish = false
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[[bin]]
+name = "noste"
+path = "src/main.rs"
+
+[dependencies]
+slint = { version = "1.18.1", features = ["backend-android-activity-06"] }
+
+# Desktop Linux: load fontconfig at runtime instead of linking it, so no pkg-config/fontconfig headers are needed.
+[target.'cfg(target_os = "linux")'.dependencies]
+fontique = { version = "0.11", default-features = false, features = ["fontconfig-dlopen"] }
+
+[build-dependencies]
+slint-build = "1.18.1"
+
+[profile.release]
+lto = true
+strip = true
+
+# cargo-apk
+[package.metadata.android]
+package = "io.github.ldrick.noste"
+build_targets = ["aarch64-linux-android", "x86_64-linux-android"]
+resources = "android/res"
+
+[package.metadata.android.sdk]
+min_sdk_version = 29
+target_sdk_version = 36
+
+[package.metadata.android.application]
+label = "nøste"
+icon = "@mipmap/ic_launcher"
+
