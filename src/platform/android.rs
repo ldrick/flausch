@@ -4,9 +4,10 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-use jni::objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue};
+use jni::errors::LogErrorAndDefault;
+use jni::objects::{Global, JByteArray, JClass, JObject, JString, JValue};
 use jni::sys::jint;
-use jni::{JNIEnv, JavaVM, NativeMethod};
+use jni::{Env, EnvUnowned, JavaVM, NativeMethod, jni_sig, jni_str};
 use slint::android::AndroidApp;
 
 use super::{PageImage, PickResult};
@@ -15,14 +16,9 @@ const DEX: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/classes.dex"));
 const HELPER_CLASS: &str = "io.github.ldrick.noste.NosteHelper";
 
 static APP: OnceLock<AndroidApp> = OnceLock::new();
-static HELPER: OnceLock<Helper> = OnceLock::new();
+static HELPER: OnceLock<Global<JObject<'static>>> = OnceLock::new();
 type PickCallback = Box<dyn FnOnce(PickResult) + Send>;
 static PENDING_PICK: Mutex<Option<PickCallback>> = Mutex::new(None);
-
-struct Helper {
-    vm: JavaVM,
-    object: GlobalRef,
-}
 
 /// Must be called once from `android_main` before anything else in this module.
 pub fn init(app: AndroidApp) {
@@ -39,78 +35,69 @@ fn app() -> &'static AndroidApp {
     APP.get().expect("platform::init was not called")
 }
 
-fn load_helper(app: &AndroidApp) -> jni::errors::Result<Helper> {
-    // SAFETY: android-activity hands out valid pointers to the process JavaVM and the activity.
-    let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }?;
-    let object = {
-        let mut env = vm.attach_current_thread_permanently()?;
-        // SAFETY: see above; the activity outlives this call.
-        let activity = unsafe { JObject::from_raw(app.activity_as_ptr().cast()) };
-        let result = (|| {
-            // SAFETY: DEX is 'static and never written to.
-            let dex = unsafe { env.new_direct_byte_buffer(DEX.as_ptr().cast_mut(), DEX.len()) }?;
-            let parent = env
-                .call_method(
-                    &activity,
-                    "getClassLoader",
-                    "()Ljava/lang/ClassLoader;",
-                    &[],
-                )?
-                .l()?;
-            let loader = env.new_object(
-                "dalvik/system/InMemoryDexClassLoader",
-                "(Ljava/nio/ByteBuffer;Ljava/lang/ClassLoader;)V",
-                &[JValue::Object(&dex), JValue::Object(&parent)],
-            )?;
-            let name = env.new_string(HELPER_CLASS)?;
-            let class: JClass = env
-                .call_method(
-                    &loader,
-                    "loadClass",
-                    "(Ljava/lang/String;)Ljava/lang/Class;",
-                    &[JValue::Object(&name)],
-                )?
-                .l()?
-                .into();
+/// Loads `NosteHelper` from the embedded dex and creates an instance for the activity.
+fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>> {
+    // SAFETY: android-activity hands out a valid pointer to the process JavaVM.
+    let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) };
+    vm.attach_current_thread(|env| {
+        // SAFETY: android-activity holds a global reference to the activity for the app's lifetime;
+        // this wrapper doesn't own it and only lives for this closure.
+        let activity = unsafe { JObject::from_raw(env, app.activity_as_ptr().cast()) };
+        // SAFETY: DEX is 'static and never written to.
+        let dex = unsafe { env.new_direct_byte_buffer(DEX.as_ptr().cast_mut(), DEX.len()) }?;
+        let parent = env
+            .call_method(
+                &activity,
+                jni_str!("getClassLoader"),
+                jni_sig!("()Ljava/lang/ClassLoader;"),
+                &[],
+            )?
+            .l()?;
+        let loader = env.new_object(
+            jni_str!("dalvik/system/InMemoryDexClassLoader"),
+            jni_sig!("(Ljava/nio/ByteBuffer;Ljava/lang/ClassLoader;)V"),
+            &[JValue::Object(&dex), JValue::Object(&parent)],
+        )?;
+        let name = env.new_string(HELPER_CLASS)?;
+        let class = env
+            .call_method(
+                &loader,
+                jni_str!("loadClass"),
+                jni_sig!("(Ljava/lang/String;)Ljava/lang/Class;"),
+                &[JValue::Object(&name)],
+            )?
+            .l()?;
+        let class = env.cast_local::<JClass>(class)?;
+        // SAFETY: `on_pdf_picked` matches the static method `void onPdfPicked(int, String)`, and
+        // its second parameter is the class.
+        unsafe {
             env.register_native_methods(
                 &class,
-                &[NativeMethod {
-                    name: "onPdfPicked".into(),
-                    sig: "(ILjava/lang/String;)V".into(),
-                    fn_ptr: on_pdf_picked as *mut std::ffi::c_void,
-                }],
-            )?;
-            let helper = env.new_object(
-                &class,
-                "(Landroid/app/Activity;)V",
-                &[JValue::Object(&activity)],
-            )?;
-            env.new_global_ref(helper)
-        })();
-        clear_exception(&mut env);
-        result?
-    };
-    Ok(Helper { vm, object })
+                &[NativeMethod::from_raw_parts(
+                    jni_str!("onPdfPicked"),
+                    jni_str!("(ILjava/lang/String;)V"),
+                    on_pdf_picked as *mut std::ffi::c_void,
+                )],
+            )
+        }?;
+        let helper = env.new_object(
+            &class,
+            jni_sig!("(Landroid/app/Activity;)V"),
+            &[JValue::Object(&activity)],
+        )?;
+        env.new_global_ref(helper)
+    })
 }
 
-fn clear_exception(env: &mut JNIEnv) {
-    if env.exception_check().unwrap_or(false) {
-        let _ = env.exception_describe();
-        let _ = env.exception_clear();
-    }
-}
-
+/// Runs `f` with the helper object on the current thread (attached if needed). Pending Java
+/// exceptions are cleared and returned as errors.
 fn with_helper<T>(
-    f: impl FnOnce(&mut JNIEnv, &JObject) -> jni::errors::Result<T>,
+    f: impl FnOnce(&mut Env, &JObject) -> jni::errors::Result<T>,
 ) -> Result<T, String> {
     let helper = HELPER.get().ok_or("Java helper not loaded")?;
-    let mut env = helper
-        .vm
-        .attach_current_thread_permanently()
-        .map_err(|e| e.to_string())?;
-    let result = f(&mut env, helper.object.as_obj());
-    clear_exception(&mut env);
-    result.map_err(|e| e.to_string())
+    let vm = JavaVM::singleton().map_err(|e| e.to_string())?;
+    vm.attach_current_thread(|env| f(env, helper))
+        .map_err(|e: jni::errors::Error| e.to_string())
 }
 
 pub fn data_dir() -> PathBuf {
@@ -129,9 +116,9 @@ pub fn keep_screen_on(on: bool) {
     let result = with_helper(|env, helper| {
         env.call_method(
             helper,
-            "setKeepScreenOn",
-            "(Z)V",
-            &[JValue::Bool(on.into())],
+            jni_str!("setKeepScreenOn"),
+            jni_sig!("(Z)V"),
+            &[JValue::Bool(on)],
         )?;
         Ok(())
     });
@@ -144,9 +131,9 @@ pub fn set_dark_theme(dark: bool) {
     let result = with_helper(|env, helper| {
         env.call_method(
             helper,
-            "setLightSystemBars",
-            "(Z)V",
-            &[JValue::Bool((!dark).into())],
+            jni_str!("setLightSystemBars"),
+            jni_sig!("(Z)V"),
+            &[JValue::Bool(!dark)],
         )?;
         Ok(())
     });
@@ -158,7 +145,7 @@ pub fn set_dark_theme(dark: bool) {
 /// Hides the text cursor handles that Slint shows after a text field was focused from code.
 pub fn hide_text_handles() {
     let result = with_helper(|env, helper| {
-        env.call_method(helper, "hideTextHandles", "()V", &[])?;
+        env.call_method(helper, jni_str!("hideTextHandles"), jni_sig!("()V"), &[])?;
         Ok(())
     });
     if let Err(e) = result {
@@ -178,8 +165,8 @@ pub fn pick_pdf(dest: PathBuf, done: impl FnOnce(PickResult) + Send + 'static) {
         let dest = env.new_string(dest.to_string_lossy())?;
         env.call_method(
             helper,
-            "pickPdf",
-            "(Ljava/lang/String;)V",
+            jni_str!("pickPdf"),
+            jni_sig!("(Ljava/lang/String;)V"),
             &[JValue::Object(&dest)],
         )?;
         Ok(())
@@ -197,16 +184,20 @@ fn finish_pick(result: PickResult) {
 }
 
 extern "system" fn on_pdf_picked<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     status: jint,
     text: JString<'local>,
 ) {
-    let text: String = if text.is_null() {
-        String::new()
-    } else {
-        env.get_string(&text).map(Into::into).unwrap_or_default()
-    };
+    let text = env
+        .with_env(|env| -> jni::errors::Result<String> {
+            if text.is_null() {
+                Ok(String::new())
+            } else {
+                text.try_to_string(env)
+            }
+        })
+        .resolve::<LogErrorAndDefault>();
     finish_pick(match status {
         0 => PickResult::Picked { title: text },
         1 => PickResult::Cancelled,
@@ -220,8 +211,8 @@ pub fn page_count(path: &Path) -> Result<u32, String> {
         let count = env
             .call_method(
                 helper,
-                "pageCount",
-                "(Ljava/lang/String;)I",
+                jni_str!("pageCount"),
+                jni_sig!("(Ljava/lang/String;)I"),
                 &[JValue::Object(&path)],
             )?
             .i()?;
@@ -232,19 +223,19 @@ pub fn page_count(path: &Path) -> Result<u32, String> {
 pub fn render_page(path: &Path, index: u32, width: u32) -> Result<PageImage, String> {
     let rgba = with_helper(|env, helper| {
         let path = env.new_string(path.to_string_lossy())?;
-        let bytes: JByteArray = env
+        let bytes = env
             .call_method(
                 helper,
-                "renderPage",
-                "(Ljava/lang/String;II)[B",
+                jni_str!("renderPage"),
+                jni_sig!("(Ljava/lang/String;II)[B"),
                 &[
                     JValue::Object(&path),
                     JValue::Int(index as jint),
                     JValue::Int(width as jint),
                 ],
             )?
-            .l()?
-            .into();
+            .l()?;
+        let bytes = env.cast_local::<JByteArray>(bytes)?;
         env.convert_byte_array(&bytes)
     })?;
     let height = (rgba.len() / 4 / width.max(1) as usize) as u32;

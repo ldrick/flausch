@@ -141,8 +141,8 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   text still shows the handles.
 - Rust `stderr` shows up in logcat under the tag `RustStdoutStderr`. ANR traces:
   `adb shell dumpsys dropbox --print data_app_anr`.
-- After changing the Java helper, check the call signatures in `platform/android.rs` (JNI strings such as
-  `"(Z)V"`).
+- After changing the Java helper, check the call signatures in `platform/android.rs` (jni 0.22: names and
+  signatures go through `jni_str!` / `jni_sig!`, e.g. `jni_sig!("(Z)V")`; `onPdfPicked` is registered by hand).
 
 ## Testing on the emulator
 
@@ -164,5 +164,6 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
   `rustfmt`.
 - Only add comments where something needs explaining.
 - On Linux, `fontique` loads fontconfig at runtime (`fontconfig-dlopen`). Don't add dependencies that need
-  system `-dev` packages or pkg-config.
+  system `-dev` packages or pkg-config. Our `fontique` must stay on the version Slint uses (Dependabot ignores it);
+  bump it together with Slint.
 - Don't commit unless asked. Local plans and notes go in `.scratch/` (gitignored).

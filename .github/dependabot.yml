@@ -4,6 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Only enables a feature on Slint's copy, so it must stay on the version Slint uses (see Cargo.toml).
+      - dependency-name: fontique
     groups:
       cargo:
         patterns: ["*"]
