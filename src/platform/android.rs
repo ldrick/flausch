@@ -1,3 +1,6 @@
+// JNI needs unsafe; every block must explain why it is sound (clippy::undocumented_unsafe_blocks).
+#![allow(unsafe_code)]
+
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
@@ -41,6 +44,7 @@ fn load_helper(app: &AndroidApp) -> jni::errors::Result<Helper> {
     let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }?;
     let object = {
         let mut env = vm.attach_current_thread_permanently()?;
+        // SAFETY: see above; the activity outlives this call.
         let activity = unsafe { JObject::from_raw(app.activity_as_ptr().cast()) };
         let result = (|| {
             // SAFETY: DEX is 'static and never written to.
@@ -164,6 +168,10 @@ pub fn hide_text_handles() {
 
 /// Opens the system document picker and copies the chosen PDF to `dest`.
 /// `done` runs on a Java thread.
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "same signature as the desktop version"
+)]
 pub fn pick_pdf(dest: PathBuf, done: impl FnOnce(PickResult) + Send + 'static) {
     *PENDING_PICK.lock().unwrap() = Some(Box::new(done));
     let result = with_helper(|env, helper| {

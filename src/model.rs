@@ -370,7 +370,7 @@ mod tests {
         let b = lib.create("Schal", 11);
         assert_ne!(a, b);
         assert_eq!(lib.get(a).unwrap().name, "Mütze blau");
-        assert!(lib.get(b).unwrap().parts.is_empty());
+        assert_eq!(lib.get(b).unwrap().parts, []);
     }
 
     #[test]
@@ -421,7 +421,7 @@ mod tests {
             ("Decke", 7, Some(40))
         );
         assert_eq!(part.id, 3);
-        assert!(lib.get(2).unwrap().parts.is_empty());
+        assert_eq!(lib.get(2).unwrap().parts, []);
         // Saved data has no legacy fields left, so loading it again doesn't add a second part.
         let mut again: Library =
             serde_json::from_str(&serde_json::to_string(&lib).unwrap()).unwrap();

@@ -1,0 +1,44 @@
+# cargo-deny: security advisories, licenses, duplicate/banned crates and dependency sources.
+# Run with `make deny`.
+
+[graph]
+all-features = false
+
+[advisories]
+# Vulnerable, unsound and yanked crates always fail. "Unmaintained" only fails for direct dependencies, since
+# transitive ones (via Slint, rfd…) can only be fixed upstream.
+unmaintained = "workspace"
+# Ignore single advisories here, always with a reason.
+ignore = []
+
+[licenses]
+# nøste is not published, so its own (missing) license is not checked.
+private = { ignore = true }
+# Licenses allowed for dependencies. Slint is used under its Royalty-free License 2.0 (see README).
+allow = [
+  "LicenseRef-Slint-Royalty-free-2.0",
+  "0BSD",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "ISC",
+  "MIT",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+# The crate itself has no version requirement on its own path.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

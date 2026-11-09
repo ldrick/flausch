@@ -38,7 +38,7 @@ impl Renderer {
                     while let Ok(newer) = receiver.try_recv() {
                         request = newer;
                     }
-                    on_done(render(request));
+                    on_done(render(&request));
                 }
             })
             .expect("cannot start the PDF render thread");
@@ -50,7 +50,7 @@ impl Renderer {
     }
 }
 
-fn render(request: Request) -> Rendered {
+fn render(request: &Request) -> Rendered {
     let mut page_count = 0;
     let result = platform::page_count(&request.path).and_then(|count| {
         page_count = count;
@@ -95,7 +95,7 @@ impl Covers {
                     match write_cover(&pdf, &cover) {
                         Ok(()) => on_done(),
                         Err(e) => {
-                            eprintln!("nøste: cannot create a cover for {}: {e}", pdf.display())
+                            eprintln!("nøste: cannot create a cover for {}: {e}", pdf.display());
                         }
                     }
                 }
@@ -143,6 +143,6 @@ mod tests {
         assert_eq!(render_width(1000.0, 2.0, 1.414), 2000);
         let capped = render_width(1080.0, 4.0, 1.414);
         assert!(capped < 4320);
-        assert!((capped as u64).pow(2) as f32 * 1.414 <= platform::MAX_PAGE_PIXELS as f32);
+        assert!(u64::from(capped).pow(2) as f32 * 1.414 <= platform::MAX_PAGE_PIXELS as f32);
     }
 }

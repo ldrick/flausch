@@ -55,11 +55,13 @@ pub fn run() -> Result<(), slint::PlatformError> {
     connect(&app);
     platform::set_dark_theme(app.global::<Theme>().get_dark());
     app.run()?;
-    with(|c| c.flush());
+    with(Controller::flush);
     Ok(())
 }
 
 #[cfg(target_os = "android")]
+// android-activity declares this as `extern "Rust"` and looks it up by name.
+#[allow(unsafe_code, clippy::no_mangle_with_rust_abi)]
 #[unsafe(no_mangle)]
 fn android_main(app: slint::android::AndroidApp) {
     platform::init(app.clone());
@@ -69,6 +71,8 @@ fn android_main(app: slint::android::AndroidApp) {
 
 thread_local! {
     // Lives on the UI thread. Callbacks from other threads go through `invoke_from_event_loop`.
+    // The allow works around a clippy false positive on aarch64-linux-android (it is already `const`).
+    #[allow(clippy::missing_const_for_thread_local)]
     static CONTROLLER: RefCell<Option<Controller>> = const { RefCell::new(None) };
 }
 
@@ -78,7 +82,7 @@ fn with<R>(f: impl FnOnce(&mut Controller) -> R) -> Option<R> {
 
 fn connect(app: &App) {
     let store = app.global::<Store>();
-    store.on_back(|| with(|c| c.back()).unwrap_or(false));
+    store.on_back(|| with(Controller::back).unwrap_or(false));
     store.on_open_settings(|| {
         with(|c| c.navigate(Screen::Settings));
     });
@@ -92,7 +96,7 @@ fn connect(app: &App) {
         with(|c| c.edit_project(&name));
     });
     store.on_delete_project(|| {
-        with(|c| c.delete_project());
+        with(Controller::delete_project);
     });
     store.on_query_changed(|| {
         with(|c| c.refresh());
@@ -113,7 +117,7 @@ fn connect(app: &App) {
         with(|c| c.edit_part(&name, &goal));
     });
     store.on_delete_part(|| {
-        with(|c| c.delete_part());
+        with(Controller::delete_part);
     });
     store.on_increment(|| {
         with(|c| c.count(Library::increment));
@@ -125,13 +129,13 @@ fn connect(app: &App) {
         with(|c| c.count(Library::reset));
     });
     store.on_pick_pdf(|| {
-        with(|c| c.pick_pdf());
+        with(Controller::pick_pdf);
     });
     store.on_remove_pdf(|| {
-        with(|c| c.remove_pdf());
+        with(Controller::remove_pdf);
     });
     store.on_open_pdf(|| {
-        with(|c| c.open_pdf());
+        with(Controller::open_pdf);
     });
     store.on_pdf_view_changed(|page, zoom, scroll_x, scroll_y, width| {
         with(|c| c.pdf_view_changed(page, zoom, scroll_x, scroll_y, width));
@@ -202,7 +206,7 @@ impl Controller {
     fn save_later(&mut self) {
         self.save_timer
             .start(slint::TimerMode::SingleShot, Duration::from_secs(1), || {
-                with(|c| c.save());
+                with(Controller::save);
             });
     }
 
@@ -439,46 +443,46 @@ impl Controller {
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_or(0, |d| d.as_nanos());
-        let file = self.storage.new_pdf_file(id, nanos);
+        let file = Storage::new_pdf_file(id, nanos);
         let dest = self.storage.pdf_path(&file);
         platform::pick_pdf(dest, move |result| {
             let _ = slint::invoke_from_event_loop(move || {
-                with(|c| c.pdf_picked(id, file, result));
+                with(|c| c.pdf_picked(id, &file, result));
             });
         });
     }
 
-    fn pdf_picked(&mut self, id: u64, file: String, result: PickResult) {
+    fn pdf_picked(&mut self, id: u64, file: &str, result: PickResult) {
         let title = match result {
             PickResult::Picked { title } => title,
             PickResult::Cancelled => {
-                self.storage.remove_pdf(&file);
+                self.storage.remove_pdf(file);
                 return;
             }
             PickResult::Failed(e) => {
                 eprintln!("nøste: PDF import failed: {e}");
-                self.storage.remove_pdf(&file);
+                self.storage.remove_pdf(file);
                 return self.notify(Notice::PdfImportFailed);
             }
         };
-        if let Err(e) = platform::page_count(&self.storage.pdf_path(&file)).and_then(|n| match n {
+        if let Err(e) = platform::page_count(&self.storage.pdf_path(file)).and_then(|n| match n {
             0 => Err("no pages".into()),
             n => Ok(n),
         }) {
             eprintln!("nøste: {title} is not a usable PDF: {e}");
-            self.storage.remove_pdf(&file);
+            self.storage.remove_pdf(file);
             return self.notify(Notice::PdfInvalid);
         }
         let Some(project) = self.library.touch(id, now()) else {
-            self.storage.remove_pdf(&file);
+            self.storage.remove_pdf(file);
             return;
         };
-        if let Some(old) = project.pdf.replace(Pdf::new(file.clone(), title)) {
+        if let Some(old) = project.pdf.replace(Pdf::new(file.to_owned(), title)) {
             self.storage.remove_pdf(&old.file);
         }
         self.save();
         self.refresh();
-        self.create_cover(&file);
+        self.create_cover(file);
     }
 
     fn remove_pdf(&mut self) {
@@ -727,7 +731,7 @@ impl From<Language> for model::Language {
         match language {
             Language::De => model::Language::De,
             Language::En => model::Language::En,
-            _ => model::Language::System,
+            Language::System => model::Language::System,
         }
     }
 }
@@ -747,7 +751,7 @@ impl From<Appearance> for model::Appearance {
         match appearance {
             Appearance::Light => model::Appearance::Light,
             Appearance::Dark => model::Appearance::Dark,
-            _ => model::Appearance::System,
+            Appearance::System => model::Appearance::System,
         }
     }
 }

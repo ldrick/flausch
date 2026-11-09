@@ -30,8 +30,8 @@ See [`AGENTS.md`](AGENTS.md) for conventions and development notes.
 
 ## Setup
 
-- Rust via [rustup](https://rustup.rs) with the Android targets:
-  `rustup target add aarch64-linux-android x86_64-linux-android`
+- Rust via [rustup](https://rustup.rs); `rust-toolchain.toml` pulls in stable with clippy, rustfmt and the
+  Android targets
 - `cargo install cargo-apk`
 - Android SDK in `~/Android/Sdk` with `platforms;android-36`, `build-tools;36.0.0`, `ndk;<version>`
   (and `emulator` plus a system image for an emulator)
@@ -45,6 +45,7 @@ The `Makefile` defaults to these paths; override them via `ANDROID_HOME`, `ANDRO
 make run                 # desktop window
 make test                # unit tests
 make check               # rustfmt + clippy
+make ci                  # everything CI checks: also Android clippy, cargo-deny (cargo install cargo-deny)
 make apk                 # target/debug/apk/noste.apk (arm64)
 make install             # build, install and start on a connected device
 make emulator            # start the AVD "noste"; then: make install TARGET=x86_64-linux-android

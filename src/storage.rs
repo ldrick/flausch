@@ -49,7 +49,7 @@ impl Storage {
 
     /// File name for a newly imported PDF. Unique per import so that a replaced PDF never
     /// collides with the one it replaces.
-    pub fn new_pdf_file(&self, project_id: u64, now_nanos: u128) -> String {
+    pub fn new_pdf_file(project_id: u64, now_nanos: u128) -> String {
         format!("{project_id}-{now_nanos:x}.pdf")
     }
 

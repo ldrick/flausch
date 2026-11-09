@@ -19,6 +19,9 @@ make run                 # desktop window (cargo run)
 make test                # cargo test
 cargo test <name>        # run a single test (substring match)
 make check               # cargo fmt --check && cargo clippy --all-targets -- -D warnings
+make check-android       # clippy for the Android code (cargo clippy --lib --target $TARGET)
+make deny                # cargo deny check: advisories, licenses, sources (deny.toml; needs cargo-deny)
+make ci                  # check + check-android + test + deny
 make apk                 # debug APK -> target/debug/apk/noste.apk (TARGET defaults to aarch64-linux-android)
 make apk-release         # release APK (lto + strip)
 make install             # cargo apk run: build, install, launch (then streams logcat until stopped)
@@ -27,7 +30,13 @@ make emulator            # start the AVD "noste"; then build with TARGET=x86_64-
 
 Before you finish a change, run `make check` (clippy uses `-D warnings`) and `make test`. If you touched
 anything Android-specific (`src/platform/android.rs`, the Java helper, `build.rs`, Android metadata), also run
-`make apk TARGET=x86_64-linux-android`.
+`make check-android` and `make apk TARGET=x86_64-linux-android`. After changing dependencies, run `make deny`.
+
+Lints are configured in `Cargo.toml` (`[lints]`): `clippy::pedantic` is on, numeric cast lints are off (Slint uses
+`i32`/`f32`). `unsafe` is denied except in `platform/android.rs` (JNI), where every block needs a `// SAFETY:`
+comment. Prefer fixing a lint over `#[allow]`; if you must allow one, keep it local and say why.
+CI (`.github/workflows/ci.yml`) runs fmt, clippy, tests, cargo-deny, Android clippy and a debug APK build.
+The toolchain (stable, rustfmt, clippy, Android targets) is set in `rust-toolchain.toml`.
 
 ## Architecture
 

@@ -8,7 +8,7 @@ AVD              ?= noste
 export ANDROID_HOME ANDROID_NDK_ROOT JAVA_HOME
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-.PHONY: run test check apk apk-release install emulator clean
+.PHONY: run test check check-android deny ci apk apk-release install emulator clean
 
 run:            ## Run the app on the desktop
 	cargo run
@@ -19,6 +19,14 @@ test:           ## Run unit tests
 check:          ## Format check and lints
 	cargo fmt --check
 	cargo clippy --all-targets -- -D warnings
+
+check-android:  ## Lints for the Android code (platform/android.rs, android_main)
+	cargo clippy --lib --target $(TARGET) -- -D warnings
+
+deny:           ## Advisories, licenses and sources of dependencies (needs cargo-deny)
+	cargo deny check
+
+ci: check check-android test deny  ## Everything CI runs, except the APK build
 
 apk:            ## Build a debug APK (target/debug/apk/noste.apk)
 	cargo apk build --lib --target $(TARGET)
