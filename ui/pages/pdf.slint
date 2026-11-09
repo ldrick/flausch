@@ -1,6 +1,7 @@
 import { Theme } from "../theme.slint";
-import { Store } from "../store.slint";
-import { IconButton, TopBar } from "../components.slint";
+import { Store, DialogKind } from "../store.slint";
+import { Icon, IconButton, TopBar } from "../components.slint";
+import { CounterButtons, RowCount } from "../counter.slint";
 
 component FloatingPill inherits Rectangle {
     height: 56px;
@@ -184,8 +185,46 @@ export component PdfPage inherits Rectangle {
                 }
             }
 
+            if !Store.current.has-active && Store.parts.length > 0: FloatingPill {
+                x: parent.width - self.width - 12px;
+                y: parent.height - self.height - 16px;
+
+                Rectangle {
+                    border-radius: 24px;
+                    background: choose-touch.pressed ? Theme.surface-muted : transparent;
+                    accessible-role: button;
+                    accessible-label: @tr("Choose part");
+                    accessible-action-default => { Store.dialog = DialogKind.pick-part; }
+
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        padding-right: 12px;
+                        spacing: 4px;
+                        Text {
+                            text: @tr("Choose part");
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            Icon {
+                                source: @image-url("../icons/chevron-down.svg");
+                                color: Theme.text-muted;
+                                width: 18px;
+                                height: 18px;
+                            }
+                        }
+                    }
+                    choose-touch := TouchArea {
+                        clicked => { Store.dialog = DialogKind.pick-part; }
+                    }
+                }
+            }
+
             // Row counter, always at hand while reading the pattern.
-            FloatingPill {
+            if Store.current.has-active && !Store.counter-expanded: FloatingPill {
                 x: parent.width - self.width - 12px;
                 y: parent.height - self.height - 16px;
 
@@ -193,17 +232,54 @@ export component PdfPage inherits Rectangle {
                     y: 4px;
                     icon: @image-url("../icons/minus.svg");
                     label: @tr("Previous row");
-                    enabled: Store.current.row > 0;
+                    enabled: Store.part.row > 0;
                     clicked => { Store.decrement(); }
                 }
-                Text {
-                    text: @tr("Row {}", Store.current.row);
-                    color: Theme.text;
-                    font-size: Theme.font-body;
-                    font-weight: 600;
-                    vertical-alignment: center;
+                // Tap to enlarge the counter.
+                Rectangle {
                     min-width: 72px;
-                    horizontal-alignment: center;
+                    max-width: 150px;
+                    border-radius: 12px;
+                    background: expand-touch.pressed ? Theme.surface-muted : transparent;
+                    accessible-role: button;
+                    accessible-label: @tr("Enlarge counter");
+                    accessible-action-default => { Store.counter-expanded = true; }
+
+                    VerticalLayout {
+                        alignment: center;
+                        padding-left: 4px;
+                        padding-right: 4px;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            Text {
+                                text: Store.part.name;
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                overflow: elide;
+                            }
+                            VerticalLayout {
+                                alignment: center;
+                                Icon {
+                                    source: @image-url("../icons/chevron-up.svg");
+                                    color: Theme.text-muted;
+                                    width: 14px;
+                                    height: 14px;
+                                }
+                            }
+                        }
+                        Text {
+                            text: @tr("Row {}", Store.part.row);
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                        }
+                    }
+                    expand-touch := TouchArea {
+                        clicked => { Store.counter-expanded = true; }
+                    }
                 }
                 Rectangle {
                     width: 48px;
@@ -226,6 +302,84 @@ export component PdfPage inherits Rectangle {
                             clicked => { Store.increment(); }
                         }
                     }
+                }
+            }
+        }
+
+        // Large counter, like on the part screen; the page stays readable above it.
+        if Store.counter-expanded && Store.current.has-active: Rectangle {
+            vertical-stretch: 0;
+            background: Theme.surface;
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+            drop-shadow-blur: 24px;
+            drop-shadow-offset-y: -4px;
+            drop-shadow-color: Theme.shadow;
+
+            VerticalLayout {
+                padding: 12px;
+                padding-bottom: 28px;
+                spacing: 4px;
+
+                HorizontalLayout {
+                    spacing: 4px;
+
+                    Rectangle {
+                        horizontal-stretch: 0;
+                        border-radius: 24px;
+                        background: pick-touch.pressed ? Theme.surface-muted : transparent;
+                        accessible-role: button;
+                        accessible-enabled: Store.parts.length > 1;
+                        accessible-label: Store.parts.length > 1 ? @tr("Choose part") : Store.part.name;
+                        accessible-action-default => { Store.dialog = DialogKind.pick-part; }
+
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 4px;
+                            Text {
+                                text: Store.part.name;
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                                overflow: elide;
+                            }
+                            if Store.parts.length > 1: VerticalLayout {
+                                alignment: center;
+                                Icon {
+                                    source: @image-url("../icons/chevron-down.svg");
+                                    color: Theme.text-muted;
+                                    width: 18px;
+                                    height: 18px;
+                                }
+                            }
+                        }
+                        pick-touch := TouchArea {
+                            enabled: Store.parts.length > 1;
+                            clicked => { Store.dialog = DialogKind.pick-part; }
+                        }
+                    }
+                    Rectangle {
+                        horizontal-stretch: 1;
+                    }
+                    IconButton {
+                        icon: @image-url("../icons/minimize.svg");
+                        label: @tr("Shrink counter");
+                        clicked => { Store.counter-expanded = false; }
+                    }
+                }
+
+                RowCount {
+                    vertical-stretch: 0;
+                    number-size: 80px;
+                    inset: 0;
+                }
+
+                CounterButtons {
+                    padding-top: 12px;
+                    size: 56px;
+                    primary-size: 84px;
                 }
             }
         }

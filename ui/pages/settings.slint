@@ -1,7 +1,7 @@
 import { AboutSlint, Palette } from "std-widgets.slint";
 import { Theme, Appearance } from "../theme.slint";
 import { Store, Language } from "../store.slint";
-import { Card, Segmented, Switch, TopBar } from "../components.slint";
+import { Card, Icon, Segmented, Switch, TopBar } from "../components.slint";
 
 component SectionTitle inherits Text {
     color: Theme.text-muted;
@@ -97,11 +97,21 @@ export component SettingsPage inherits Rectangle {
                         padding: 18px;
                         spacing: 8px;
 
-                        Text {
-                            text: "nøste \{Store.version}";
-                            color: Theme.text;
-                            font-size: Theme.font-body;
-                            font-weight: 600;
+                        HorizontalLayout {
+                            spacing: 10px;
+                            Icon {
+                                source: @image-url("../icons/logo.svg");
+                                color: Theme.accent;
+                                width: 28px;
+                                height: 28px;
+                            }
+                            Text {
+                                text: "nøste \{Store.version}";
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                            }
                         }
                         Text {
                             text: @tr("A crochet companion. Nøste is Norwegian for winding yarn into a ball.");

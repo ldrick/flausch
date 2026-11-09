@@ -1,0 +1,123 @@
+// Row counter building blocks, shared by the part screen and the PDF view.
+import { Theme } from "theme.slint";
+import { Store, DialogKind } from "store.slint";
+import { Icon, ProgressBar } from "components.slint";
+
+export component RoundButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> label;
+    in property <bool> primary: false;
+    in property <bool> enabled: true;
+    in property <length> size: 64px;
+    callback clicked();
+
+    width: root.size;
+    height: root.size;
+    border-radius: self.height / 2;
+    background: root.primary ? (touch.pressed ? Theme.accent-pressed : Theme.accent) : (touch.pressed ? Theme.surface-muted : Theme.surface);
+    border-width: root.primary ? 0 : 1px;
+    border-color: Theme.border;
+    drop-shadow-blur: root.primary ? 20px : 0;
+    drop-shadow-offset-y: 6px;
+    drop-shadow-color: Theme.shadow;
+    opacity: root.enabled ? 1 : 0.4;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+
+    Icon {
+        source: root.icon;
+        color: root.primary ? Theme.on-accent : Theme.text;
+        width: root.size * 0.4;
+        height: root.size * 0.4;
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+}
+
+// "Row", the row of the active part and, with a goal, "of n" and a progress bar.
+// Tapping it counts, too: the largest possible target.
+export component RowCount inherits Rectangle {
+    in property <length> number-size: Theme.font-counter;
+    in property <length> inset: 24px;
+
+    VerticalLayout {
+        alignment: center;
+        padding: root.inset;
+        spacing: 4px;
+
+        Text {
+            text: @tr("Row");
+            color: Theme.text-muted;
+            font-size: Theme.font-body;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: Store.part.row;
+            color: Theme.text;
+            font-size: root.number-size;
+            font-weight: 300;
+            horizontal-alignment: center;
+            accessible-role: text;
+            accessible-label: @tr("Row {}", Store.part.row);
+        }
+        if Store.part.goal > 0: VerticalLayout {
+            spacing: 10px;
+            padding-left: 24px;
+            padding-right: 24px;
+
+            Text {
+                text: @tr("of {}", Store.part.goal);
+                color: Theme.text-muted;
+                font-size: Theme.font-body;
+                horizontal-alignment: center;
+            }
+            ProgressBar {
+                progress: Store.part.row / Store.part.goal;
+            }
+        }
+    }
+
+    TouchArea {
+        clicked => { Store.increment(); }
+    }
+}
+
+// Previous row, next row and reset.
+export component CounterButtons inherits HorizontalLayout {
+    in property <length> size: 64px;
+    in property <length> primary-size: 104px;
+
+    alignment: center;
+    spacing: 28px;
+
+    VerticalLayout {
+        alignment: center;
+        RoundButton {
+            size: root.size;
+            icon: @image-url("icons/minus.svg");
+            label: @tr("Previous row");
+            enabled: Store.part.row > 0;
+            clicked => { Store.decrement(); }
+        }
+    }
+    RoundButton {
+        size: root.primary-size;
+        primary: true;
+        icon: @image-url("icons/plus.svg");
+        label: @tr("Next row");
+        clicked => { Store.increment(); }
+    }
+    VerticalLayout {
+        alignment: center;
+        RoundButton {
+            size: root.size;
+            icon: @image-url("icons/reset.svg");
+            label: @tr("Reset counter");
+            enabled: Store.part.row > 0;
+            clicked => { Store.dialog = DialogKind.reset; }
+        }
+    }
+}

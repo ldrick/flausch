@@ -1,3 +1,5 @@
+<img src="ui/icons/logo.svg" width="72" alt="">
+
 # nøste
 
 An Android app for crocheting, written in Rust. *Nøste* is Norwegian for winding yarn into a ball.
@@ -8,8 +10,9 @@ on the desktop via winit – so most development happens with a plain `cargo run
 
 ## Features (MVP)
 
-Projects with a row counter (optional goal), PDF patterns (imported and rendered on the device), keep screen on,
-Android back key, German/English, light/dark mode.
+Projects made of parts (e.g. head, body, legs), each with its own row counter and optional row goal; project
+list with pattern covers, total progress, search and a continue button; PDF patterns (imported and rendered on the
+device) with a row counter for any part that can be enlarged; keep screen on, Android back key, German/English, light/dark mode.
 
 ## Layout
 
@@ -21,6 +24,7 @@ Android back key, German/English, light/dark mode.
 - `lang/` – translations (gettext `.po`, bundled at build time)
 - `android/java/` – small Java helper (file picker, PdfRenderer), compiled by `build.rs`
 - `android/res/` – Android resources (launcher icon)
+- `tools/logo.py` – generates the logo (`ui/icons/logo.svg`) and the launcher icon
 
 See [`AGENTS.md`](AGENTS.md) for conventions and development notes.
 

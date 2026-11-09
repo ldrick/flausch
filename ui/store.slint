@@ -1,21 +1,36 @@
 import { Appearance } from "theme.slint";
 
-export enum Screen { list, project, pdf, settings }
+export enum Screen { list, project, part, pdf, settings }
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, reset, remove-pdf }
+export enum DialogKind { none, create, edit, delete, add-part, edit-part, delete-part, pick-part, reset, remove-pdf }
 
 export enum Notice { none, pdf-import-failed, pdf-invalid, pdf-render-failed }
 
-export struct ProjectItem {
+export struct PartItem {
     id: int,
     name: string,
     row: int,
     // 0 means no goal.
     goal: int,
+}
+
+export struct ProjectItem {
+    id: int,
+    name: string,
+    part-count: int,
+    // The part opened last; `has-active` is false if there is none.
+    has-active: bool,
+    active: PartItem,
+    // Total progress over all parts with a goal; `rows-total` is 0 if no part has one.
+    rows-done: int,
+    rows-total: int,
     has-pdf: bool,
     pdf-title: string,
+    // Thumbnail of the first PDF page.
+    has-cover: bool,
+    cover: image,
 }
 
 export struct PdfView {
@@ -35,8 +50,17 @@ export struct PdfView {
 // The interface between Rust (src/lib.rs) and the UI. Rust sets the `in` properties and
 // handles the callbacks.
 export global Store {
+    // Projects matching `query`, most recently used first.
     in property <[ProjectItem]> projects;
+    // Whether there are any projects at all, regardless of `query`.
+    in property <bool> has-projects;
+    in-out property <bool> searching;
+    in-out property <string> query;
     in property <ProjectItem> current;
+    // Parts of the current project, in the order they were added.
+    in property <[PartItem]> parts;
+    // The part shown on the part screen; same as `current.active`.
+    in property <PartItem> part;
     in property <Screen> screen: Screen.list;
     in property <PdfView> pdf: { zoom: 1, aspect: 1.414 };
     in property <Notice> notice: Notice.none;
@@ -47,15 +71,30 @@ export global Store {
     in property <bool> keep-screen-on: true;
 
     in-out property <DialogKind> dialog: DialogKind.none;
+    // The PDF view shows the large counter instead of the floating one.
+    in-out property <bool> counter-expanded;
 
     // Returns false if there is nothing to go back to.
     callback back() -> bool;
     callback open-settings();
     callback open-project(int);
-    callback create-project(string, string);
-    callback edit-project(string, string);
+    callback create-project(string);
+    callback edit-project(string);
     callback delete-project();
 
+    callback query-changed();
+
+    // Makes a part active without leaving the screen.
+    callback select-part(int);
+    callback open-part(int);
+    // Opens the pattern of a project from the project list, at the saved page.
+    callback continue-project(int);
+    // name, rows (optional, may be empty)
+    callback add-part(string, string);
+    callback edit-part(string, string);
+    callback delete-part();
+
+    // The counter callbacks act on the active part.
     callback increment();
     callback decrement();
     callback reset();
@@ -70,6 +109,8 @@ export global Store {
     callback set-language(Language);
     callback set-appearance(Appearance);
     callback set-keep-screen-on(bool);
+    // A text field was focused from code (not by a tap); hides Android's cursor handles.
+    callback hide-text-handles();
     // The effective theme changed (setting or system), for the system bar icons.
     callback dark-changed(bool);
 }

@@ -3086,6 +3086,7 @@ dependencies = [
  "fontique",
  "hayro",
  "jni 0.21.1",
+ "png",
  "rfd",
  "serde",
  "serde_json",

@@ -26,6 +26,12 @@ pub fn run() -> Result<(), slint::PlatformError> {
         });
     });
 
+    let covers = pdf::Covers::new(|| {
+        let _ = slint::invoke_from_event_loop(|| {
+            with(|c| c.refresh());
+        });
+    });
+
     let controller = Controller {
         app: app.as_weak(),
         library: storage.load_library(),
@@ -35,6 +41,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
         current: None,
         pdf: PdfSession::default(),
         renderer,
+        covers,
         save_timer: slint::Timer::default(),
         screen_on: None,
         last_back: None,
@@ -43,6 +50,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
     with(|c| {
         c.apply_settings();
         c.refresh();
+        c.create_missing_covers();
     });
     connect(&app);
     platform::set_dark_theme(app.global::<Theme>().get_dark());
@@ -77,14 +85,35 @@ fn connect(app: &App) {
     store.on_open_project(|id| {
         with(|c| c.open_project(id as u64));
     });
-    store.on_create_project(|name, goal| {
-        with(|c| c.create_project(&name, &goal));
+    store.on_create_project(|name| {
+        with(|c| c.create_project(&name));
     });
-    store.on_edit_project(|name, goal| {
-        with(|c| c.edit_project(&name, &goal));
+    store.on_edit_project(|name| {
+        with(|c| c.edit_project(&name));
     });
     store.on_delete_project(|| {
         with(|c| c.delete_project());
+    });
+    store.on_query_changed(|| {
+        with(|c| c.refresh());
+    });
+    store.on_select_part(|id| {
+        with(|c| c.select_part(id as u64));
+    });
+    store.on_continue_project(|id| {
+        with(|c| c.continue_project(id as u64));
+    });
+    store.on_open_part(|id| {
+        with(|c| c.open_part(id as u64));
+    });
+    store.on_add_part(|name, goal| {
+        with(|c| c.add_part(&name, &goal));
+    });
+    store.on_edit_part(|name, goal| {
+        with(|c| c.edit_part(&name, &goal));
+    });
+    store.on_delete_part(|| {
+        with(|c| c.delete_part());
     });
     store.on_increment(|| {
         with(|c| c.count(Library::increment));
@@ -93,7 +122,7 @@ fn connect(app: &App) {
         with(|c| c.count(Library::decrement));
     });
     store.on_reset(|| {
-        with(|c| c.count(|lib, id, now| lib.reset(id, now).then_some(0)));
+        with(|c| c.count(Library::reset));
     });
     store.on_pick_pdf(|| {
         with(|c| c.pick_pdf());
@@ -117,6 +146,7 @@ fn connect(app: &App) {
         with(|c| c.update_settings(|s| s.appearance = appearance.into()));
     });
     store.on_dark_changed(platform::set_dark_theme);
+    store.on_hide_text_handles(platform::hide_text_handles);
     store.on_set_keep_screen_on(|on| {
         with(|c| c.update_settings(|s| s.keep_screen_on = on));
     });
@@ -144,6 +174,7 @@ struct Controller {
     current: Option<u64>,
     pdf: PdfSession,
     renderer: pdf::Renderer,
+    covers: pdf::Covers,
     save_timer: slint::Timer,
     screen_on: Option<bool>,
     last_back: Option<Instant>,
@@ -184,15 +215,21 @@ impl Controller {
     fn refresh(&self) {
         let app = self.app();
         let store = app.global::<Store>();
+        let query = store.get_query();
         let items: Vec<ProjectItem> = self
             .library
             .recent()
             .into_iter()
-            .map(project_item)
+            .filter(|p| p.matches(&query))
+            .map(|p| self.project_item(p))
             .collect();
         store.set_projects(ModelRc::new(VecModel::from(items)));
+        store.set_has_projects(!self.library.projects.is_empty());
         if let Some(project) = self.current.and_then(|id| self.library.get(id)) {
-            store.set_current(project_item(project));
+            store.set_current(self.project_item(project));
+            let parts: Vec<PartItem> = project.parts.iter().map(part_item).collect();
+            store.set_parts(ModelRc::new(VecModel::from(parts)));
+            store.set_part(project.active().map(part_item).unwrap_or_default());
         }
     }
 
@@ -236,6 +273,18 @@ impl Controller {
             self.last_back = Some(now);
             return true;
         }
+        if self.screen() == Screen::Pdf && store.get_counter_expanded() {
+            store.set_counter_expanded(false);
+            self.last_back = Some(now);
+            return true;
+        }
+        if self.screen() == Screen::List && store.get_searching() {
+            store.set_searching(false);
+            store.set_query("".into());
+            self.last_back = Some(now);
+            self.refresh();
+            return true;
+        }
         if self.nav.len() <= 1 {
             return false;
         }
@@ -249,8 +298,8 @@ impl Controller {
     }
 
     fn update_keep_screen_on(&mut self) {
-        let on =
-            self.settings.keep_screen_on && matches!(self.screen(), Screen::Project | Screen::Pdf);
+        let on = self.settings.keep_screen_on
+            && matches!(self.screen(), Screen::Project | Screen::Part | Screen::Pdf);
         if self.screen_on != Some(on) {
             self.screen_on = Some(on);
             platform::keep_screen_on(on);
@@ -269,21 +318,32 @@ impl Controller {
         self.show();
     }
 
-    fn create_project(&mut self, name: &str, goal: &str) {
+    /// Opens the pattern of a project straight from the list; Back returns to the list.
+    fn continue_project(&mut self, id: u64) {
+        if self.library.get(id).and_then(|p| p.pdf.as_ref()).is_none() {
+            return self.open_project(id);
+        }
+        self.current = Some(id);
+        self.nav = vec![Screen::List];
+        self.refresh();
+        self.open_pdf();
+    }
+
+    fn create_project(&mut self, name: &str) {
         if name.trim().is_empty() {
             return;
         }
-        let id = self.library.create(name, parse_goal(goal), now());
+        let id = self.library.create(name, now());
         self.save();
         self.open_project(id);
     }
 
-    fn edit_project(&mut self, name: &str, goal: &str) {
+    fn edit_project(&mut self, name: &str) {
         let Some(id) = self.current else { return };
         if name.trim().is_empty() {
             return;
         }
-        self.library.edit(id, name, parse_goal(goal), now());
+        self.library.rename(id, name, now());
         self.save();
         self.refresh();
     }
@@ -301,9 +361,72 @@ impl Controller {
         self.show();
     }
 
-    fn count(&mut self, op: impl FnOnce(&mut Library, u64, u64) -> Option<u32>) {
+    // Parts
+
+    fn active_part(&self) -> Option<(u64, u64)> {
+        let id = self.current?;
+        Some((id, self.library.get(id)?.active_part?))
+    }
+
+    fn open_part(&mut self, part: u64) {
         let Some(id) = self.current else { return };
-        if op(&mut self.library, id, now()).is_some() {
+        if self.library.activate_part(id, part) {
+            self.save();
+            self.refresh();
+            self.navigate(Screen::Part);
+        }
+    }
+
+    /// Makes `part` the active part without leaving the current screen, e.g. in the PDF view.
+    fn select_part(&mut self, part: u64) {
+        let Some(id) = self.current else { return };
+        if self.library.activate_part(id, part) {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    fn add_part(&mut self, name: &str, goal: &str) {
+        let Some(id) = self.current else { return };
+        if name.trim().is_empty() {
+            return;
+        }
+        // Stay on the project screen; the new part becomes the one being worked on.
+        if let Some(part) = self.library.add_part(id, name, parse_goal(goal), now()) {
+            self.save();
+            self.select_part(part);
+        }
+    }
+
+    fn edit_part(&mut self, name: &str, goal: &str) {
+        let Some((id, part)) = self.active_part() else {
+            return;
+        };
+        if name.trim().is_empty() {
+            return;
+        }
+        self.library
+            .edit_part(id, part, name, parse_goal(goal), now());
+        self.save();
+        self.refresh();
+    }
+
+    fn delete_part(&mut self) {
+        let Some((id, part)) = self.active_part() else {
+            return;
+        };
+        self.library.remove_part(id, part, now());
+        self.save();
+        self.nav = vec![Screen::List, Screen::Project];
+        self.refresh();
+        self.show();
+    }
+
+    fn count(&mut self, op: impl FnOnce(&mut Library, u64, u64, u64) -> Option<u32>) {
+        let Some((id, part)) = self.active_part() else {
+            return;
+        };
+        if op(&mut self.library, id, part, now()).is_some() {
             self.save();
             self.refresh();
         }
@@ -350,11 +473,12 @@ impl Controller {
             self.storage.remove_pdf(&file);
             return;
         };
-        if let Some(old) = project.pdf.replace(Pdf::new(file, title)) {
+        if let Some(old) = project.pdf.replace(Pdf::new(file.clone(), title)) {
             self.storage.remove_pdf(&old.file);
         }
         self.save();
         self.refresh();
+        self.create_cover(&file);
     }
 
     fn remove_pdf(&mut self) {
@@ -363,6 +487,50 @@ impl Controller {
             self.storage.remove_pdf(&old.file);
             self.save();
             self.refresh();
+        }
+    }
+
+    fn create_cover(&self, file: &str) {
+        self.covers
+            .request(self.storage.pdf_path(file), self.storage.cover_path(file));
+    }
+
+    /// Covers are missing for PDFs imported before covers existed, or if rendering failed.
+    fn create_missing_covers(&self) {
+        for project in &self.library.projects {
+            if let Some(pdf) = &project.pdf
+                && !self.storage.cover_path(&pdf.file).exists()
+            {
+                self.create_cover(&pdf.file);
+            }
+        }
+    }
+
+    fn project_item(&self, project: &model::Project) -> ProjectItem {
+        let cover = project
+            .pdf
+            .as_ref()
+            .map(|pdf| self.storage.cover_path(&pdf.file))
+            .filter(|path| path.exists())
+            .and_then(|path| Image::load_from_path(&path).ok());
+        let (done, total) = project.progress();
+        ProjectItem {
+            id: project.id as i32,
+            name: project.name.as_str().into(),
+            part_count: project.parts.len() as i32,
+            has_active: project.active().is_some(),
+            active: project.active().map(part_item).unwrap_or_default(),
+            rows_done: done as i32,
+            rows_total: total as i32,
+            has_pdf: project.pdf.is_some(),
+            pdf_title: project
+                .pdf
+                .as_ref()
+                .map(|p| p.title.as_str())
+                .unwrap_or_default()
+                .into(),
+            has_cover: cover.is_some(),
+            cover: cover.unwrap_or_default(),
         }
     }
 
@@ -535,19 +703,12 @@ fn parse_goal(goal: &str) -> Option<u32> {
     goal.trim().parse().ok()
 }
 
-fn project_item(project: &model::Project) -> ProjectItem {
-    ProjectItem {
-        id: project.id as i32,
-        name: project.name.as_str().into(),
-        row: project.row as i32,
-        goal: project.row_goal.unwrap_or(0) as i32,
-        has_pdf: project.pdf.is_some(),
-        pdf_title: project
-            .pdf
-            .as_ref()
-            .map(|p| p.title.as_str())
-            .unwrap_or_default()
-            .into(),
+fn part_item(part: &model::Part) -> PartItem {
+    PartItem {
+        id: part.id as i32,
+        name: part.name.as_str().into(),
+        row: part.row as i32,
+        goal: part.row_goal.unwrap_or(0) as i32,
     }
 }
 

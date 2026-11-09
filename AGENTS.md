@@ -1,8 +1,9 @@
 # AGENTS.md – nøste
 
-nøste is an Android crochet app (projects, row counter, PDF patterns) written in Rust (edition 2024) with a
-[Slint](https://slint.dev) 1.18 UI. The same code runs on the desktop via winit, so most development and checks
-happen with `cargo run`. APKs are built with `cargo-apk`. Only Android is a release target; there is no iOS.
+nøste is an Android crochet app (projects made of parts with their own row counters, PDF patterns) written in Rust
+(edition 2024) with a [Slint](https://slint.dev) 1.18 UI. The same code runs on the desktop via winit, so most
+development and checks happen with `cargo run`. APKs are built with `cargo-apk`. Only Android is a release target;
+there is no iOS.
 
 This file is the single source of truth for coding agents. `CLAUDE.md` and `.github/copilot-instructions.md`
 point here.
@@ -35,28 +36,40 @@ src/
   lib.rs              Controller: wires Store callbacks, navigation, debounced saving, PDF sessions, android_main
   main.rs             thin desktop binary -> noste::run(); no logic here
   model.rs            UI-independent data model (Library, Project, Pdf, Settings) – no slint
-  storage.rs          JSON persistence (projects.json, settings.json, pdfs/) with atomic writes – no slint
-  pdf.rs              background render worker; only the newest pending request is rendered
+  storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes – no slint
+  pdf.rs              render workers: viewer pages (newest request only) and PNG covers of page 1
   platform/mod.rs     picks android.rs or desktop.rs via cfg
   platform/android.rs JNI: loads the dex built from android/java, picker, PdfRenderer, keep-screen-on, bar colors
   platform/desktop.rs dirs + rfd file dialog + hayro rendering; most other functions are no-ops
 android/java/.../NosteHelper.java   Java helper (compiled by build.rs with javac + d8, embedded as classes.dex)
-android/res/          launcher icon
+android/res/          launcher icon (mint logo on light mint, also the monochrome themed icon)
 ui/
   app.slint           root window App: page switch, dialogs, notice, Back key, safe-area insets
   store.slint         Store global = the Rust↔UI contract (state properties, enums, structs, callbacks)
   theme.slint         Theme global: colors (light/dark), sizes, radii, fonts
   components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Field, Segmented, Switch…)
-  pages/*.slint       list, project, pdf, settings
-  icons/              SVG icons
+  counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
+  pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings
+  icons/              SVG icons; logo.svg is the app logo
+tools/logo.py         generates ui/icons/logo.svg and the launcher icon from one geometry – never edit those by hand
 lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 ```
 
 - Data flow: the UI only reads `Store` properties and calls `Store` callbacks. `src/lib.rs` handles the
   callbacks, changes the `model`, saves through `storage`, and pushes new state back into `Store`. Keep UI logic
   in Slint minimal.
+- Domain: a `Project` has a name, any number of `Part`s (e.g. head, legs) and an optional PDF. Each part has its
+  own row counter and an optional row goal. `active_part` is the part opened last; the counter in the PDF view
+  counts it (switchable there, and expandable to a large counter: `Store.counter-expanded`, Back collapses it),
+  and the project list shows it. Adding a part makes it active but stays on the project screen. List progress sums all parts with a goal
+  (`Project::progress`); search matches project and part names (`Project::matches`). Navigation:
+  list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to
+  the list).
 - `model.rs` and `storage.rs` must not depend on `slint`, so they stay unit-testable (`tempfile` in tests).
-- On-disk files are versioned (`LIBRARY_VERSION`, `SETTINGS_VERSION`). Imported PDFs are copied to `pdfs/`.
+- On-disk files are versioned (`LIBRARY_VERSION`, `SETTINGS_VERSION`). `Library::migrate` (called on load)
+  upgrades old data, e.g. version 1 rows per project become one part; add a test for every migration.
+  Imported PDFs are copied to `pdfs/`; `covers/<pdf>.png` holds a thumbnail of page 1 for the project list,
+  created after import and on start if missing. `Storage::remove_pdf` removes both.
 - `NOSTE_DATA_DIR=/tmp/x cargo run` uses a scratch data directory on the desktop.
 - PDF rendering: on Android, `android.graphics.pdf.PdfRenderer` through the Java helper; on the desktop, `hayro`
   (pure Rust). The worker renders at the display width and the viewer scales it.
@@ -71,7 +84,11 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   colors and sizes from `Theme` only, never hard-coded colors and not `Palette`. `Theme.dark` follows the
   appearance setting (system, light, dark). The color scheme isn't final, so keep it centralized in
   `theme.slint`.
-- Design window: phone-like, 390×800.
+- Logo: one yarn ball in mint everywhere. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (its
+  wraps are transparent, so it fits any background). If the mint changes, update `MINT` in `tools/logo.py`, run
+  it, and update `ic_launcher_background` (light mint, `Theme.accent-soft`) in `android/res/values/colors.xml`.
+- Design window: Pixel 9a size, 412×924 logical px (1080×2424 at density 2.625). The AVD "noste" uses the
+  `pixel_9a` profile.
 - `Rectangle` already has a (deprecated) `color` property, so name custom color properties differently
   (for example `tint`).
 - Layouts ignore `x`/`y`. To center a child vertically in a `HorizontalLayout`, wrap it in
@@ -93,6 +110,9 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   msgmerge -U lang/de/LC_MESSAGES/noste.po /tmp/noste.pot   # then translate the new or fuzzy entries
   ```
 
+  Without gettext installed, merge with Python's `polib` in a venv (`po.merge(pot)`, fill the empty or fuzzy
+  entries, drop `po.obsolete_entries()`, save). Plural strings use `@tr("{n} part" | "{n} parts" % count)`.
+
 - Every new string needs a German translation.
 
 ## Android gotchas
@@ -104,7 +124,12 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   the project list finishes the activity.
 - The status bar icon color follows `Theme.dark` (`Store.dark-changed` → `platform::set_dark_theme` →
   `NosteHelper.setLightSystemBars`).
-- Pages are inset by `safe-area-insets`. Dialogs and the scrim cover the whole window.
+- Pages are inset by `safe-area-insets`. Dialogs and the scrim cover the whole window. `App` copies the
+  on-screen keyboard height into the `Keyboard` global, and `Dialog` moves up so the keyboard never covers it.
+- Slint shows Android's cursor handles whenever the last touch was a tap, also when a dialog focuses a field from
+  code. `Field.focus-input()` therefore calls `Store.hide-text-handles()` → `NosteHelper.hideTextHandles`, which
+  sends the unchanged text through Slint's `SlintAndroidJavaHelper.updateText` (reflection). Tapping or selecting
+  text still shows the handles.
 - Rust `stderr` shows up in logcat under the tag `RustStdoutStderr`. ANR traces:
   `adb shell dumpsys dropbox --print data_app_anr`.
 - After changing the Java helper, check the call signatures in `platform/android.rs` (JNI strings such as
@@ -117,7 +142,7 @@ make emulator                                   # separate terminal; AVD "noste"
 make apk TARGET=x86_64-linux-android
 adb install -r target/debug/apk/noste.apk
 adb shell am start -n io.github.ldrick.noste/android.app.NativeActivity
-adb exec-out screencap -p > /tmp/screen.png     # 1080×2400 physical pixels
+adb exec-out screencap -p > /tmp/screen.png     # 1080×2424 physical pixels
 adb shell input tap X Y                         # physical pixels (logical px × 2.625 at density 420)
 ```
 

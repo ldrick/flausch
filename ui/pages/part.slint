@@ -1,0 +1,55 @@
+import { Theme } from "../theme.slint";
+import { Store, DialogKind } from "../store.slint";
+import { Card, IconButton, TopBar } from "../components.slint";
+import { CounterButtons, RowCount } from "../counter.slint";
+import { PatternCard } from "project.slint";
+
+export component PartPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: Store.part.name;
+            subtitle: Store.current.name;
+            back => { Store.back(); }
+
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/edit.svg");
+                    label: @tr("Edit part");
+                    clicked => { Store.dialog = DialogKind.edit-part; }
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/trash.svg");
+                    label: @tr("Delete part");
+                    clicked => { Store.dialog = DialogKind.delete-part; }
+                }
+            }
+        }
+
+        VerticalLayout {
+            vertical-stretch: 1;
+            padding: Theme.padding;
+            padding-top: 8px;
+            spacing: 24px;
+
+            Card {
+                vertical-stretch: 1;
+                min-height: 220px;
+
+                RowCount {
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+
+            CounterButtons { }
+
+            if Store.current.has-pdf: PatternCard {
+                removable: false;
+            }
+        }
+    }
+}

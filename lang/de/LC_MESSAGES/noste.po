@@ -1,3 +1,4 @@
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: noste\n"
@@ -7,243 +8,480 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgctxt "ProjectDialog"
-msgid "Edit project"
-msgstr "Projekt bearbeiten"
-
+#: ui/app.slint:16
 msgctxt "ProjectDialog"
 msgid "New project"
 msgstr "Neues Projekt"
 
+#: ui/app.slint:39
 msgctxt "ProjectDialog"
 msgid "Name"
 msgstr "Name"
 
-msgctxt "ProjectDialog"
-msgid "Name, e.g. Granny square blanket"
-msgstr "Name, z. B. Granny-Square-Decke"
-
-msgctxt "ProjectDialog"
-msgid "Rows (optional)"
-msgstr "Reihen (optional)"
-
+#: ui/app.slint:44
 msgctxt "ProjectDialog"
 msgid "Save"
 msgstr "Speichern"
 
+#: ui/app.slint:44
 msgctxt "ProjectDialog"
 msgid "Create"
 msgstr "Anlegen"
 
+#: ui/app.slint:184
 msgctxt "App"
 msgid "This file could not be opened as a PDF."
 msgstr "Diese Datei konnte nicht als PDF geöffnet werden."
 
+#: ui/app.slint:185
 msgctxt "App"
 msgid "The page could not be displayed."
 msgstr "Die Seite konnte nicht angezeigt werden."
 
+#: ui/app.slint:186
 msgctxt "App"
 msgid "The PDF could not be imported."
 msgstr "Das PDF konnte nicht importiert werden."
 
+#: ui/app.slint:207
 msgctxt "App"
 msgid "Delete project?"
 msgstr "Projekt löschen?"
 
+#: ui/app.slint:208
 msgctxt "App"
 msgid "“{}” and its pattern will be removed. This cannot be undone."
-msgstr "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht werden."
+msgstr ""
+"„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
+"werden."
 
+#: ui/app.slint:212 ui/app.slint:233
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
+#: ui/app.slint:309
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-msgctxt "App"
-msgid "The row counter goes back to 0."
-msgstr "Der Reihenzähler wird auf 0 gesetzt."
-
+#: ui/app.slint:314
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
+#: ui/app.slint:324
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-msgctxt "App"
-msgid "The PDF is removed from this project. The row counter stays."
-msgstr "Das PDF wird aus diesem Projekt entfernt. Der Reihenzähler bleibt erhalten."
-
+#: ui/app.slint:329
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
 
+#: ui/components.slint:308
 msgctxt "DialogButtons"
 msgid "Cancel"
 msgstr "Abbrechen"
 
+#: ui/components.slint:338
 msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
 
-msgctxt "ProjectCard"
-msgid "Row {} of {}"
-msgstr "Reihe {} von {}"
-
-msgctxt "ProjectCard"
-msgid "Row {}"
-msgstr "Reihe {}"
-
+#: ui/pages/list.slint:207
 msgctxt "ListPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
+#: ui/pages/list.slint:226
 msgctxt "ListPage"
 msgid "Projects"
 msgstr "Projekte"
 
+#: ui/pages/list.slint:276
 msgctxt "ListPage"
 msgid "No projects yet"
 msgstr "Noch keine Projekte"
 
+#: ui/pages/list.slint:283
 msgctxt "ListPage"
 msgid "Create a project to count your rows and keep your pattern at hand."
-msgstr "Leg ein Projekt an, um Reihen zu zählen und deine Anleitung griffbereit zu haben."
+msgstr ""
+"Leg ein Projekt an, um Reihen zu zählen und deine Anleitung griffbereit zu "
+"haben."
 
+#: ui/pages/list.slint:296
 msgctxt "ListPage"
 msgid "New project"
 msgstr "Neues Projekt"
 
+#: ui/pages/pdf.slint:87
 msgctxt "PdfPage"
 msgid "Zoom out"
 msgstr "Verkleinern"
 
+#: ui/pages/pdf.slint:96
 msgctxt "PdfPage"
 msgid "Zoom in"
 msgstr "Vergrößern"
 
+#: ui/pages/pdf.slint:137
 msgctxt "PdfPage"
 msgid "Page {} of {}"
 msgstr "Seite {} von {}"
 
+#: ui/pages/pdf.slint:153
 msgctxt "PdfPage"
 msgid "Loading…"
 msgstr "Wird geladen…"
 
+#: ui/pages/pdf.slint:167
 msgctxt "PdfPage"
 msgid "Previous page"
 msgstr "Vorherige Seite"
 
+#: ui/pages/pdf.slint:182
 msgctxt "PdfPage"
 msgid "Next page"
 msgstr "Nächste Seite"
 
+#: ui/pages/pdf.slint:234
 msgctxt "PdfPage"
 msgid "Previous row"
 msgstr "Vorherige Reihe"
 
+#: ui/pages/pdf.slint:273
 msgctxt "PdfPage"
 msgid "Row {}"
 msgstr "Reihe {}"
 
+#: ui/pages/pdf.slint:292
 msgctxt "PdfPage"
 msgid "Next row"
 msgstr "Nächste Reihe"
 
-msgctxt "ProjectPage"
-msgid "Edit project"
-msgstr "Projekt bearbeiten"
-
+#: ui/pages/project.slint:154
 msgctxt "ProjectPage"
 msgid "Delete project"
 msgstr "Projekt löschen"
 
-msgctxt "ProjectPage"
-msgid "Row"
-msgstr "Reihe"
-
-msgctxt "ProjectPage"
-msgid "Row {}"
-msgstr "Reihe {}"
-
-msgctxt "ProjectPage"
-msgid "of {}"
-msgstr "von {}"
-
-msgctxt "ProjectPage"
-msgid "Previous row"
-msgstr "Vorherige Reihe"
-
-msgctxt "ProjectPage"
-msgid "Next row"
-msgstr "Nächste Reihe"
-
-msgctxt "ProjectPage"
-msgid "Reset counter"
-msgstr "Zähler zurücksetzen"
-
+#: ui/pages/project.slint:200
 msgctxt "ProjectPage"
 msgid "Add PDF pattern"
 msgstr "PDF-Anleitung hinzufügen"
 
-msgctxt "ProjectPage"
-msgid "Open pattern"
-msgstr "Anleitung öffnen"
-
+#: ui/pages/project.slint:196
 msgctxt "ProjectPage"
 msgid "Pattern"
 msgstr "Anleitung"
 
-msgctxt "ProjectPage"
-msgid "Remove pattern"
-msgstr "Anleitung entfernen"
-
+#: ui/pages/settings.slint:15
 msgctxt "SettingsPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
+#: ui/pages/settings.slint:30
 msgctxt "SettingsPage"
 msgid "Language"
 msgstr "Sprache"
 
+#: ui/pages/settings.slint:33 ui/pages/settings.slint:44
 msgctxt "SettingsPage"
 msgid "System"
 msgstr "System"
 
+#: ui/pages/settings.slint:41
 msgctxt "SettingsPage"
 msgid "Appearance"
 msgstr "Erscheinungsbild"
 
+#: ui/pages/settings.slint:44
 msgctxt "SettingsPage"
 msgid "Light"
 msgstr "Hell"
 
+#: ui/pages/settings.slint:44
 msgctxt "SettingsPage"
 msgid "Dark"
 msgstr "Dunkel"
 
+#: ui/pages/settings.slint:52
 msgctxt "SettingsPage"
 msgid "Counting"
 msgstr "Zählen"
 
+#: ui/pages/settings.slint:67 ui/pages/settings.slint:81
 msgctxt "SettingsPage"
 msgid "Keep screen on"
 msgstr "Bildschirm bleibt an"
 
+#: ui/pages/settings.slint:72
 msgctxt "SettingsPage"
 msgid "While a project or pattern is open"
 msgstr "Solange ein Projekt oder eine Anleitung geöffnet ist"
 
+#: ui/pages/settings.slint:90
 msgctxt "SettingsPage"
 msgid "About"
 msgstr "Über"
 
+#: ui/pages/settings.slint:107
 msgctxt "SettingsPage"
 msgid "A crochet companion. Nøste is Norwegian for winding yarn into a ball."
-msgstr "Dein Häkelbegleiter. Nøste ist Norwegisch und heißt, Garn zu einem Knäuel aufwickeln."
+msgstr ""
+"Dein Häkelbegleiter. Nøste ist Norwegisch und heißt, Garn zu einem Knäuel "
+"aufwickeln."
 
+#: ui/pages/part.slint:18
+msgctxt "PartPage"
+msgid "Edit part"
+msgstr "Teil bearbeiten"
+
+#: ui/pages/part.slint:26
+msgctxt "PartPage"
+msgid "Delete part"
+msgstr "Teil löschen"
+
+#: ui/pages/list.slint:86
+msgctxt "ProjectCard"
+msgid "No parts yet"
+msgstr "Noch keine Teile"
+
+#: ui/pages/list.slint:86
+msgctxt "ProjectCard"
+msgid "{n} part"
+msgid_plural "{n} parts"
+msgstr[0] "{n} Teil"
+msgstr[1] "{n} Teile"
+
+#: ui/pages/list.slint:87
+msgctxt "ProjectCard"
+msgid "{} · row {} of {}"
+msgstr "{} · Reihe {} von {}"
+
+#: ui/pages/list.slint:88
+msgctxt "ProjectCard"
+msgid "{} · row {}"
+msgstr "{} · Reihe {}"
+
+#: ui/pages/project.slint:12
+msgctxt "PatternCard"
+msgid "Open pattern"
+msgstr "Anleitung öffnen"
+
+#: ui/pages/project.slint:46
+msgctxt "PatternCard"
+msgid "Pattern"
+msgstr "Anleitung"
+
+#: ui/pages/project.slint:62
+msgctxt "PatternCard"
+msgid "Remove pattern"
+msgstr "Anleitung entfernen"
+
+#: ui/pages/project.slint:85
+msgctxt "PartCard"
+msgid "{}, row {} of {}"
+msgstr "{}, Reihe {} von {}"
+
+#: ui/pages/project.slint:85
+msgctxt "PartCard"
+msgid "{}, row {}"
+msgstr "{}, Reihe {}"
+
+#: ui/pages/project.slint:114
+msgctxt "PartCard"
+msgid "Row {} of {}"
+msgstr "Reihe {} von {}"
+
+#: ui/pages/project.slint:114
+msgctxt "PartCard"
+msgid "Row {}"
+msgstr "Reihe {}"
+
+#: ui/pages/project.slint:146
+msgctxt "ProjectPage"
+msgid "Rename project"
+msgstr "Projekt umbenennen"
+
+#: ui/pages/project.slint:171
+msgctxt "ProjectPage"
+msgid "Parts"
+msgstr "Teile"
+
+#: ui/pages/project.slint:174
+msgctxt "ProjectPage"
+msgid ""
+"Add the parts of your project, e.g. head, body and legs. Each part counts "
+"its own rows."
+msgstr ""
+"Füge die Teile deines Projekts hinzu, z. B. Kopf, Körper und Beine. Jedes "
+"Teil zählt seine eigenen Reihen."
+
+#: ui/pages/project.slint:186
+msgctxt "ProjectPage"
+msgid "Add part"
+msgstr "Teil hinzufügen"
+
+#: ui/app.slint:16
+msgctxt "ProjectDialog"
+msgid "Rename project"
+msgstr "Projekt umbenennen"
+
+#: ui/app.slint:40
+msgctxt "ProjectDialog"
+msgid "Name, e.g. Bunny"
+msgstr "Name, z. B. Hase"
+
+#: ui/app.slint:55
+msgctxt "PartDialog"
+msgid "Edit part"
+msgstr "Teil bearbeiten"
+
+#: ui/app.slint:55
+msgctxt "PartDialog"
+msgid "New part"
+msgstr "Neues Teil"
+
+#: ui/app.slint:79
+msgctxt "PartDialog"
+msgid "Name"
+msgstr "Name"
+
+#: ui/app.slint:80
+msgctxt "PartDialog"
+msgid "Name, e.g. Head"
+msgstr "Name, z. B. Kopf"
+
+#: ui/app.slint:84 ui/app.slint:85
+msgctxt "PartDialog"
+msgid "Rows (optional)"
+msgstr "Reihen (optional)"
+
+#: ui/app.slint:90
+msgctxt "PartDialog"
+msgid "Save"
+msgstr "Speichern"
+
+#: ui/app.slint:90
+msgctxt "PartDialog"
+msgid "Add"
+msgstr "Hinzufügen"
+
+#: ui/app.slint:228
+msgctxt "App"
+msgid "Delete part?"
+msgstr "Teil löschen?"
+
+#: ui/app.slint:229
+msgctxt "App"
+msgid "“{}” and its row counter will be removed."
+msgstr "„{}“ und sein Reihenzähler werden gelöscht."
+
+#: ui/app.slint:310
+msgctxt "App"
+msgid "The row counter of “{}” goes back to 0."
+msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
+
+#: ui/app.slint:325
+msgctxt "App"
+msgid "The PDF is removed from this project. The row counters stay."
+msgstr ""
+"Das PDF wird aus diesem Projekt entfernt. Die Reihenzähler bleiben erhalten."
+
+#: ui/pages/list.slint:103
+msgctxt "ProjectCard"
+msgid "{}%"
+msgstr "{} %"
+
+#: ui/pages/list.slint:164
+msgctxt "ListPage"
+msgid "Close search"
+msgstr "Suche schließen"
+
+#: ui/pages/list.slint:173 ui/pages/list.slint:199
+msgctxt "ListPage"
+msgid "Search"
+msgstr "Suchen"
+
+#: ui/pages/list.slint:174
+msgctxt "ListPage"
+msgid "Search projects"
+msgstr "Projekte suchen"
+
+#: ui/pages/list.slint:244
+msgctxt "ListPage"
+msgid "No matching projects"
+msgstr "Keine passenden Projekte"
+
+#: ui/pages/pdf.slint:196 ui/pages/pdf.slint:204 ui/pages/pdf.slint:332
+msgctxt "PdfPage"
+msgid "Choose part"
+msgstr "Teil wählen"
+
+#: ui/app.slint:244
+msgctxt "App"
+msgid "Choose part"
+msgstr "Teil wählen"
+
+#: ui/app.slint:283
+msgctxt "App"
+msgid "Row {} of {}"
+msgstr "Reihe {} von {}"
+
+#: ui/app.slint:283
+msgctxt "App"
+msgid "Row {}"
+msgstr "Reihe {}"
+
+#: ui/app.slint:301
+msgctxt "App"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: ui/pages/list.slint:129
+msgctxt "ProjectCard"
+msgid "Continue {}"
+msgstr "{} fortsetzen"
+
+#: ui/pages/pdf.slint:245
+msgctxt "PdfPage"
+msgid "Enlarge counter"
+msgstr "Zähler vergrößern"
+
+#: ui/pages/pdf.slint:367
+msgctxt "PdfPage"
+msgid "Shrink counter"
+msgstr "Zähler verkleinern"
+
+#: ui/counter.slint:52
+msgctxt "RowCount"
+msgid "Row"
+msgstr "Reihe"
+
+#: ui/counter.slint:64
+msgctxt "RowCount"
+msgid "Row {}"
+msgstr "Reihe {}"
+
+#: ui/counter.slint:72
+msgctxt "RowCount"
+msgid "of {}"
+msgstr "von {}"
+
+#: ui/counter.slint:101
+msgctxt "CounterButtons"
+msgid "Previous row"
+msgstr "Vorherige Reihe"
+
+#: ui/counter.slint:110
+msgctxt "CounterButtons"
+msgid "Next row"
+msgstr "Nächste Reihe"
+
+#: ui/counter.slint:118
+msgctxt "CounterButtons"
+msgid "Reset counter"
+msgstr "Zähler zurücksetzen"

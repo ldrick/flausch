@@ -26,6 +26,8 @@ pub fn keep_screen_on(_on: bool) {}
 
 pub fn set_dark_theme(_dark: bool) {}
 
+pub fn hide_text_handles() {}
+
 /// Shows a file dialog on a background thread and copies the chosen file to `dest`.
 /// `done` runs on that background thread.
 pub fn pick_pdf(dest: PathBuf, done: impl FnOnce(PickResult) + Send + 'static) {

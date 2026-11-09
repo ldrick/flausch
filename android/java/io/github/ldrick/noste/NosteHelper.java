@@ -15,7 +15,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 
@@ -24,6 +26,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 
 /**
@@ -126,6 +130,60 @@ public class NosteHelper {
                 }
             }
         });
+    }
+
+    /**
+     * Hides the text cursor handles after a text field was focused from code, e.g. when a dialog
+     * opens. Slint shows them because the last touch (on the button that opened the dialog) was a
+     * tap, and hides them once text arrives from the keyboard. This sends the unchanged text through
+     * Slint's own {@code SlintAndroidJavaHelper.updateText}, which has that effect. Tapping or
+     * selecting text afterwards shows the handles as usual.
+     *
+     * Must be called after the field was focused: the runnable then runs after Slint passed the
+     * current text to its input view.
+     */
+    public void hideTextHandles() {
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    View input = findView(mActivity.getWindow().getDecorView(), "SlintInputView");
+                    if (input == null) {
+                        return;
+                    }
+                    Class<?> view = input.getClass();
+                    Class<?> helper = Class.forName("SlintAndroidJavaHelper", true, view.getClassLoader());
+                    Method update = helper.getMethod("updateText", String.class, int.class, int.class, int.class,
+                            int.class);
+                    update.invoke(null, field(view, input, "mText"), field(view, input, "mCursorPosition"),
+                            field(view, input, "mAnchorPosition"), 0, 0);
+                } catch (ReflectiveOperationException | RuntimeException e) {
+                    Log.w("noste", "cannot hide the text handles", e);
+                }
+            }
+        });
+    }
+
+    private static Object field(Class<?> type, Object object, String name) throws ReflectiveOperationException {
+        Field field = type.getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(object);
+    }
+
+    private static View findView(View view, String className) {
+        if (view.getClass().getName().equals(className)) {
+            return view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findView(group.getChildAt(i), className);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     public int pageCount(String path) throws IOException {

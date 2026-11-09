@@ -12,6 +12,7 @@ use crate::model::{Library, Settings};
 const LIBRARY_FILE: &str = "projects.json";
 const SETTINGS_FILE: &str = "settings.json";
 const PDF_DIR: &str = "pdfs";
+const COVER_DIR: &str = "covers";
 
 pub struct Storage {
     dir: PathBuf,
@@ -20,11 +21,14 @@ pub struct Storage {
 impl Storage {
     pub fn new(dir: PathBuf) -> io::Result<Self> {
         fs::create_dir_all(dir.join(PDF_DIR))?;
+        fs::create_dir_all(dir.join(COVER_DIR))?;
         Ok(Self { dir })
     }
 
     pub fn load_library(&self) -> Library {
-        load_or_default(&self.dir.join(LIBRARY_FILE))
+        let mut library: Library = load_or_default(&self.dir.join(LIBRARY_FILE));
+        library.migrate();
+        library
     }
 
     pub fn save_library(&self, library: &Library) -> io::Result<()> {
@@ -49,13 +53,23 @@ impl Storage {
         format!("{project_id}-{now_nanos:x}.pdf")
     }
 
+    /// Thumbnail of the first page of the PDF `file`, see `pdf::Covers`.
+    pub fn cover_path(&self, file: &str) -> PathBuf {
+        self.dir.join(COVER_DIR).join(format!("{file}.png"))
+    }
+
+    /// Removes the PDF and its cover.
     pub fn remove_pdf(&self, file: &str) {
-        let path = self.pdf_path(file);
-        if let Err(e) = fs::remove_file(&path)
-            && e.kind() != io::ErrorKind::NotFound
-        {
-            eprintln!("nøste: cannot remove {}: {e}", path.display());
-        }
+        remove_file(&self.pdf_path(file));
+        remove_file(&self.cover_path(file));
+    }
+}
+
+fn remove_file(path: &Path) {
+    if let Err(e) = fs::remove_file(path)
+        && e.kind() != io::ErrorKind::NotFound
+    {
+        eprintln!("nøste: cannot remove {}: {e}", path.display());
     }
 }
 
@@ -110,8 +124,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let storage = Storage::new(dir.path().to_path_buf()).unwrap();
         let mut library = Library::default();
-        let id = library.create("Mütze", Some(40), 1);
-        library.increment(id, 2);
+        let id = library.create("Mütze", 1);
+        let part = library.add_part(id, "Krempe", Some(12), 2).unwrap();
+        library.increment(id, part, 3);
         storage.save_library(&library).unwrap();
         assert_eq!(storage.load_library(), library);
 

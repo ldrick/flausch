@@ -151,6 +151,17 @@ pub fn set_dark_theme(dark: bool) {
     }
 }
 
+/// Hides the text cursor handles that Slint shows after a text field was focused from code.
+pub fn hide_text_handles() {
+    let result = with_helper(|env, helper| {
+        env.call_method(helper, "hideTextHandles", "()V", &[])?;
+        Ok(())
+    });
+    if let Err(e) = result {
+        eprintln!("nøste: cannot hide the text handles: {e}");
+    }
+}
+
 /// Opens the system document picker and copies the chosen PDF to `dest`.
 /// `done` runs on a Java thread.
 pub fn pick_pdf(dest: PathBuf, done: impl FnOnce(PickResult) + Send + 'static) {

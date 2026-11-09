@@ -1,6 +1,7 @@
-//! Renders PDF pages on a background thread. Only the newest pending request is rendered.
+//! Renders PDF pages on background threads: pages for the viewer (only the newest pending
+//! request is rendered) and cover thumbnails for the project list.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
 use slint::{Rgba8Pixel, SharedPixelBuffer};
@@ -73,6 +74,53 @@ fn render(request: Request) -> Rendered {
         width: request.width,
         result,
     }
+}
+
+/// Width of cover thumbnails in pixels.
+const COVER_WIDTH: u32 = 288;
+
+/// Renders the first page of PDFs to PNG thumbnails on a background thread, one after another.
+pub struct Covers {
+    sender: mpsc::Sender<(PathBuf, PathBuf)>,
+}
+
+impl Covers {
+    /// `on_done` runs on the cover thread after each cover was written.
+    pub fn new(on_done: impl Fn() + Send + 'static) -> Self {
+        let (sender, receiver) = mpsc::channel::<(PathBuf, PathBuf)>();
+        std::thread::Builder::new()
+            .name("pdf-cover".into())
+            .spawn(move || {
+                while let Ok((pdf, cover)) = receiver.recv() {
+                    match write_cover(&pdf, &cover) {
+                        Ok(()) => on_done(),
+                        Err(e) => {
+                            eprintln!("nøste: cannot create a cover for {}: {e}", pdf.display())
+                        }
+                    }
+                }
+            })
+            .expect("cannot start the PDF cover thread");
+        Self { sender }
+    }
+
+    pub fn request(&self, pdf: PathBuf, cover: PathBuf) {
+        let _ = self.sender.send((pdf, cover));
+    }
+}
+
+fn write_cover(pdf: &Path, cover: &Path) -> Result<(), String> {
+    let image = platform::render_page(pdf, 0, COVER_WIDTH)?;
+    let tmp = cover.with_extension("png.tmp");
+    let file = std::fs::File::create(&tmp).map_err(|e| e.to_string())?;
+    let mut encoder = png::Encoder::new(std::io::BufWriter::new(file), image.width, image.height);
+    encoder.set_color(png::ColorType::Rgba);
+    encoder.set_depth(png::BitDepth::Eight);
+    encoder
+        .write_header()
+        .and_then(|mut writer| writer.write_image_data(&image.rgba))
+        .map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, cover).map_err(|e| e.to_string())
 }
 
 /// Render width in physical pixels for a page shown `view_width` pixels wide at `zoom`,

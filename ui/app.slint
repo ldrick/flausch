@@ -1,18 +1,19 @@
 import { Theme, Appearance } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PdfView, Language } from "store.slint";
-import { Dialog, DialogButtons, Field } from "components.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language } from "store.slint";
+import { Dialog, DialogButtons, Field, Keyboard, PillButton, ButtonKind } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
+import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 
-export { Store, Theme, Appearance, Screen, DialogKind, Notice, ProjectItem, PdfView, Language }
+export { Store, Theme, Appearance, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language }
 
 component ProjectDialog inherits Dialog {
     in property <bool> editing;
     callback done();
 
-    title: root.editing ? @tr("Edit project") : @tr("New project");
+    title: root.editing ? @tr("Rename project") : @tr("New project");
     dismissed => { root.done(); }
 
     function submit() {
@@ -20,9 +21,9 @@ component ProjectDialog inherits Dialog {
             return;
         }
         if root.editing {
-            Store.edit-project(name.text, goal.text);
+            Store.edit-project(name.text);
         } else {
-            Store.create-project(name.text, goal.text);
+            Store.create-project(name.text);
         }
         root.done();
     }
@@ -30,20 +31,13 @@ component ProjectDialog inherits Dialog {
     init => {
         if root.editing {
             name.text = Store.current.name;
-            goal.text = Store.current.goal > 0 ? Store.current.goal : "";
         }
         name.focus-input();
     }
 
     name := Field {
         label: @tr("Name");
-        placeholder: @tr("Name, e.g. Granny square blanket");
-        accepted => { goal.focus-input(); }
-    }
-    goal := Field {
-        label: @tr("Rows (optional)");
-        placeholder: @tr("Rows (optional)");
-        input-type: InputType.number;
+        placeholder: @tr("Name, e.g. Bunny");
         accepted => { root.submit(); }
     }
     DialogButtons {
@@ -54,10 +48,56 @@ component ProjectDialog inherits Dialog {
     }
 }
 
+component PartDialog inherits Dialog {
+    in property <bool> editing;
+    callback done();
+
+    title: root.editing ? @tr("Edit part") : @tr("New part");
+    dismissed => { root.done(); }
+
+    function submit() {
+        if name.text.is-empty {
+            return;
+        }
+        if root.editing {
+            Store.edit-part(name.text, goal.text);
+        } else {
+            Store.add-part(name.text, goal.text);
+        }
+        root.done();
+    }
+
+    init => {
+        if root.editing {
+            name.text = Store.part.name;
+            goal.text = Store.part.goal > 0 ? Store.part.goal : "";
+        }
+        name.focus-input();
+    }
+
+    name := Field {
+        label: @tr("Name");
+        placeholder: @tr("Name, e.g. Head");
+        accepted => { goal.focus-input(); }
+    }
+    goal := Field {
+        label: @tr("Rows (optional)");
+        placeholder: @tr("Rows (optional)");
+        input-type: InputType.number;
+        accepted => { root.submit(); }
+    }
+    DialogButtons {
+        confirm-text: root.editing ? @tr("Save") : @tr("Add");
+        confirm-enabled: !name.text.is-empty;
+        cancel => { root.done(); }
+        confirm => { root.submit(); }
+    }
+}
+
 export component App inherits Window {
     title: "nøste";
-    preferred-width: 390px;
-    preferred-height: 800px;
+    preferred-width: 412px;
+    preferred-height: 924px;
     background: Theme.background;
 
     property <DialogKind> dialog: Store.dialog;
@@ -65,6 +105,16 @@ export component App inherits Window {
     property <Appearance> appearance: Store.appearance;
     property <bool> dark: Theme.dark;
     property <bool> back-handled;
+    property <bool> searching: Store.searching;
+    property <length> keyboard-height: self.virtual-keyboard-size.height > 0 ? max(0, self.height - self.virtual-keyboard-position.y) : 0;
+    changed keyboard-height => {
+        Keyboard.height = self.keyboard-height;
+    }
+    changed searching => {
+        if !self.searching {
+            scope.focus();
+        }
+    }
     changed dialog => {
         if self.dialog == DialogKind.none {
             scope.focus();
@@ -116,6 +166,7 @@ export component App inherits Window {
 
             if Store.screen == Screen.list: ListPage { }
             if Store.screen == Screen.project: ProjectPage { }
+            if Store.screen == Screen.part: PartPage { }
             if Store.screen == Screen.pdf: PdfPage { }
             if Store.screen == Screen.settings: SettingsPage { }
 
@@ -168,9 +219,95 @@ export component App inherits Window {
             }
         }
 
+        if Store.dialog == DialogKind.add-part || Store.dialog == DialogKind.edit-part: PartDialog {
+            editing: Store.dialog == DialogKind.edit-part;
+            done => { root.close-dialog(); }
+        }
+
+        if Store.dialog == DialogKind.delete-part: Dialog {
+            title: @tr("Delete part?");
+            message: @tr("“{}” and its row counter will be removed.", Store.part.name);
+            dismissed => { root.close-dialog(); }
+
+            DialogButtons {
+                confirm-text: @tr("Delete");
+                destructive: true;
+                cancel => { root.close-dialog(); }
+                confirm => {
+                    root.close-dialog();
+                    Store.delete-part();
+                }
+            }
+        }
+
+        if Store.dialog == DialogKind.pick-part: Dialog {
+            title: @tr("Choose part");
+            dismissed => { root.close-dialog(); }
+
+            Flickable {
+                height: min(parts.preferred-height, 336px);
+                content-height: parts.preferred-height;
+
+                parts := VerticalLayout {
+                    alignment: start;
+                    spacing: 4px;
+
+                    for part in Store.parts: Rectangle {
+                        property <bool> active: Store.current.has-active && part.id == Store.current.active.id;
+                        height: 56px;
+                        border-radius: Theme.radius-small;
+                        background: self.active ? Theme.accent-soft : part-touch.pressed ? Theme.surface-muted : transparent;
+                        accessible-role: button;
+                        accessible-label: part.name;
+                        accessible-checked: self.active;
+                        accessible-action-default => {
+                            Store.select-part(part.id);
+                            root.close-dialog();
+                        }
+
+                        HorizontalLayout {
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            spacing: 12px;
+
+                            Text {
+                                text: part.name;
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                                font-weight: Store.current.has-active && part.id == Store.current.active.id ? 600 : 400;
+                                vertical-alignment: center;
+                                overflow: elide;
+                                horizontal-stretch: 1;
+                            }
+                            Text {
+                                text: part.goal > 0 ? @tr("Row {} of {}", part.row, part.goal) : @tr("Row {}", part.row);
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                vertical-alignment: center;
+                            }
+                        }
+                        part-touch := TouchArea {
+                            clicked => {
+                                Store.select-part(part.id);
+                                root.close-dialog();
+                            }
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                alignment: end;
+                PillButton {
+                    text: @tr("Cancel");
+                    kind: ButtonKind.quiet;
+                    clicked => { root.close-dialog(); }
+                }
+            }
+        }
+
         if Store.dialog == DialogKind.reset: Dialog {
             title: @tr("Reset counter?");
-            message: @tr("The row counter goes back to 0.");
+            message: @tr("The row counter of “{}” goes back to 0.", Store.part.name);
             dismissed => { root.close-dialog(); }
 
             DialogButtons {
@@ -185,7 +322,7 @@ export component App inherits Window {
 
         if Store.dialog == DialogKind.remove-pdf: Dialog {
             title: @tr("Remove pattern?");
-            message: @tr("The PDF is removed from this project. The row counter stays.");
+            message: @tr("The PDF is removed from this project. The row counters stay.");
             dismissed => { root.close-dialog(); }
 
             DialogButtons {

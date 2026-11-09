@@ -1,23 +1,54 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind, ProjectItem } from "../store.slint";
-import { Card, Icon, IconButton, PillButton, ProgressBar } from "../components.slint";
+import { Card, Field, Icon, IconButton, PillButton, ProgressBar } from "../components.slint";
 
 component ProjectCard inherits Card {
     in property <ProjectItem> project;
     callback clicked();
 
-    height: 96px;
+    height: 104px;
     background: touch.pressed ? Theme.surface-muted : Theme.surface;
     accessible-role: button;
     accessible-label: root.project.name;
     accessible-action-default => { root.clicked(); }
 
+    // Below the content, so the continue button gets its own taps.
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+
     HorizontalLayout {
-        padding: 18px;
+        padding: 14px;
+        padding-right: 18px;
         spacing: 16px;
 
-        // Round badge with the current row.
-        VerticalLayout {
+        // First page of the pattern, top-aligned like a book cover.
+        if root.project.has-cover: VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 58px;
+                height: 76px;
+                border-radius: 10px;
+                clip: true;
+                background: #ffffff;
+
+                Image {
+                    width: parent.width;
+                    height: parent.height;
+                    source: root.project.cover;
+                    image-fit: cover;
+                    vertical-alignment: top;
+                }
+                Rectangle {
+                    border-radius: parent.border-radius;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                }
+            }
+        }
+
+        // Without a cover: round badge with the row of the active part.
+        if !root.project.has-cover: VerticalLayout {
             alignment: center;
             Rectangle {
                 width: 56px;
@@ -25,11 +56,17 @@ component ProjectCard inherits Card {
                 border-radius: self.height / 2;
                 background: Theme.accent-soft;
 
-                Text {
-                    text: root.project.row;
+                if root.project.has-active: Text {
+                    text: root.project.active.row;
                     color: Theme.accent-pressed;
                     font-size: 20px;
                     font-weight: 700;
+                }
+                if !root.project.has-active: Icon {
+                    source: @image-url("../icons/logo.svg");
+                    color: Theme.accent;
+                    width: 28px;
+                    height: 28px;
                 }
             }
         }
@@ -46,25 +83,32 @@ component ProjectCard inherits Card {
                 overflow: elide;
             }
             Text {
-                text: root.project.goal > 0 ? @tr("Row {} of {}", root.project.row, root.project.goal) : @tr("Row {}", root.project.row);
+                text: !root.project.has-active ? (root.project.part-count == 0 ? @tr("No parts yet") : @tr("{n} part" | "{n} parts" % root.project.part-count))
+                    : root.project.active.goal > 0 ? @tr("{} · row {} of {}", root.project.active.name, root.project.active.row, root.project.active.goal)
+                    : @tr("{} · row {}", root.project.active.name, root.project.active.row);
+                overflow: elide;
                 color: Theme.text-muted;
                 font-size: Theme.font-small;
             }
-            if root.project.goal > 0: ProgressBar {
-                progress: root.project.row / root.project.goal;
+            // Total progress over all parts.
+            if root.project.rows-total > 0: HorizontalLayout {
+                spacing: 10px;
+                VerticalLayout {
+                    alignment: center;
+                    ProgressBar {
+                        progress: root.project.rows-done / root.project.rows-total;
+                    }
+                }
+                Text {
+                    text: @tr("{}%", Math.floor(root.project.rows-done * 100 / root.project.rows-total));
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    horizontal-stretch: 0;
+                }
             }
         }
 
-        if root.project.has-pdf: VerticalLayout {
-            alignment: center;
-            Icon {
-                source: @image-url("../icons/file.svg");
-                color: Theme.text-muted;
-                width: 20px;
-                height: 20px;
-            }
-        }
-        VerticalLayout {
+        if !root.project.has-pdf: VerticalLayout {
             alignment: center;
             Icon {
                 source: @image-url("../icons/chevron-right.svg");
@@ -73,20 +117,83 @@ component ProjectCard inherits Card {
                 height: 20px;
             }
         }
-    }
+        // Continue at the saved page of the pattern.
+        if root.project.has-pdf: VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 44px;
+                height: 44px;
+                border-radius: self.height / 2;
+                background: continue-touch.pressed ? Theme.accent : Theme.accent-soft;
+                accessible-role: button;
+                accessible-label: @tr("Continue {}", root.project.name);
+                accessible-action-default => { Store.continue-project(root.project.id); }
 
-    touch := TouchArea {
-        clicked => { root.clicked(); }
+                Icon {
+                    source: @image-url("../icons/play.svg");
+                    color: continue-touch.pressed ? Theme.on-accent : Theme.accent-pressed;
+                    width: 20px;
+                    height: 20px;
+                }
+                continue-touch := TouchArea {
+                    clicked => { Store.continue-project(root.project.id); }
+                }
+            }
+        }
     }
 }
 
 export component ListPage inherits Rectangle {
+    function close-search() {
+        Store.searching = false;
+        Store.query = "";
+        Store.query-changed();
+    }
+
     VerticalLayout {
-        HorizontalLayout {
+        if Store.searching: HorizontalLayout {
+            height: 72px;
+            padding-left: 4px;
+            padding-right: Theme.padding;
+            spacing: 4px;
+
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/chevron-left.svg");
+                    label: @tr("Close search");
+                    clicked => { root.close-search(); }
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                horizontal-stretch: 1;
+                Field {
+                    height: 48px;
+                    label: @tr("Search");
+                    placeholder: @tr("Search projects");
+                    text <=> Store.query;
+                    changed text => { Store.query-changed(); }
+                    init => { self.focus-input(); }
+                }
+            }
+        }
+
+        if !Store.searching: HorizontalLayout {
             height: 72px;
             padding-left: Theme.padding;
             padding-right: 8px;
+            spacing: 10px;
 
+            VerticalLayout {
+                alignment: center;
+                Icon {
+                    source: @image-url("../icons/logo.svg");
+                    color: Theme.accent;
+                    width: 34px;
+                    height: 34px;
+                }
+            }
             Text {
                 text: "nøste";
                 color: Theme.text;
@@ -94,6 +201,14 @@ export component ListPage inherits Rectangle {
                 font-weight: 700;
                 vertical-alignment: center;
                 horizontal-stretch: 1;
+            }
+            if Store.has-projects: VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/search.svg");
+                    label: @tr("Search");
+                    clicked => { Store.searching = true; }
+                }
             }
             VerticalLayout {
                 alignment: center;
@@ -130,7 +245,21 @@ export component ListPage inherits Rectangle {
             }
         }
 
-        if Store.projects.length == 0: VerticalLayout {
+        if Store.has-projects && Store.projects.length == 0: VerticalLayout {
+            vertical-stretch: 1;
+            alignment: start;
+            padding: 40px;
+
+            Text {
+                text: @tr("No matching projects");
+                color: Theme.text-muted;
+                font-size: Theme.font-body;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+        }
+
+        if !Store.has-projects: VerticalLayout {
             vertical-stretch: 1;
             alignment: center;
             padding: 40px;
@@ -146,7 +275,7 @@ export component ListPage inherits Rectangle {
                     background: Theme.accent-soft;
 
                     Icon {
-                        source: @image-url("../icons/yarn.svg");
+                        source: @image-url("../icons/logo.svg");
                         color: Theme.accent;
                         width: 56px;
                         height: 56px;

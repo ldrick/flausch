@@ -1,38 +1,135 @@
 import { Theme } from "../theme.slint";
-import { Store, DialogKind } from "../store.slint";
+import { Store, DialogKind, PartItem } from "../store.slint";
 import { Card, Icon, IconButton, PillButton, ButtonKind, ProgressBar, TopBar } from "../components.slint";
 
-component RoundButton inherits Rectangle {
-    in property <image> icon;
-    in property <string> label;
-    in property <bool> primary: false;
-    in property <bool> enabled: true;
-    in property <length> size: 64px;
+export component PatternCard inherits Card {
+    // Shows a button to remove the PDF from the project.
+    in property <bool> removable: true;
+
+    height: 72px;
+    background: touch.pressed ? Theme.surface-muted : Theme.surface;
+    accessible-role: button;
+    accessible-label: @tr("Open pattern");
+    accessible-action-default => { Store.open-pdf(); }
+
+    touch := TouchArea {
+        clicked => { Store.open-pdf(); }
+    }
+
+    HorizontalLayout {
+        padding-left: 18px;
+        padding-right: 6px;
+        spacing: 14px;
+
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 40px;
+                height: 40px;
+                border-radius: Theme.radius-small;
+                background: Theme.accent-soft;
+
+                Icon {
+                    source: @image-url("../icons/file.svg");
+                    color: Theme.accent-pressed;
+                    width: 20px;
+                    height: 20px;
+                }
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            horizontal-stretch: 1;
+
+            Text {
+                text: @tr("Pattern");
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+            }
+            Text {
+                text: Store.current.pdf-title;
+                color: Theme.text;
+                font-size: Theme.font-body;
+                overflow: elide;
+            }
+        }
+        if root.removable: VerticalLayout {
+            alignment: center;
+            IconButton {
+                icon: @image-url("../icons/close.svg");
+                tint: Theme.text-muted;
+                label: @tr("Remove pattern");
+                clicked => { Store.dialog = DialogKind.remove-pdf; }
+            }
+        }
+    }
+}
+
+component SectionTitle inherits Text {
+    color: Theme.text-muted;
+    font-size: Theme.font-small;
+    font-weight: 600;
+}
+
+component PartCard inherits Card {
+    in property <PartItem> part;
+    in property <bool> active;
     callback clicked();
 
-    width: root.size;
-    height: root.size;
-    border-radius: self.height / 2;
-    background: root.primary ? (touch.pressed ? Theme.accent-pressed : Theme.accent) : (touch.pressed ? Theme.surface-muted : Theme.surface);
-    border-width: root.primary ? 0 : 1px;
-    border-color: Theme.border;
-    drop-shadow-blur: root.primary ? 20px : 0;
-    drop-shadow-offset-y: 6px;
-    drop-shadow-color: Theme.shadow;
-    opacity: root.enabled ? 1 : 0.4;
+    height: root.part.goal > 0 ? 84px : 68px;
+    background: touch.pressed ? Theme.surface-muted : Theme.surface;
+    border-width: root.active ? 1.5px : 0;
+    border-color: Theme.accent;
     accessible-role: button;
-    accessible-label: root.label;
+    accessible-label: root.part.goal > 0 ? @tr("{}, row {} of {}", root.part.name, root.part.row, root.part.goal) : @tr("{}, row {}", root.part.name, root.part.row);
     accessible-action-default => { root.clicked(); }
 
-    Icon {
-        source: root.icon;
-        color: root.primary ? Theme.on-accent : Theme.text;
-        width: root.size * 0.4;
-        height: root.size * 0.4;
-    }
     touch := TouchArea {
-        enabled: root.enabled;
         clicked => { root.clicked(); }
+    }
+
+    HorizontalLayout {
+        padding-left: 18px;
+        padding-right: 12px;
+        spacing: 12px;
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 10px;
+            horizontal-stretch: 1;
+
+            HorizontalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: root.part.name;
+                    color: Theme.text;
+                    font-size: Theme.font-body + 1px;
+                    font-weight: 600;
+                    overflow: elide;
+                    horizontal-stretch: 1;
+                }
+                Text {
+                    text: root.part.goal > 0 ? @tr("Row {} of {}", root.part.row, root.part.goal) : @tr("Row {}", root.part.row);
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    vertical-alignment: center;
+                }
+            }
+            if root.part.goal > 0: ProgressBar {
+                progress: root.part.row / root.part.goal;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Icon {
+                source: @image-url("../icons/chevron-right.svg");
+                color: Theme.border;
+                width: 20px;
+                height: 20px;
+            }
+        }
     }
 }
 
@@ -46,7 +143,7 @@ export component ProjectPage inherits Rectangle {
                 alignment: center;
                 IconButton {
                     icon: @image-url("../icons/edit.svg");
-                    label: @tr("Edit project");
+                    label: @tr("Rename project");
                     clicked => { Store.dialog = DialogKind.edit; }
                 }
             }
@@ -60,156 +157,52 @@ export component ProjectPage inherits Rectangle {
             }
         }
 
-        VerticalLayout {
+        Flickable {
             vertical-stretch: 1;
-            padding: Theme.padding;
-            padding-top: 8px;
-            spacing: 24px;
+            content-height: content.preferred-height;
 
-            Card {
-                vertical-stretch: 1;
-                min-height: 220px;
+            content := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 8px;
+                spacing: Theme.spacing;
+                alignment: start;
 
-                VerticalLayout {
-                    alignment: center;
-                    padding: 24px;
-                    spacing: 4px;
-
-                    Text {
-                        text: @tr("Row");
-                        color: Theme.text-muted;
-                        font-size: Theme.font-body;
-                        horizontal-alignment: center;
-                    }
-                    Text {
-                        text: Store.current.row;
-                        color: Theme.text;
-                        font-size: Theme.font-counter;
-                        font-weight: 300;
-                        horizontal-alignment: center;
-                        accessible-role: text;
-                        accessible-label: @tr("Row {}", Store.current.row);
-                    }
-                    if Store.current.goal > 0: VerticalLayout {
-                        spacing: 10px;
-                        padding-left: 24px;
-                        padding-right: 24px;
-
-                        Text {
-                            text: @tr("of {}", Store.current.goal);
-                            color: Theme.text-muted;
-                            font-size: Theme.font-body;
-                            horizontal-alignment: center;
-                        }
-                        ProgressBar {
-                            progress: Store.current.row / Store.current.goal;
-                        }
-                    }
+                SectionTitle {
+                    text: @tr("Parts");
                 }
-
-                // Tapping the card counts, too: the largest possible target.
-                TouchArea {
-                    clicked => { Store.increment(); }
+                if Store.parts.length == 0: Text {
+                    text: @tr("Add the parts of your project, e.g. head, body and legs. Each part counts its own rows.");
+                    color: Theme.text-muted;
+                    font-size: Theme.font-body;
+                    wrap: word-wrap;
                 }
-            }
-
-            HorizontalLayout {
-                alignment: center;
-                spacing: 28px;
-
-                VerticalLayout {
-                    alignment: center;
-                    RoundButton {
-                        icon: @image-url("../icons/minus.svg");
-                        label: @tr("Previous row");
-                        enabled: Store.current.row > 0;
-                        clicked => { Store.decrement(); }
-                    }
+                for part in Store.parts: PartCard {
+                    part: part;
+                    active: Store.current.has-active && part.id == Store.current.active.id;
+                    clicked => { Store.open-part(part.id); }
                 }
-                RoundButton {
-                    size: 104px;
-                    primary: true;
+                PillButton {
+                    kind: Store.parts.length == 0 ? ButtonKind.primary : ButtonKind.secondary;
+                    text: @tr("Add part");
                     icon: @image-url("../icons/plus.svg");
-                    label: @tr("Next row");
-                    clicked => { Store.increment(); }
-                }
-                VerticalLayout {
-                    alignment: center;
-                    RoundButton {
-                        icon: @image-url("../icons/reset.svg");
-                        label: @tr("Reset counter");
-                        enabled: Store.current.row > 0;
-                        clicked => { Store.dialog = DialogKind.reset; }
-                    }
-                }
-            }
-
-            if !Store.current.has-pdf: PillButton {
-                kind: ButtonKind.secondary;
-                text: @tr("Add PDF pattern");
-                icon: @image-url("../icons/file.svg");
-                has-icon: true;
-                clicked => { Store.pick-pdf(); }
-            }
-
-            if Store.current.has-pdf: Card {
-                height: 72px;
-                background: touch.pressed ? Theme.surface-muted : Theme.surface;
-                accessible-role: button;
-                accessible-label: @tr("Open pattern");
-                accessible-action-default => { Store.open-pdf(); }
-
-                touch := TouchArea {
-                    clicked => { Store.open-pdf(); }
+                    has-icon: true;
+                    clicked => { Store.dialog = DialogKind.add-part; }
                 }
 
-                HorizontalLayout {
-                    padding-left: 18px;
-                    padding-right: 6px;
-                    spacing: 14px;
-
-                    VerticalLayout {
-                        alignment: center;
-                        Rectangle {
-                            width: 40px;
-                            height: 40px;
-                            border-radius: Theme.radius-small;
-                            background: Theme.accent-soft;
-
-                            Icon {
-                                source: @image-url("../icons/file.svg");
-                                color: Theme.accent-pressed;
-                                width: 20px;
-                                height: 20px;
-                            }
-                        }
-                    }
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: 2px;
-
-                        Text {
-                            text: @tr("Pattern");
-                            color: Theme.text-muted;
-                            font-size: Theme.font-small;
-                        }
-                        Text {
-                            text: Store.current.pdf-title;
-                            color: Theme.text;
-                            font-size: Theme.font-body;
-                            overflow: elide;
-                        }
-                    }
-                    VerticalLayout {
-                        alignment: center;
-                        IconButton {
-                            icon: @image-url("../icons/close.svg");
-                            tint: Theme.text-muted;
-                            label: @tr("Remove pattern");
-                            clicked => { Store.dialog = DialogKind.remove-pdf; }
-                        }
-                    }
+                Rectangle {
+                    height: 8px;
                 }
+                SectionTitle {
+                    text: @tr("Pattern");
+                }
+                if !Store.current.has-pdf: PillButton {
+                    kind: ButtonKind.secondary;
+                    text: @tr("Add PDF pattern");
+                    icon: @image-url("../icons/file.svg");
+                    has-icon: true;
+                    clicked => { Store.pick-pdf(); }
+                }
+                if Store.current.has-pdf: PatternCard { }
             }
         }
     }
