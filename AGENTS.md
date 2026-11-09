@@ -165,5 +165,4 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
 - Only add comments where something needs explaining.
 - On Linux, `fontique` loads fontconfig at runtime (`fontconfig-dlopen`). Don't add dependencies that need
   system `-dev` packages or pkg-config.
-- Don't commit unless asked. Never add `Co-authored-by` or other AI attribution trailers to commit messages.
-  Local plans and notes go in `.scratch/` (gitignored).
+- Don't commit unless asked. Local plans and notes go in `.scratch/` (gitignored).
