@@ -6,12 +6,23 @@ The UI uses [Slint](https://slint.dev) (`ui/*.slint`), which runs on Android via
 on the desktop via winit – so most development happens with a plain `cargo run`. APKs are built with
 [cargo-apk](https://github.com/rust-mobile/cargo-apk). `minSdk` 29 (Android 10).
 
+## Features (MVP)
+
+Projects with a row counter (optional goal), PDF patterns (imported and rendered on the device), keep screen on,
+Android back key, German/English, light/dark mode.
+
 ## Layout
 
-- `src/lib.rs` – app logic, `android_main` entry point (built as `cdylib` for Android)
+- `src/lib.rs` – controller wiring the UI to the model, `android_main` entry point (built as `cdylib`)
+- `src/model.rs`, `src/storage.rs` – data model and JSON persistence (no Slint)
+- `src/pdf.rs`, `src/platform/` – PDF render worker, Android (JNI) and desktop platform code
 - `src/main.rs` – desktop entry point
-- `ui/app.slint` – UI, compiled by `build.rs`
+- `ui/` – Slint UI (`app.slint` root, `store.slint` Rust↔UI contract, `theme.slint`, `pages/`)
+- `lang/` – translations (gettext `.po`, bundled at build time)
+- `android/java/` – small Java helper (file picker, PdfRenderer), compiled by `build.rs`
 - `android/res/` – Android resources (launcher icon)
+
+See [`AGENTS.md`](AGENTS.md) for conventions and development notes.
 
 ## Setup
 

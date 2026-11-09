@@ -1,0 +1,341 @@
+import { Theme } from "theme.slint";
+
+export component Icon inherits Image {
+    in property <color> color: Theme.text;
+    width: 24px;
+    height: 24px;
+    colorize: root.color;
+    image-fit: contain;
+}
+
+export component IconButton inherits Rectangle {
+    in property <image> icon;
+    in property <color> tint: Theme.text;
+    in property <bool> enabled: true;
+    in property <string> label;
+    callback clicked();
+
+    width: Theme.touch;
+    height: Theme.touch;
+    border-radius: self.height / 2;
+    background: touch.pressed ? Theme.surface-muted : transparent;
+    opacity: root.enabled ? 1 : 0.35;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+
+    Icon {
+        source: root.icon;
+        color: root.tint;
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+}
+
+export enum ButtonKind { primary, secondary, danger, quiet }
+
+export component PillButton inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <bool> has-icon: false;
+    in property <ButtonKind> kind: ButtonKind.primary;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    height: Theme.touch + 4px;
+    min-width: 96px;
+    horizontal-stretch: 0;
+    border-radius: self.height / 2;
+    background: {
+        if root.kind == ButtonKind.primary { return touch.pressed ? Theme.accent-pressed : Theme.accent; }
+        if root.kind == ButtonKind.danger { return touch.pressed ? Theme.danger.darker(0.1) : Theme.danger; }
+        if root.kind == ButtonKind.secondary { return touch.pressed ? Theme.surface-muted : Theme.surface; }
+        return touch.pressed ? Theme.surface-muted : transparent;
+    }
+    border-width: root.kind == ButtonKind.secondary ? 1px : 0;
+    border-color: Theme.border;
+    opacity: root.enabled ? 1 : 0.45;
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-action-default => { root.clicked(); }
+
+    property <color> content-color: root.kind == ButtonKind.primary ? Theme.on-accent : root.kind == ButtonKind.danger ? Theme.surface : root.kind == ButtonKind.quiet ? Theme.accent-pressed : Theme.text;
+
+    HorizontalLayout {
+        padding-left: 22px;
+        padding-right: 22px;
+        spacing: 8px;
+        alignment: center;
+
+        if root.has-icon: VerticalLayout {
+            alignment: center;
+            Icon {
+                source: root.icon;
+                color: root.content-color;
+                width: 20px;
+                height: 20px;
+            }
+        }
+        Text {
+            text: root.text;
+            color: root.content-color;
+            font-size: Theme.font-body;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component Card inherits Rectangle {
+    background: Theme.surface;
+    border-radius: Theme.radius;
+    drop-shadow-blur: 24px;
+    drop-shadow-offset-y: 6px;
+    drop-shadow-color: Theme.shadow;
+}
+
+export component ProgressBar inherits Rectangle {
+    in property <float> progress;
+    height: 6px;
+    border-radius: self.height / 2;
+    background: Theme.surface-muted;
+
+    Rectangle {
+        x: 0;
+        width: parent.width * clamp(root.progress, 0, 1);
+        border-radius: parent.border-radius;
+        background: Theme.accent;
+        animate width { duration: Theme.animation; easing: ease-out; }
+    }
+}
+
+export component Field inherits Rectangle {
+    in property <string> label;
+    in property <string> placeholder;
+    in property <InputType> input-type: InputType.text;
+    in-out property <string> text <=> input.text;
+    callback accepted();
+
+    public function focus-input() {
+        input.focus();
+        input.select-all();
+    }
+
+    height: 56px;
+    border-radius: Theme.radius-small;
+    background: Theme.surface-muted;
+    border-width: input.has-focus ? 1.5px : 0;
+    border-color: Theme.accent;
+    accessible-role: text-input;
+    accessible-label: root.label;
+
+    Text {
+        x: 16px;
+        width: parent.width - 32px;
+        height: parent.height;
+        visible: input.text == "";
+        text: root.placeholder;
+        color: Theme.text-muted;
+        font-size: Theme.font-body;
+        vertical-alignment: center;
+    }
+
+    input := TextInput {
+        x: 16px;
+        width: parent.width - 32px;
+        height: parent.height;
+        single-line: true;
+        input-type: root.input-type;
+        color: Theme.text;
+        selection-background-color: Theme.accent-soft;
+        selection-foreground-color: Theme.text;
+        font-size: Theme.font-body;
+        vertical-alignment: center;
+        accepted => { root.accepted(); }
+    }
+}
+
+export struct SegmentOption {
+    label: string,
+}
+
+export component Segmented inherits Rectangle {
+    in property <[SegmentOption]> options;
+    in property <int> selected;
+    callback select(int);
+
+    height: 44px;
+    border-radius: self.height / 2;
+    background: Theme.surface-muted;
+
+    HorizontalLayout {
+        padding: 4px;
+        spacing: 4px;
+        for option[index] in root.options: Rectangle {
+            border-radius: self.height / 2;
+            background: index == root.selected ? Theme.surface : transparent;
+            drop-shadow-blur: index == root.selected ? 6px : 0;
+            drop-shadow-color: Theme.shadow;
+            accessible-role: button;
+            accessible-label: option.label;
+            accessible-checked: index == root.selected;
+            accessible-action-default => { root.select(index); }
+            animate background { duration: Theme.animation; }
+
+            Text {
+                text: option.label;
+                color: index == root.selected ? Theme.text : Theme.text-muted;
+                font-size: Theme.font-small + 1px;
+                font-weight: index == root.selected ? 600 : 400;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            TouchArea {
+                clicked => { root.select(index); }
+            }
+        }
+    }
+}
+
+export component Switch inherits Rectangle {
+    in property <bool> checked;
+    in property <string> label;
+    callback toggled();
+
+    width: 52px;
+    height: 32px;
+    border-radius: self.height / 2;
+    background: root.checked ? Theme.accent : Theme.surface-muted;
+    accessible-role: switch;
+    accessible-label: root.label;
+    accessible-checked: root.checked;
+    accessible-action-default => { root.toggled(); }
+    animate background { duration: Theme.animation; }
+
+    Rectangle {
+        width: 24px;
+        height: 24px;
+        y: 4px;
+        x: root.checked ? parent.width - self.width - 4px : 4px;
+        border-radius: self.height / 2;
+        background: Theme.surface;
+        drop-shadow-blur: 4px;
+        drop-shadow-color: Theme.shadow;
+        animate x { duration: Theme.animation; easing: ease-out; }
+    }
+    TouchArea {
+        clicked => { root.toggled(); }
+    }
+}
+
+// Modal sheet with a dimmed backdrop. Tapping the backdrop dismisses it.
+export component Dialog inherits Rectangle {
+    in property <string> title;
+    in property <string> message;
+    callback dismissed();
+
+    background: Theme.scrim;
+
+    TouchArea {
+        clicked => { root.dismissed(); }
+    }
+
+    card := Rectangle {
+        width: min(root.width - 40px, 380px);
+        height: layout.preferred-height;
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius-large;
+        drop-shadow-blur: 32px;
+        drop-shadow-color: Theme.shadow;
+
+        // Swallow taps so they don't reach the backdrop.
+        TouchArea { }
+
+        layout := VerticalLayout {
+            padding: 24px;
+            spacing: 16px;
+
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-title;
+                font-weight: 600;
+                wrap: word-wrap;
+            }
+            if root.message != "": Text {
+                text: root.message;
+                color: Theme.text-muted;
+                font-size: Theme.font-body;
+                wrap: word-wrap;
+            }
+            @children
+        }
+    }
+}
+
+// Two buttons at the bottom of a dialog: dismiss and confirm.
+export component DialogButtons inherits HorizontalLayout {
+    in property <string> confirm-text;
+    in property <bool> confirm-enabled: true;
+    in property <bool> destructive: false;
+    callback cancel();
+    callback confirm();
+
+    spacing: 8px;
+    alignment: end;
+    padding-top: 8px;
+
+    PillButton {
+        text: @tr("Cancel");
+        kind: ButtonKind.quiet;
+        clicked => { root.cancel(); }
+    }
+    PillButton {
+        text: root.confirm-text;
+        kind: root.destructive ? ButtonKind.danger : ButtonKind.primary;
+        enabled: root.confirm-enabled;
+        clicked => { root.confirm(); }
+    }
+}
+
+// Top bar with an optional back button, a title and trailing actions as children.
+export component TopBar inherits HorizontalLayout {
+    in property <string> title;
+    in property <bool> show-back: true;
+    callback back();
+
+    height: 64px;
+    padding-left: root.show-back ? 4px : Theme.padding;
+    padding-right: 8px;
+    spacing: 4px;
+    alignment: stretch;
+
+    if root.show-back: VerticalLayout {
+        alignment: center;
+        IconButton {
+            icon: @image-url("icons/chevron-left.svg");
+            label: @tr("Back");
+            clicked => { root.back(); }
+        }
+    }
+    Text {
+        text: root.title;
+        color: Theme.text;
+        font-size: Theme.font-title;
+        font-weight: 600;
+        vertical-alignment: center;
+        overflow: elide;
+        horizontal-stretch: 1;
+    }
+    @children
+}

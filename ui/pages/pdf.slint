@@ -1,0 +1,233 @@
+import { Theme } from "../theme.slint";
+import { Store } from "../store.slint";
+import { IconButton, TopBar } from "../components.slint";
+
+component FloatingPill inherits Rectangle {
+    height: 56px;
+    width: layout.preferred-width;
+    border-radius: self.height / 2;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+    drop-shadow-blur: 20px;
+    drop-shadow-offset-y: 4px;
+    drop-shadow-color: Theme.shadow;
+
+    layout := HorizontalLayout {
+        padding-left: 4px;
+        padding-right: 4px;
+        @children
+    }
+}
+
+export component PdfPage inherits Rectangle {
+    property <float> zoom: Store.pdf.zoom;
+    property <float> start-zoom;
+    property <length> start-x;
+    property <length> start-y;
+    property <bool> restored: false;
+    property <length> page-height: flick.width * root.zoom * Store.pdf.aspect;
+
+    function scroll-fraction(offset: length, range: length) -> float {
+        return range > 0 ? clamp(-offset / range, 0, 1) : 0;
+    }
+
+    function report() {
+        Store.pdf-view-changed(Store.pdf.page, root.zoom,
+            scroll-fraction(flick.content-x, flick.content-width - flick.width),
+            scroll-fraction(flick.content-y, flick.content-height - flick.height),
+            flick.width / 1phx);
+    }
+
+    // Zooms to `new-zoom`, keeping the point (cx, cy) of the visible area in place.
+    function zoom-to(new-zoom: float, cx: length, cy: length) {
+        set-zoom(root.zoom, flick.content-x, flick.content-y, new-zoom, cx, cy);
+        report();
+    }
+
+    function set-zoom(from-zoom: float, from-x: length, from-y: length, new-zoom: float, cx: length, cy: length) {
+        root.zoom = clamp(new-zoom, 1, 4);
+        let ratio = root.zoom / from-zoom;
+        flick.content-x = clamp(cx - (cx - from-x) * ratio, min(0, flick.width - flick.content-width), 0);
+        flick.content-y = clamp(cy - (cy - from-y) * ratio, min(0, flick.height - flick.content-height), 0);
+    }
+
+    function go-to-page(page: int) {
+        flick.content-x = 0;
+        flick.content-y = 0;
+        Store.pdf-view-changed(page, root.zoom, 0, 0, flick.width / 1phx);
+    }
+
+    init => {
+        report();
+    }
+    changed width => {
+        report();
+    }
+    // Restore the saved scroll position once the first page has been rendered.
+    changed serial => {
+        if !root.restored {
+            root.restored = true;
+            flick.content-x = -Store.pdf.scroll-x * max(0, flick.content-width - flick.width);
+            flick.content-y = -Store.pdf.scroll-y * max(0, flick.content-height - flick.height);
+        }
+    }
+    property <int> serial: Store.pdf.serial;
+
+    VerticalLayout {
+        TopBar {
+            title: Store.current.pdf-title;
+            back => { Store.back(); }
+
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/zoom-out.svg");
+                    label: @tr("Zoom out");
+                    enabled: root.zoom > 1;
+                    clicked => { root.zoom-to(root.zoom / 1.25, flick.width / 2, flick.height / 2); }
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/zoom-in.svg");
+                    label: @tr("Zoom in");
+                    enabled: root.zoom < 4;
+                    clicked => { root.zoom-to(root.zoom * 1.25, flick.width / 2, flick.height / 2); }
+                }
+            }
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+            clip: true;
+
+            gesture := ScaleRotateGestureHandler {
+                started => {
+                    root.start-zoom = root.zoom;
+                    root.start-x = flick.content-x;
+                    root.start-y = flick.content-y;
+                }
+                updated => {
+                    root.set-zoom(root.start-zoom, root.start-x, root.start-y, root.start-zoom * self.scale, self.center.x, self.center.y);
+                }
+                ended => { root.report(); }
+
+                flick := Flickable {
+                    content-width: self.width * root.zoom;
+                    // Extra room at the bottom so the floating controls never cover the page end.
+                    content-height: max(self.height, root.page-height + 96px);
+                    flicked => { root.report(); }
+
+                    Rectangle {
+                        x: 0;
+                        y: max(0, (flick.height - 96px - root.page-height) / 2);
+                        width: flick.content-width;
+                        height: root.page-height;
+                        background: #ffffff;
+
+                        Image {
+                            width: parent.width;
+                            height: parent.height;
+                            source: Store.pdf.image;
+                            image-fit: fill;
+                            accessible-role: image;
+                            accessible-label: @tr("Page {} of {}", Store.pdf.page + 1, Store.pdf.page-count);
+                        }
+                        TouchArea {
+                            double-clicked => {
+                                if root.zoom > 1.01 {
+                                    root.zoom-to(1, 0, 0);
+                                } else {
+                                    root.zoom-to(2.5, self.mouse-x + flick.content-x, self.mouse-y + parent.y + flick.content-y);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if Store.pdf.loading && Store.pdf.serial == 0: Text {
+                text: @tr("Loading…");
+                color: Theme.text-muted;
+                font-size: Theme.font-body;
+            }
+
+            // Page navigation
+            FloatingPill {
+                x: 12px;
+                y: parent.height - self.height - 16px;
+                visible: Store.pdf.page-count > 1;
+
+                IconButton {
+                    y: 4px;
+                    icon: @image-url("../icons/chevron-left.svg");
+                    label: @tr("Previous page");
+                    enabled: Store.pdf.page > 0;
+                    clicked => { root.go-to-page(Store.pdf.page - 1); }
+                }
+                Text {
+                    text: "\{Store.pdf.page + 1}/\{Store.pdf.page-count}";
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    vertical-alignment: center;
+                    min-width: 36px;
+                    horizontal-alignment: center;
+                }
+                IconButton {
+                    y: 4px;
+                    icon: @image-url("../icons/chevron-right.svg");
+                    label: @tr("Next page");
+                    enabled: Store.pdf.page + 1 < Store.pdf.page-count;
+                    clicked => { root.go-to-page(Store.pdf.page + 1); }
+                }
+            }
+
+            // Row counter, always at hand while reading the pattern.
+            FloatingPill {
+                x: parent.width - self.width - 12px;
+                y: parent.height - self.height - 16px;
+
+                IconButton {
+                    y: 4px;
+                    icon: @image-url("../icons/minus.svg");
+                    label: @tr("Previous row");
+                    enabled: Store.current.row > 0;
+                    clicked => { Store.decrement(); }
+                }
+                Text {
+                    text: @tr("Row {}", Store.current.row);
+                    color: Theme.text;
+                    font-size: Theme.font-body;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    min-width: 72px;
+                    horizontal-alignment: center;
+                }
+                Rectangle {
+                    width: 48px;
+                    Rectangle {
+                        width: 44px;
+                        height: 44px;
+                        border-radius: self.height / 2;
+                        background: plus-touch.pressed ? Theme.accent-pressed : Theme.accent;
+                        accessible-role: button;
+                        accessible-label: @tr("Next row");
+                        accessible-action-default => { Store.increment(); }
+
+                        Image {
+                            source: @image-url("../icons/plus.svg");
+                            colorize: Theme.on-accent;
+                            width: 22px;
+                            height: 22px;
+                        }
+                        plus-touch := TouchArea {
+                            clicked => { Store.increment(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

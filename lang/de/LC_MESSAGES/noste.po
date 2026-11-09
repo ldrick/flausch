@@ -1,0 +1,249 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: noste\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "ProjectDialog"
+msgid "Edit project"
+msgstr "Projekt bearbeiten"
+
+msgctxt "ProjectDialog"
+msgid "New project"
+msgstr "Neues Projekt"
+
+msgctxt "ProjectDialog"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "ProjectDialog"
+msgid "Name, e.g. Granny square blanket"
+msgstr "Name, z. B. Granny-Square-Decke"
+
+msgctxt "ProjectDialog"
+msgid "Rows (optional)"
+msgstr "Reihen (optional)"
+
+msgctxt "ProjectDialog"
+msgid "Save"
+msgstr "Speichern"
+
+msgctxt "ProjectDialog"
+msgid "Create"
+msgstr "Anlegen"
+
+msgctxt "App"
+msgid "This file could not be opened as a PDF."
+msgstr "Diese Datei konnte nicht als PDF geöffnet werden."
+
+msgctxt "App"
+msgid "The page could not be displayed."
+msgstr "Die Seite konnte nicht angezeigt werden."
+
+msgctxt "App"
+msgid "The PDF could not be imported."
+msgstr "Das PDF konnte nicht importiert werden."
+
+msgctxt "App"
+msgid "Delete project?"
+msgstr "Projekt löschen?"
+
+msgctxt "App"
+msgid "“{}” and its pattern will be removed. This cannot be undone."
+msgstr "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht werden."
+
+msgctxt "App"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "App"
+msgid "Reset counter?"
+msgstr "Zähler zurücksetzen?"
+
+msgctxt "App"
+msgid "The row counter goes back to 0."
+msgstr "Der Reihenzähler wird auf 0 gesetzt."
+
+msgctxt "App"
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+msgctxt "App"
+msgid "Remove pattern?"
+msgstr "Anleitung entfernen?"
+
+msgctxt "App"
+msgid "The PDF is removed from this project. The row counter stays."
+msgstr "Das PDF wird aus diesem Projekt entfernt. Der Reihenzähler bleibt erhalten."
+
+msgctxt "App"
+msgid "Remove"
+msgstr "Entfernen"
+
+msgctxt "DialogButtons"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "TopBar"
+msgid "Back"
+msgstr "Zurück"
+
+msgctxt "ProjectCard"
+msgid "Row {} of {}"
+msgstr "Reihe {} von {}"
+
+msgctxt "ProjectCard"
+msgid "Row {}"
+msgstr "Reihe {}"
+
+msgctxt "ListPage"
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgctxt "ListPage"
+msgid "Projects"
+msgstr "Projekte"
+
+msgctxt "ListPage"
+msgid "No projects yet"
+msgstr "Noch keine Projekte"
+
+msgctxt "ListPage"
+msgid "Create a project to count your rows and keep your pattern at hand."
+msgstr "Leg ein Projekt an, um Reihen zu zählen und deine Anleitung griffbereit zu haben."
+
+msgctxt "ListPage"
+msgid "New project"
+msgstr "Neues Projekt"
+
+msgctxt "PdfPage"
+msgid "Zoom out"
+msgstr "Verkleinern"
+
+msgctxt "PdfPage"
+msgid "Zoom in"
+msgstr "Vergrößern"
+
+msgctxt "PdfPage"
+msgid "Page {} of {}"
+msgstr "Seite {} von {}"
+
+msgctxt "PdfPage"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+msgctxt "PdfPage"
+msgid "Previous page"
+msgstr "Vorherige Seite"
+
+msgctxt "PdfPage"
+msgid "Next page"
+msgstr "Nächste Seite"
+
+msgctxt "PdfPage"
+msgid "Previous row"
+msgstr "Vorherige Reihe"
+
+msgctxt "PdfPage"
+msgid "Row {}"
+msgstr "Reihe {}"
+
+msgctxt "PdfPage"
+msgid "Next row"
+msgstr "Nächste Reihe"
+
+msgctxt "ProjectPage"
+msgid "Edit project"
+msgstr "Projekt bearbeiten"
+
+msgctxt "ProjectPage"
+msgid "Delete project"
+msgstr "Projekt löschen"
+
+msgctxt "ProjectPage"
+msgid "Row"
+msgstr "Reihe"
+
+msgctxt "ProjectPage"
+msgid "Row {}"
+msgstr "Reihe {}"
+
+msgctxt "ProjectPage"
+msgid "of {}"
+msgstr "von {}"
+
+msgctxt "ProjectPage"
+msgid "Previous row"
+msgstr "Vorherige Reihe"
+
+msgctxt "ProjectPage"
+msgid "Next row"
+msgstr "Nächste Reihe"
+
+msgctxt "ProjectPage"
+msgid "Reset counter"
+msgstr "Zähler zurücksetzen"
+
+msgctxt "ProjectPage"
+msgid "Add PDF pattern"
+msgstr "PDF-Anleitung hinzufügen"
+
+msgctxt "ProjectPage"
+msgid "Open pattern"
+msgstr "Anleitung öffnen"
+
+msgctxt "ProjectPage"
+msgid "Pattern"
+msgstr "Anleitung"
+
+msgctxt "ProjectPage"
+msgid "Remove pattern"
+msgstr "Anleitung entfernen"
+
+msgctxt "SettingsPage"
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgctxt "SettingsPage"
+msgid "Language"
+msgstr "Sprache"
+
+msgctxt "SettingsPage"
+msgid "System"
+msgstr "System"
+
+msgctxt "SettingsPage"
+msgid "Appearance"
+msgstr "Erscheinungsbild"
+
+msgctxt "SettingsPage"
+msgid "Light"
+msgstr "Hell"
+
+msgctxt "SettingsPage"
+msgid "Dark"
+msgstr "Dunkel"
+
+msgctxt "SettingsPage"
+msgid "Counting"
+msgstr "Zählen"
+
+msgctxt "SettingsPage"
+msgid "Keep screen on"
+msgstr "Bildschirm bleibt an"
+
+msgctxt "SettingsPage"
+msgid "While a project or pattern is open"
+msgstr "Solange ein Projekt oder eine Anleitung geöffnet ist"
+
+msgctxt "SettingsPage"
+msgid "About"
+msgstr "Über"
+
+msgctxt "SettingsPage"
+msgid "A crochet companion. Nøste is Norwegian for winding yarn into a ball."
+msgstr "Dein Häkelbegleiter. Nøste ist Norwegisch und heißt, Garn zu einem Knäuel aufwickeln."
+

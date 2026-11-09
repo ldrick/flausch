@@ -1,0 +1,39 @@
+import { Palette } from "std-widgets.slint";
+
+export enum Appearance { system, light, dark }
+
+// Soft, light and minimal. All colors, sizes and radii live here so the look can be changed in
+// one place. Components use `Theme`, never `Palette` directly.
+export global Theme {
+    in-out property <Appearance> appearance: Appearance.system;
+    out property <bool> dark: appearance == Appearance.system ? Palette.color-scheme == ColorScheme.dark : appearance == Appearance.dark;
+
+    out property <color> background: dark ? #15191b : #f2f5f6;
+    out property <color> surface: dark ? #1e2427 : #ffffff;
+    out property <color> surface-muted: dark ? #273033 : #eaeff0;
+    out property <color> border: dark ? #303a3e : #dde4e6;
+    out property <color> text: dark ? #e4eaec : #2c3437;
+    out property <color> text-muted: dark ? #8d9a9f : #8b989c;
+    out property <color> accent: dark ? #7dcbb9 : #66b8a6;
+    out property <color> accent-pressed: dark ? #69b7a5 : #57a593;
+    out property <color> accent-soft: dark ? #223c37 : #e2f2ee;
+    out property <color> on-accent: dark ? #0f2420 : #ffffff;
+    out property <color> danger: dark ? #e79a95 : #cf726c;
+    out property <color> scrim: dark ? #000000a0 : #2c343766;
+    out property <color> shadow: dark ? #00000060 : #2c34371a;
+
+    out property <length> radius-small: 12px;
+    out property <length> radius: 20px;
+    out property <length> radius-large: 28px;
+    out property <length> spacing: 12px;
+    out property <length> padding: 20px;
+    out property <length> touch: 48px;
+
+    out property <length> font-small: 13px;
+    out property <length> font-body: 16px;
+    out property <length> font-title: 22px;
+    out property <length> font-headline: 30px;
+    out property <length> font-counter: 112px;
+
+    out property <duration> animation: 180ms;
+}

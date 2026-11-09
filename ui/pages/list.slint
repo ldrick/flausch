@@ -1,0 +1,185 @@
+import { Theme } from "../theme.slint";
+import { Store, DialogKind, ProjectItem } from "../store.slint";
+import { Card, Icon, IconButton, PillButton, ProgressBar } from "../components.slint";
+
+component ProjectCard inherits Card {
+    in property <ProjectItem> project;
+    callback clicked();
+
+    height: 96px;
+    background: touch.pressed ? Theme.surface-muted : Theme.surface;
+    accessible-role: button;
+    accessible-label: root.project.name;
+    accessible-action-default => { root.clicked(); }
+
+    HorizontalLayout {
+        padding: 18px;
+        spacing: 16px;
+
+        // Round badge with the current row.
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 56px;
+                height: 56px;
+                border-radius: self.height / 2;
+                background: Theme.accent-soft;
+
+                Text {
+                    text: root.project.row;
+                    color: Theme.accent-pressed;
+                    font-size: 20px;
+                    font-weight: 700;
+                }
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 6px;
+
+            Text {
+                text: root.project.name;
+                color: Theme.text;
+                font-size: Theme.font-body + 1px;
+                font-weight: 600;
+                overflow: elide;
+            }
+            Text {
+                text: root.project.goal > 0 ? @tr("Row {} of {}", root.project.row, root.project.goal) : @tr("Row {}", root.project.row);
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+            }
+            if root.project.goal > 0: ProgressBar {
+                progress: root.project.row / root.project.goal;
+            }
+        }
+
+        if root.project.has-pdf: VerticalLayout {
+            alignment: center;
+            Icon {
+                source: @image-url("../icons/file.svg");
+                color: Theme.text-muted;
+                width: 20px;
+                height: 20px;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Icon {
+                source: @image-url("../icons/chevron-right.svg");
+                color: Theme.border;
+                width: 20px;
+                height: 20px;
+            }
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+export component ListPage inherits Rectangle {
+    VerticalLayout {
+        HorizontalLayout {
+            height: 72px;
+            padding-left: Theme.padding;
+            padding-right: 8px;
+
+            Text {
+                text: "nøste";
+                color: Theme.text;
+                font-size: Theme.font-headline;
+                font-weight: 700;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/settings.svg");
+                    label: @tr("Settings");
+                    clicked => { Store.open-settings(); }
+                }
+            }
+        }
+
+        if Store.projects.length > 0: Flickable {
+            vertical-stretch: 1;
+            content-height: list.preferred-height;
+
+            list := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                // Leave room for the floating button.
+                padding-bottom: 112px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                Text {
+                    text: @tr("Projects");
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    font-weight: 600;
+                }
+                for project in Store.projects: ProjectCard {
+                    project: project;
+                    clicked => { Store.open-project(project.id); }
+                }
+            }
+        }
+
+        if Store.projects.length == 0: VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            padding: 40px;
+            padding-bottom: 120px;
+            spacing: 16px;
+
+            Rectangle {
+                height: 112px;
+                Rectangle {
+                    width: 112px;
+                    height: 112px;
+                    border-radius: self.height / 2;
+                    background: Theme.accent-soft;
+
+                    Icon {
+                        source: @image-url("../icons/yarn.svg");
+                        color: Theme.accent;
+                        width: 56px;
+                        height: 56px;
+                    }
+                }
+            }
+            Text {
+                text: @tr("No projects yet");
+                color: Theme.text;
+                font-size: Theme.font-title;
+                font-weight: 600;
+                horizontal-alignment: center;
+            }
+            Text {
+                text: @tr("Create a project to count your rows and keep your pattern at hand.");
+                color: Theme.text-muted;
+                font-size: Theme.font-body;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+        }
+    }
+
+    PillButton {
+        x: (parent.width - self.width) / 2;
+        y: parent.height - self.height - 28px;
+        width: min(parent.width - 2 * Theme.padding, 360px);
+        text: @tr("New project");
+        icon: @image-url("../icons/plus.svg");
+        has-icon: true;
+        drop-shadow-blur: 16px;
+        drop-shadow-offset-y: 4px;
+        drop-shadow-color: Theme.shadow;
+        clicked => { Store.dialog = DialogKind.create; }
+    }
+}

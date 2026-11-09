@@ -1,0 +1,75 @@
+import { Appearance } from "theme.slint";
+
+export enum Screen { list, project, pdf, settings }
+
+export enum Language { system, de, en }
+
+export enum DialogKind { none, create, edit, delete, reset, remove-pdf }
+
+export enum Notice { none, pdf-import-failed, pdf-invalid, pdf-render-failed }
+
+export struct ProjectItem {
+    id: int,
+    name: string,
+    row: int,
+    // 0 means no goal.
+    goal: int,
+    has-pdf: bool,
+    pdf-title: string,
+}
+
+export struct PdfView {
+    page: int,
+    page-count: int,
+    zoom: float,
+    scroll-x: float,
+    scroll-y: float,
+    image: image,
+    // height / width of the current page
+    aspect: float,
+    loading: bool,
+    // Incremented whenever a newly rendered page arrives.
+    serial: int,
+}
+
+// The interface between Rust (src/lib.rs) and the UI. Rust sets the `in` properties and
+// handles the callbacks.
+export global Store {
+    in property <[ProjectItem]> projects;
+    in property <ProjectItem> current;
+    in property <Screen> screen: Screen.list;
+    in property <PdfView> pdf: { zoom: 1, aspect: 1.414 };
+    in property <Notice> notice: Notice.none;
+    in property <string> version;
+
+    in property <Language> language: Language.system;
+    in property <Appearance> appearance: Appearance.system;
+    in property <bool> keep-screen-on: true;
+
+    in-out property <DialogKind> dialog: DialogKind.none;
+
+    // Returns false if there is nothing to go back to.
+    callback back() -> bool;
+    callback open-settings();
+    callback open-project(int);
+    callback create-project(string, string);
+    callback edit-project(string, string);
+    callback delete-project();
+
+    callback increment();
+    callback decrement();
+    callback reset();
+
+    callback pick-pdf();
+    callback remove-pdf();
+    callback open-pdf();
+    // page, zoom, scroll-x, scroll-y, width of the page view in physical pixels
+    callback pdf-view-changed(int, float, float, float, float);
+
+    callback dismiss-notice();
+    callback set-language(Language);
+    callback set-appearance(Appearance);
+    callback set-keep-screen-on(bool);
+    // The effective theme changed (setting or system), for the system bar icons.
+    callback dark-changed(bool);
+}

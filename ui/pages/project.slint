@@ -1,0 +1,216 @@
+import { Theme } from "../theme.slint";
+import { Store, DialogKind } from "../store.slint";
+import { Card, Icon, IconButton, PillButton, ButtonKind, ProgressBar, TopBar } from "../components.slint";
+
+component RoundButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> label;
+    in property <bool> primary: false;
+    in property <bool> enabled: true;
+    in property <length> size: 64px;
+    callback clicked();
+
+    width: root.size;
+    height: root.size;
+    border-radius: self.height / 2;
+    background: root.primary ? (touch.pressed ? Theme.accent-pressed : Theme.accent) : (touch.pressed ? Theme.surface-muted : Theme.surface);
+    border-width: root.primary ? 0 : 1px;
+    border-color: Theme.border;
+    drop-shadow-blur: root.primary ? 20px : 0;
+    drop-shadow-offset-y: 6px;
+    drop-shadow-color: Theme.shadow;
+    opacity: root.enabled ? 1 : 0.4;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+
+    Icon {
+        source: root.icon;
+        color: root.primary ? Theme.on-accent : Theme.text;
+        width: root.size * 0.4;
+        height: root.size * 0.4;
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component ProjectPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: Store.current.name;
+            back => { Store.back(); }
+
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/edit.svg");
+                    label: @tr("Edit project");
+                    clicked => { Store.dialog = DialogKind.edit; }
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/trash.svg");
+                    label: @tr("Delete project");
+                    clicked => { Store.dialog = DialogKind.delete; }
+                }
+            }
+        }
+
+        VerticalLayout {
+            vertical-stretch: 1;
+            padding: Theme.padding;
+            padding-top: 8px;
+            spacing: 24px;
+
+            Card {
+                vertical-stretch: 1;
+                min-height: 220px;
+
+                VerticalLayout {
+                    alignment: center;
+                    padding: 24px;
+                    spacing: 4px;
+
+                    Text {
+                        text: @tr("Row");
+                        color: Theme.text-muted;
+                        font-size: Theme.font-body;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: Store.current.row;
+                        color: Theme.text;
+                        font-size: Theme.font-counter;
+                        font-weight: 300;
+                        horizontal-alignment: center;
+                        accessible-role: text;
+                        accessible-label: @tr("Row {}", Store.current.row);
+                    }
+                    if Store.current.goal > 0: VerticalLayout {
+                        spacing: 10px;
+                        padding-left: 24px;
+                        padding-right: 24px;
+
+                        Text {
+                            text: @tr("of {}", Store.current.goal);
+                            color: Theme.text-muted;
+                            font-size: Theme.font-body;
+                            horizontal-alignment: center;
+                        }
+                        ProgressBar {
+                            progress: Store.current.row / Store.current.goal;
+                        }
+                    }
+                }
+
+                // Tapping the card counts, too: the largest possible target.
+                TouchArea {
+                    clicked => { Store.increment(); }
+                }
+            }
+
+            HorizontalLayout {
+                alignment: center;
+                spacing: 28px;
+
+                VerticalLayout {
+                    alignment: center;
+                    RoundButton {
+                        icon: @image-url("../icons/minus.svg");
+                        label: @tr("Previous row");
+                        enabled: Store.current.row > 0;
+                        clicked => { Store.decrement(); }
+                    }
+                }
+                RoundButton {
+                    size: 104px;
+                    primary: true;
+                    icon: @image-url("../icons/plus.svg");
+                    label: @tr("Next row");
+                    clicked => { Store.increment(); }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    RoundButton {
+                        icon: @image-url("../icons/reset.svg");
+                        label: @tr("Reset counter");
+                        enabled: Store.current.row > 0;
+                        clicked => { Store.dialog = DialogKind.reset; }
+                    }
+                }
+            }
+
+            if !Store.current.has-pdf: PillButton {
+                kind: ButtonKind.secondary;
+                text: @tr("Add PDF pattern");
+                icon: @image-url("../icons/file.svg");
+                has-icon: true;
+                clicked => { Store.pick-pdf(); }
+            }
+
+            if Store.current.has-pdf: Card {
+                height: 72px;
+                background: touch.pressed ? Theme.surface-muted : Theme.surface;
+                accessible-role: button;
+                accessible-label: @tr("Open pattern");
+                accessible-action-default => { Store.open-pdf(); }
+
+                touch := TouchArea {
+                    clicked => { Store.open-pdf(); }
+                }
+
+                HorizontalLayout {
+                    padding-left: 18px;
+                    padding-right: 6px;
+                    spacing: 14px;
+
+                    VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: 40px;
+                            height: 40px;
+                            border-radius: Theme.radius-small;
+                            background: Theme.accent-soft;
+
+                            Icon {
+                                source: @image-url("../icons/file.svg");
+                                color: Theme.accent-pressed;
+                                width: 20px;
+                                height: 20px;
+                            }
+                        }
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 2px;
+
+                        Text {
+                            text: @tr("Pattern");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                        }
+                        Text {
+                            text: Store.current.pdf-title;
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            overflow: elide;
+                        }
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        IconButton {
+                            icon: @image-url("../icons/close.svg");
+                            tint: Theme.text-muted;
+                            label: @tr("Remove pattern");
+                            clicked => { Store.dialog = DialogKind.remove-pdf; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,15 +1,202 @@
-import { Palette } from "std-widgets.slint";
+import { Theme, Appearance } from "theme.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PdfView, Language } from "store.slint";
+import { Dialog, DialogButtons, Field } from "components.slint";
+import { ListPage } from "pages/list.slint";
+import { ProjectPage } from "pages/project.slint";
+import { PdfPage } from "pages/pdf.slint";
+import { SettingsPage } from "pages/settings.slint";
+
+export { Store, Theme, Appearance, Screen, DialogKind, Notice, ProjectItem, PdfView, Language }
+
+component ProjectDialog inherits Dialog {
+    in property <bool> editing;
+    callback done();
+
+    title: root.editing ? @tr("Edit project") : @tr("New project");
+    dismissed => { root.done(); }
+
+    function submit() {
+        if name.text.is-empty {
+            return;
+        }
+        if root.editing {
+            Store.edit-project(name.text, goal.text);
+        } else {
+            Store.create-project(name.text, goal.text);
+        }
+        root.done();
+    }
+
+    init => {
+        if root.editing {
+            name.text = Store.current.name;
+            goal.text = Store.current.goal > 0 ? Store.current.goal : "";
+        }
+        name.focus-input();
+    }
+
+    name := Field {
+        label: @tr("Name");
+        placeholder: @tr("Name, e.g. Granny square blanket");
+        accepted => { goal.focus-input(); }
+    }
+    goal := Field {
+        label: @tr("Rows (optional)");
+        placeholder: @tr("Rows (optional)");
+        input-type: InputType.number;
+        accepted => { root.submit(); }
+    }
+    DialogButtons {
+        confirm-text: root.editing ? @tr("Save") : @tr("Create");
+        confirm-enabled: !name.text.is-empty;
+        cancel => { root.done(); }
+        confirm => { root.submit(); }
+    }
+}
 
 export component App inherits Window {
     title: "nøste";
     preferred-width: 390px;
     preferred-height: 800px;
-    background: Palette.background;
+    background: Theme.background;
 
-    Text {
-        text: "nøste";
-        font-size: 48px;
-        font-weight: 700;
-        color: Palette.foreground;
+    property <DialogKind> dialog: Store.dialog;
+    property <Screen> screen: Store.screen;
+    property <Appearance> appearance: Store.appearance;
+    property <bool> dark: Theme.dark;
+    property <bool> back-handled;
+    changed dialog => {
+        if self.dialog == DialogKind.none {
+            scope.focus();
+        }
+    }
+    changed screen => {
+        scope.focus();
+    }
+    init => {
+        scope.focus();
+        Theme.appearance = Store.appearance;
+    }
+    changed appearance => {
+        Theme.appearance = self.appearance;
+    }
+    changed dark => {
+        Store.dark-changed(self.dark);
+    }
+
+    function close-dialog() {
+        Store.dialog = DialogKind.none;
+    }
+
+    scope := FocusScope {
+
+        // Android's back button and Escape on the desktop: close a dialog, then go back.
+        // The logic, including dropping duplicate Back events, lives in Rust (`Controller::back`).
+        capture-key-pressed(event) => {
+            if event.text == Key.Back || event.text == Key.Escape {
+                root.back-handled = Store.back();
+                return root.back-handled ? accept : reject;
+            }
+            reject
+        }
+        // Keep press and release symmetric: only an unhandled Back may close the app.
+        capture-key-released(event) => {
+            if event.text == Key.Back || event.text == Key.Escape {
+                return root.back-handled ? accept : reject;
+            }
+            reject
+        }
+
+        // Pages stay clear of the status and navigation bars; dialogs cover the whole window.
+        Rectangle {
+            x: root.safe-area-insets.left;
+            y: root.safe-area-insets.top;
+            width: root.width - root.safe-area-insets.left - root.safe-area-insets.right;
+            height: root.height - root.safe-area-insets.top - root.safe-area-insets.bottom;
+
+            if Store.screen == Screen.list: ListPage { }
+            if Store.screen == Screen.project: ProjectPage { }
+            if Store.screen == Screen.pdf: PdfPage { }
+            if Store.screen == Screen.settings: SettingsPage { }
+
+            if Store.notice != Notice.none: Rectangle {
+                x: (parent.width - self.width) / 2;
+                y: parent.height - self.height - 96px;
+                width: min(parent.width - 40px, 380px);
+                height: notice-text.preferred-height + 32px;
+                border-radius: Theme.radius;
+                background: Theme.text;
+
+                notice-text := Text {
+                    x: 20px;
+                    width: parent.width - 40px;
+                    text: Store.notice == Notice.pdf-invalid ? @tr("This file could not be opened as a PDF.")
+                        : Store.notice == Notice.pdf-render-failed ? @tr("The page could not be displayed.")
+                        : @tr("The PDF could not be imported.");
+                    color: Theme.background;
+                    font-size: Theme.font-body;
+                    wrap: word-wrap;
+                }
+                TouchArea {
+                    clicked => { Store.dismiss-notice(); }
+                }
+                Timer {
+                    interval: 4s;
+                    triggered => { Store.dismiss-notice(); }
+                }
+            }
+        }
+
+        if Store.dialog == DialogKind.create || Store.dialog == DialogKind.edit: ProjectDialog {
+            editing: Store.dialog == DialogKind.edit;
+            done => { root.close-dialog(); }
+        }
+
+        if Store.dialog == DialogKind.delete: Dialog {
+            title: @tr("Delete project?");
+            message: @tr("“{}” and its pattern will be removed. This cannot be undone.", Store.current.name);
+            dismissed => { root.close-dialog(); }
+
+            DialogButtons {
+                confirm-text: @tr("Delete");
+                destructive: true;
+                cancel => { root.close-dialog(); }
+                confirm => {
+                    root.close-dialog();
+                    Store.delete-project();
+                }
+            }
+        }
+
+        if Store.dialog == DialogKind.reset: Dialog {
+            title: @tr("Reset counter?");
+            message: @tr("The row counter goes back to 0.");
+            dismissed => { root.close-dialog(); }
+
+            DialogButtons {
+                confirm-text: @tr("Reset");
+                cancel => { root.close-dialog(); }
+                confirm => {
+                    root.close-dialog();
+                    Store.reset();
+                }
+            }
+        }
+
+        if Store.dialog == DialogKind.remove-pdf: Dialog {
+            title: @tr("Remove pattern?");
+            message: @tr("The PDF is removed from this project. The row counter stays.");
+            dismissed => { root.close-dialog(); }
+
+            DialogButtons {
+                confirm-text: @tr("Remove");
+                destructive: true;
+                cancel => { root.close-dialog(); }
+                confirm => {
+                    root.close-dialog();
+                    Store.remove-pdf();
+                }
+            }
+        }
     }
 }

@@ -1,0 +1,125 @@
+import { AboutSlint, Palette } from "std-widgets.slint";
+import { Theme, Appearance } from "../theme.slint";
+import { Store, Language } from "../store.slint";
+import { Card, Segmented, Switch, TopBar } from "../components.slint";
+
+component SectionTitle inherits Text {
+    color: Theme.text-muted;
+    font-size: Theme.font-small;
+    font-weight: 600;
+}
+
+export component SettingsPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("Settings");
+            back => { Store.back(); }
+        }
+
+        Flickable {
+            vertical-stretch: 1;
+            content-height: content.preferred-height;
+
+            content := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                SectionTitle {
+                    text: @tr("Language");
+                }
+                Segmented {
+                    options: [{ label: @tr("System") }, { label: "Deutsch" }, { label: "English" }];
+                    selected: Store.language == Language.de ? 1 : Store.language == Language.en ? 2 : 0;
+                    select(index) => {
+                        Store.set-language(index == 1 ? Language.de : index == 2 ? Language.en : Language.system);
+                    }
+                }
+
+                SectionTitle {
+                    text: @tr("Appearance");
+                }
+                Segmented {
+                    options: [{ label: @tr("System") }, { label: @tr("Light") }, { label: @tr("Dark") }];
+                    selected: Store.appearance == Appearance.light ? 1 : Store.appearance == Appearance.dark ? 2 : 0;
+                    select(index) => {
+                        Store.set-appearance(index == 1 ? Appearance.light : index == 2 ? Appearance.dark : Appearance.system);
+                    }
+                }
+
+                SectionTitle {
+                    text: @tr("Counting");
+                }
+                Card {
+                    drop-shadow-blur: 0;
+                    height: row.preferred-height;
+
+                    row := HorizontalLayout {
+                        padding: 18px;
+                        spacing: 16px;
+
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+
+                            Text {
+                                text: @tr("Keep screen on");
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                            }
+                            Text {
+                                text: @tr("While a project or pattern is open");
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                wrap: word-wrap;
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            Switch {
+                                label: @tr("Keep screen on");
+                                checked: Store.keep-screen-on;
+                                toggled => { Store.set-keep-screen-on(!Store.keep-screen-on); }
+                            }
+                        }
+                    }
+                }
+
+                SectionTitle {
+                    text: @tr("About");
+                }
+                Card {
+                    drop-shadow-blur: 0;
+                    height: about.preferred-height;
+
+                    about := VerticalLayout {
+                        padding: 18px;
+                        spacing: 8px;
+
+                        Text {
+                            text: "nøste \{Store.version}";
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: @tr("A crochet companion. Nøste is Norwegian for winding yarn into a ball.");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                        // AboutSlint follows Palette, not Theme, so give it a matching backdrop.
+                        Rectangle {
+                            height: 120px;
+                            background: Palette.background;
+                            border-radius: Theme.radius-small;
+
+                            AboutSlint { }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

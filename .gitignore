@@ -2,3 +2,4 @@
 *.jks
 *.keystore
 .DS_Store
+/.scratch/
