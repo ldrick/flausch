@@ -98,8 +98,7 @@ export component PillButton inherits Rectangle {
 export component Card inherits Rectangle {
     background: Theme.surface;
     border-radius: Theme.radius;
-    drop-shadow-blur: 24px;
-    drop-shadow-offset-y: 6px;
+    drop-shadow-offset-y: Theme.shadow-offset;
     drop-shadow-color: Theme.shadow;
 }
 
@@ -184,7 +183,7 @@ export component Segmented inherits Rectangle {
         for option[index] in root.options: Rectangle {
             border-radius: self.height / 2;
             background: index == root.selected ? Theme.surface : transparent;
-            drop-shadow-blur: index == root.selected ? 6px : 0;
+            drop-shadow-offset-y: index == root.selected ? Theme.shadow-offset-small : 0;
             drop-shadow-color: Theme.shadow;
             accessible-role: button;
             accessible-label: option.label;
@@ -229,7 +228,7 @@ export component Switch inherits Rectangle {
         x: root.checked ? parent.width - self.width - 4px : 4px;
         border-radius: self.height / 2;
         background: Theme.surface;
-        drop-shadow-blur: 4px;
+        drop-shadow-offset-y: Theme.shadow-offset-small;
         drop-shadow-color: Theme.shadow;
         animate x { duration: Theme.animation; easing: ease-out; }
     }
@@ -264,7 +263,7 @@ export component Dialog inherits Rectangle {
         animate y { duration: Theme.animation; easing: ease-out; }
         background: Theme.surface;
         border-radius: Theme.radius-large;
-        drop-shadow-blur: 32px;
+        drop-shadow-offset-y: Theme.shadow-offset;
         drop-shadow-color: Theme.shadow;
 
         // Swallow taps so they don't reach the backdrop.

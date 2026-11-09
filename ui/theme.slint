@@ -21,6 +21,9 @@ export global Theme {
     out property <color> danger: dark ? #e79a95 : #cf726c;
     out property <color> scrim: dark ? #000000a0 : #2c343766;
     out property <color> shadow: dark ? #00000060 : #2c34371a;
+    // Hard drop shadows: no blur, only offset downwards (drop-shadow-blur stays 0 everywhere).
+    out property <length> shadow-offset: 6px;
+    out property <length> shadow-offset-small: 2px;
 
     out property <length> radius-small: 12px;
     out property <length> radius: 20px;

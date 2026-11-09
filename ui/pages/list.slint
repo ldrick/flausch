@@ -306,8 +306,7 @@ export component ListPage inherits Rectangle {
         text: @tr("New project");
         icon: @image-url("../icons/plus.svg");
         has-icon: true;
-        drop-shadow-blur: 16px;
-        drop-shadow-offset-y: 4px;
+        drop-shadow-offset-y: Theme.shadow-offset;
         drop-shadow-color: Theme.shadow;
         clicked => { Store.dialog = DialogKind.create; }
     }

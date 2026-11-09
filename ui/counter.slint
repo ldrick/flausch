@@ -17,8 +17,7 @@ export component RoundButton inherits Rectangle {
     background: root.primary ? (touch.pressed ? Theme.accent-pressed : Theme.accent) : (touch.pressed ? Theme.surface-muted : Theme.surface);
     border-width: root.primary ? 0 : 1px;
     border-color: Theme.border;
-    drop-shadow-blur: root.primary ? 20px : 0;
-    drop-shadow-offset-y: 6px;
+    drop-shadow-offset-y: Theme.shadow-offset;
     drop-shadow-color: Theme.shadow;
     opacity: root.enabled ? 1 : 0.4;
     accessible-role: button;

@@ -93,6 +93,8 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   colors and sizes from `Theme` only, never hard-coded colors and not `Palette`. `Theme.dark` follows the
   appearance setting (system, light, dark). The color scheme isn't final, so keep it centralized in
   `theme.slint`.
+- Shadows are hard drop shadows: no `drop-shadow-blur`, only `drop-shadow-offset-y: Theme.shadow-offset` (or
+  `Theme.shadow-offset-small` for small elements) with `drop-shadow-color: Theme.shadow`.
 - Logo: one yarn ball in mint everywhere. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (its
   wraps are transparent, so it fits any background). If the mint changes, update `MINT` in `tools/logo.py`, run
   it, and update `ic_launcher_background` (light mint, `Theme.accent-soft`) in `android/res/values/colors.xml`.
@@ -154,6 +156,10 @@ adb shell am start -n io.github.ldrick.noste/android.app.NativeActivity
 adb exec-out screencap -p > /tmp/screen.png     # 1080×2424 physical pixels
 adb shell input tap X Y                         # physical pixels (logical px × 2.625 at density 420)
 ```
+
+The AVD uses Quick Boot (start in about 4 s instead of a cold boot) and the host GPU (`hw.gpu.mode=host`). Don't
+start it with `-no-snapshot-save`/`-no-snapshot`. Shut it down with SIGTERM/SIGINT (stopping the process, Ctrl+C) so
+it saves the snapshot; a SIGKILL leaves the snapshot empty and the next start is a cold boot.
 
 On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can take screenshots with
 `import -window`. Synthetic clicks don't work there, so test interactions on the emulator.
