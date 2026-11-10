@@ -2,11 +2,15 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    let config = slint_build::CompilerConfiguration::new().with_bundled_translations("lang");
+    let android = env::var("TARGET").unwrap().contains("android");
+    // The TalkBack bridge (src/a11y.rs) and the UI tests walk the element tree, which needs debug info.
+    let config = slint_build::CompilerConfiguration::new()
+        .with_bundled_translations("lang")
+        .with_debug_info(true);
     slint_build::compile_with_config("ui/app.slint", config).expect("Slint build failed");
     println!("cargo:rerun-if-changed=lang");
 
-    if env::var("TARGET").unwrap().contains("android") {
+    if android {
         build_java_helper();
     }
 }

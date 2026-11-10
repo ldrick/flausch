@@ -13,7 +13,7 @@ on the desktop via winit – so most development happens with a plain `cargo run
 Projects made of parts (e.g. head, body, legs), each with its own row counter and optional row goal; project
 list with pattern covers, total progress, search and a continue button; PDF patterns (imported and rendered on the
 device) with a row counter for any part that can be enlarged and a movable reading line (color selectable); backup and restore of all data as a ZIP file; keep screen on, Android back key, German/English,
-light/dark mode.
+light/dark mode, TalkBack support.
 
 ## Layout
 
@@ -23,9 +23,12 @@ light/dark mode.
 - `src/main.rs` – desktop entry point
 - `ui/` – Slint UI (`app.slint` root, `store.slint` Rust↔UI contract, `theme.slint`, `pages/`)
 - `lang/` – translations (gettext `.po`, bundled at build time)
-- `android/java/` – small Java helper (file picker and save dialog, PdfRenderer), compiled by `build.rs`
+- `android/java/` – small Java helper (file picker and save dialog, PdfRenderer, TalkBack bridge), compiled by
+  `build.rs`
 - `android/res/` – Android resources (launcher icon)
-- `tools/logo.py` – generates the logo (`ui/icons/logo.svg`) and the launcher icon
+- `tools/logo.py` – generates the logo (`ui/icons/logo.svg`), the launcher icon and the store icon
+- `fastlane/metadata/android/` – store texts, icon and screenshots (en-US, de-DE)
+- `fdroid/` – F-Droid build recipe and release steps
 
 See [`AGENTS.md`](AGENTS.md) for conventions and development notes.
 
@@ -44,16 +47,27 @@ The `Makefile` defaults to these paths; override them via `ANDROID_HOME`, `ANDRO
 
 ```sh
 make run                 # desktop window
-make test                # unit tests
+make test                # unit, controller and UI tests (headless)
 make check               # rustfmt + clippy
 make ci                  # everything CI checks: also Android clippy, cargo-deny (cargo install cargo-deny)
 make apk                 # target/debug/apk/noste.apk (arm64)
+make apk-release         # release APK (needs a keystore, see below)
 make install             # build, install and start on a connected device
 make emulator            # start the AVD "noste"; then: make install TARGET=x86_64-linux-android
 ```
 
 On Linux the desktop build loads fontconfig at runtime (`fontique/fontconfig-dlopen`), so no `-dev` packages are
 needed.
+
+## Release
+
+`make apk-release` signs with the keystore from `CARGO_APK_RELEASE_KEYSTORE` and
+`CARGO_APK_RELEASE_KEYSTORE_PASSWORD`. Releases go to F-Droid, which builds from source; see
+[`fdroid/README.md`](fdroid/README.md).
+
+## Privacy
+
+nøste requests no permissions, has no internet access and collects no data. Projects and PDFs stay on the device.
 
 ## License
 

@@ -64,6 +64,15 @@ export struct PdfView {
     line: float,
 }
 
+// The element TalkBack has focused, in logical window coordinates (Android only).
+export struct A11yFocus {
+    visible: bool,
+    x: length,
+    y: length,
+    width: length,
+    height: length,
+}
+
 // The interface between Rust (src/lib.rs) and the UI. Rust sets the `in` properties and
 // handles the callbacks.
 export global Store {
@@ -81,6 +90,7 @@ export global Store {
     in property <Screen> screen: Screen.list;
     in property <PdfView> pdf: { zoom: 1, aspect: 1.414 };
     in property <Notice> notice: Notice.none;
+    in property <A11yFocus> a11y-focus;
     in property <string> version;
 
     in property <Language> language: Language.system;

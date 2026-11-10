@@ -1,5 +1,5 @@
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language } from "store.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus } from "store.slint";
 import { Dialog, DialogButtons, Field, Keyboard, PillButton, ButtonKind } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
@@ -7,7 +7,7 @@ import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus }
 
 component ProjectDialog inherits Dialog {
     in property <bool> editing;
@@ -194,6 +194,7 @@ export component App inherits Window {
                     color: Theme.background;
                     font-size: Theme.font-body;
                     wrap: word-wrap;
+                    accessible-live-region: polite;
                 }
                 TouchArea {
                     clicked => { Store.dismiss-notice(); }
@@ -358,5 +359,16 @@ export component App inherits Window {
                 }
             }
         }
+    }
+
+    // Android can't draw TalkBack's focus frame over the native surface, so we draw it here.
+    if Store.a11y-focus.visible: Rectangle {
+        x: Store.a11y-focus.x - 2px;
+        y: Store.a11y-focus.y - 2px;
+        width: Store.a11y-focus.width + 4px;
+        height: Store.a11y-focus.height + 4px;
+        border-width: 3px;
+        border-radius: min(self.height / 2, 24px);
+        border-color: Theme.a11y-focus;
     }
 }

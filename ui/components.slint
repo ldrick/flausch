@@ -135,11 +135,10 @@ export component Field inherits Rectangle {
     background: Theme.surface-muted;
     border-width: input.has-focus ? 1.5px : 0;
     border-color: Theme.accent;
-    accessible-role: text-input;
-    accessible-label: root.label;
 
     Text {
         x: 16px;
+        accessible-role: none;
         width: parent.width - 32px;
         height: parent.height;
         visible: input.text == "";
@@ -160,6 +159,8 @@ export component Field inherits Rectangle {
         selection-foreground-color: Theme.text;
         font-size: Theme.font-body;
         vertical-alignment: center;
+        accessible-label: root.label;
+        accessible-placeholder-text: root.placeholder;
         accepted => { root.accepted(); }
     }
 }
@@ -265,6 +266,9 @@ export component Dialog inherits Rectangle {
         border-radius: Theme.radius-large;
         drop-shadow-offset-y: Theme.shadow-offset;
         drop-shadow-color: Theme.shadow;
+        // The TalkBack bridge (src/a11y.rs) only exposes what lies inside this card.
+        accessible-role: groupbox;
+        accessible-id: "dialog";
 
         // Swallow taps so they don't reach the backdrop.
         TouchArea { }

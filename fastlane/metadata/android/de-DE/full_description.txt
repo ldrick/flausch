@@ -1,0 +1,27 @@
+<p>nøste behält deine Häkelprojekte im Blick. <i>Nøste</i> ist Norwegisch und heißt, Garn zu einem Knäuel aufwickeln.</p>
+
+<p><b>Projekte und Teile</b></p>
+<ul>
+<li>Teile ein Projekt in Teile auf (z. B. Kopf, Ohren, Körper), jedes mit eigenem Reihenzähler und optionalem Ziel</li>
+<li>Die Projektliste zeigt das Cover der Anleitung, das aktuelle Teil und den Gesamtfortschritt</li>
+<li>Suche nach Projekt- und Teilnamen, mit einem Tipp dort weitermachen, wo du aufgehört hast</li>
+</ul>
+
+<p><b>Anleitungen</b></p>
+<ul>
+<li>PDF-Anleitungen importieren; sie werden in die App kopiert und auf dem Gerät angezeigt</li>
+<li>Reihen direkt in der Anleitung zählen, dort das Teil wechseln oder den Zähler vergrößern</li>
+<li>Eine verschiebbare Leselinie markiert deine Reihe – sie merkt sich ihre Position auf jeder Seite, Farbe wählbar</li>
+<li>Zoom, Seite und Scrollposition werden pro Projekt gespeichert</li>
+</ul>
+
+<p><b>Fürs Häkeln gemacht</b></p>
+<ul>
+<li>Große Tasten für die Bedienung mit einer Hand, der Bildschirm bleibt beim Arbeiten an</li>
+<li>Alle Daten als ZIP-Datei sichern und wiederherstellen, z. B. beim Handywechsel</li>
+<li>Hell und dunkel, Deutsch und Englisch, funktioniert mit TalkBack</li>
+</ul>
+
+<p><b>Privat</b>: kein Konto, keine Werbung, kein Tracking, keine Internet-Berechtigung. Deine Daten bleiben auf deinem Gerät.</p>
+
+<p>nøste ist freie Software (GPLv3), geschrieben in Rust mit dem UI-Toolkit Slint.</p>

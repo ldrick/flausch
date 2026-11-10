@@ -16,14 +16,14 @@ line. If `cargo` is not on `PATH`, prefix commands with `export PATH=$HOME/.carg
 
 ```sh
 make run                 # desktop window (cargo run)
-make test                # cargo test
+make test                # cargo test: unit, controller (src/tests.rs) and UI tests (tests/)
 cargo test <name>        # run a single test (substring match)
 make check               # cargo fmt --check && cargo clippy --all-targets -- -D warnings
 make check-android       # clippy for the Android code (cargo clippy --lib --target $TARGET)
 make deny                # cargo deny check: advisories, licenses, sources (deny.toml; needs cargo-deny)
 make ci                  # check + check-android + test + deny
 make apk                 # debug APK -> target/debug/apk/noste.apk (TARGET defaults to aarch64-linux-android)
-make apk-release         # release APK (lto + strip)
+make apk-release         # release APK (lto + strip; needs CARGO_APK_RELEASE_KEYSTORE(_PASSWORD))
 make install             # cargo apk run: build, install, launch (then streams logcat until stopped)
 make emulator            # start the AVD "noste"; then build with TARGET=x86_64-linux-android
 ```
@@ -42,10 +42,14 @@ The toolchain (stable, rustfmt, clippy, Android targets) is set in `rust-toolcha
 
 ```
 src/
-  lib.rs              Controller: wires Store callbacks, navigation, debounced saving, PDF sessions, android_main
+  lib.rs              Controller: wires Store callbacks, navigation, debounced saving, PDF sessions, android_main;
+                      pub start/stop connect an App to a data dir (used by run and the tests)
+  tests.rs            controller tests on Slint's testing backend
   main.rs             thin desktop binary -> noste::run(); no logic here
+tests/ui.rs           UI tests: drive the app through accessibility labels; fixtures in tests/fixtures/
   model.rs            UI-independent data model (Library, Project, Pdf, Settings) – no slint
   storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes, ZIP backups – no slint
+  a11y.rs             Android only: TalkBack bridge (walks the Slint element tree, sends virtual views to Java)
   pdf.rs              render workers: viewer pages (newest request only) and PNG covers of page 1
   platform/mod.rs     picks android.rs or desktop.rs via cfg
   platform/android.rs JNI: loads the dex built from android/java, picker, PdfRenderer, keep-screen-on, bar colors
@@ -60,7 +64,9 @@ ui/
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings
   icons/              SVG icons; logo.svg is the app logo
-tools/logo.py         generates ui/icons/logo.svg and the launcher icon from one geometry – never edit those by hand
+tools/logo.py         generates ui/icons/logo.svg, the launcher icon and the store icon (needs resvg) – never edit those by hand
+fastlane/metadata/    F-Droid store texts, icon, screenshots (en-US, de-DE)
+fdroid/               F-Droid recipe and release steps (fdroid/README.md)
 lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 ```
 
@@ -91,7 +97,10 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 - Keep platform-specific code behind `cfg(target_os = ...)` so `cargo run` and `cargo test` keep working on the
   desktop. Android builds always use `--lib` (cargo-apk packages the `cdylib`).
 - Android config is in `Cargo.toml` under `[package.metadata.android]`: package `io.github.ldrick.noste`,
-  `minSdk` 29 and `targetSdk` 36.
+  `minSdk` 29 and `targetSdk` 36. cargo-apk derives the versionCode from `version`
+  (`1<<24 | major<<16 | minor<<8 | patch`); `[package.metadata.fdroid] version_code` mirrors it for F-Droid's
+  update check, and a test keeps both in sync. A release needs a changelog per version code in
+  `fastlane/metadata/android/*/changelogs/` (see `fdroid/README.md`).
 
 ## UI conventions
 
@@ -152,6 +161,40 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   `adb shell dumpsys dropbox --print data_app_anr`.
 - After changing the Java helper, check the call signatures in `platform/android.rs` (jni 0.22: names and
   signatures go through `jni_str!` / `jni_sig!`, e.g. `jni_sig!("(Z)V")`; `onDocumentDone` is registered by hand).
+
+## Accessibility (TalkBack)
+
+Slint's Android backend has no accessibility support, so nøste brings its own bridge:
+
+- `src/a11y.rs` polls the element tree every 300 ms while any accessibility service is on, using
+  `i-slint-backend-testing`'s `ElementHandle` API. It is pinned to the exact Slint version (`=1.18.x`); bump both
+  together. The walk needs Slint debug info, so `build.rs` sets `with_debug_info` for Android.
+- `NosteHelper` exposes the nodes as virtual views through an `AccessibilityNodeProvider` on the NativeActivity
+  content view; hover events (touch exploration) map to nodes. Actions (click, scroll = increment/decrement,
+  set text) go back to Rust through `onA11yAction`.
+- Android can't draw the focus frame over the native surface, so Java reports focus (`onA11yFocus`) and
+  `App` draws it from `Store.a11y-focus` in `Theme.a11y-focus`.
+- What the UI needs: `accessible-role` and `accessible-label` on every control (Text and Image nodes are folded
+  into the label of the smallest control that contains them). Dialog cards carry `accessible-id: "dialog"` so
+  only the dialog is exposed while it is open. Notices use `accessible-live-region` and are announced.
+- Testing: `adb shell input` bypasses touch exploration. On the emulator, real touches go through the console:
+  `adb emu event mouse X Y 0 1` (down) / `… 0 0` (up); hold ~1 s to explore, two quick taps to double tap.
+  `uiautomator dump` shows the nodes (it pauses TalkBack, which is why the bridge checks
+  `AccessibilityManager.isEnabled()` rather than touch exploration).
+
+## Tests
+
+- Unit tests live next to the code (`model.rs`, `storage.rs`, `pdf.rs`).
+- `src/tests.rs` tests the controller: the real `App` on `i_slint_backend_testing::init_no_event_loop()`
+  (per test thread, no window) with a `tempfile` data dir. It calls `Controller` methods and feeds worker
+  results (`pdf_picked`, `pdf_rendered`, `backup_picked`, …) directly, because `invoke_from_event_loop` does
+  nothing without an event loop. `mock_elapsed_time` fires timers such as the debounced save.
+- `tests/ui.rs` is black-box: `noste::start`/`stop`, then `ElementHandle::find_by_accessible_label` and
+  `invoke_accessible_default_action`/`set_accessible_value`, the same labels TalkBack uses. New UI features
+  should get a flow there; they need an `accessible-label` anyway. Call `settle()` after changes so `changed`
+  handlers run and `if` elements appear. Two Back presses within 300 ms count as one, so `go_back` waits.
+- The element tree API needs Slint debug info, so `build.rs` always enables it.
+- Never open a file dialog in tests (`pick_pdf`, `import_backup`, `export_backup`).
 
 ## Testing on the emulator
 

@@ -2,11 +2,12 @@
 #![allow(unsafe_code)]
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 
 use jni::errors::LogErrorAndDefault;
 use jni::objects::{Global, JByteArray, JClass, JObject, JString, JValue};
-use jni::sys::jint;
+use jni::sys::{jboolean, jint};
 use jni::{Env, EnvUnowned, JavaVM, NativeMethod, jni_sig, jni_str};
 use slint::android::AndroidApp;
 
@@ -19,6 +20,7 @@ static APP: OnceLock<AndroidApp> = OnceLock::new();
 static HELPER: OnceLock<Global<JObject<'static>>> = OnceLock::new();
 type PickCallback = Box<dyn FnOnce(PickResult) + Send>;
 static PENDING_PICK: Mutex<Option<PickCallback>> = Mutex::new(None);
+static A11Y_ENABLED: AtomicBool = AtomicBool::new(false);
 
 /// Must be called once from `android_main` before anything else in this module.
 pub fn init(app: AndroidApp) {
@@ -68,16 +70,34 @@ fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>
             )?
             .l()?;
         let class = env.cast_local::<JClass>(class)?;
-        // SAFETY: `on_document_done` matches the static method `void onDocumentDone(int, String)`, and
-        // its second parameter is the class.
+        // SAFETY: each function matches the signature of its static native method (`void
+        // onDocumentDone(int, String)`, `void onA11yState(boolean)`, `void onA11yAction(int, int,
+        // String)`), and its second parameter is the class.
         unsafe {
             env.register_native_methods(
                 &class,
-                &[NativeMethod::from_raw_parts(
-                    jni_str!("onDocumentDone"),
-                    jni_str!("(ILjava/lang/String;)V"),
-                    on_document_done as *mut std::ffi::c_void,
-                )],
+                &[
+                    NativeMethod::from_raw_parts(
+                        jni_str!("onDocumentDone"),
+                        jni_str!("(ILjava/lang/String;)V"),
+                        on_document_done as *mut std::ffi::c_void,
+                    ),
+                    NativeMethod::from_raw_parts(
+                        jni_str!("onA11yState"),
+                        jni_str!("(Z)V"),
+                        on_a11y_state as *mut std::ffi::c_void,
+                    ),
+                    NativeMethod::from_raw_parts(
+                        jni_str!("onA11yAction"),
+                        jni_str!("(IILjava/lang/String;)V"),
+                        on_a11y_action as *mut std::ffi::c_void,
+                    ),
+                    NativeMethod::from_raw_parts(
+                        jni_str!("onA11yFocus"),
+                        jni_str!("(I)V"),
+                        on_a11y_focus as *mut std::ffi::c_void,
+                    ),
+                ],
             )
         }?;
         let helper = env.new_object(
@@ -243,6 +263,116 @@ extern "system" fn on_document_done<'local>(
         1 => PickResult::Cancelled,
         _ => PickResult::Failed(text),
     });
+}
+
+/// Puts the accessibility node provider on the activity's content view.
+pub fn a11y_install() {
+    let result = with_helper(|env, helper| {
+        env.call_method(
+            helper,
+            jni_str!("installAccessibility"),
+            jni_sig!("()V"),
+            &[],
+        )?;
+        Ok(())
+    });
+    if let Err(e) = result {
+        eprintln!("nøste: cannot install the accessibility bridge: {e}");
+    }
+}
+
+/// Whether an accessibility service (e.g. TalkBack) is on.
+pub fn a11y_enabled() -> bool {
+    A11Y_ENABLED.load(Ordering::Relaxed)
+}
+
+/// Replaces the virtual views. With `reset` (a new screen or dialog), TalkBack focuses the first.
+pub fn a11y_update(nodes: &[crate::a11y::Node], reset: bool) {
+    let ints: Vec<jint> = nodes
+        .iter()
+        .flat_map(|n| {
+            [
+                n.id, n.rect[0], n.rect[1], n.rect[2], n.rect[3], n.kind, n.flags,
+            ]
+        })
+        .collect();
+    // U+001F (unit separator) can't appear in labels.
+    let texts = nodes
+        .iter()
+        .flat_map(|n| [n.label.as_str(), n.value.as_str()])
+        .collect::<Vec<_>>()
+        .join("\u{1f}");
+    let result = with_helper(|env, helper| {
+        let array = env.new_int_array(ints.len())?;
+        array.set_region(env, 0, &ints)?;
+        let texts = env.new_string(&texts)?;
+        env.call_method(
+            helper,
+            jni_str!("updateAccessibility"),
+            jni_sig!("([ILjava/lang/String;Z)V"),
+            &[
+                JValue::Object(&array),
+                JValue::Object(&texts),
+                JValue::Bool(reset),
+            ],
+        )?;
+        Ok(())
+    });
+    if let Err(e) = result {
+        eprintln!("nøste: cannot update the accessibility nodes: {e}");
+    }
+}
+
+/// Lets TalkBack read `text`, e.g. a notice.
+pub fn a11y_announce(text: &str) {
+    let result = with_helper(|env, helper| {
+        let text = env.new_string(text)?;
+        env.call_method(
+            helper,
+            jni_str!("announce"),
+            jni_sig!("(Ljava/lang/String;)V"),
+            &[JValue::Object(&text)],
+        )?;
+        Ok(())
+    });
+    if let Err(e) = result {
+        eprintln!("nøste: cannot announce: {e}");
+    }
+}
+
+extern "system" fn on_a11y_state<'local>(
+    _env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    enabled: jboolean,
+) {
+    A11Y_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
+extern "system" fn on_a11y_action<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    id: jint,
+    action: jint,
+    text: JString<'local>,
+) {
+    let text = env
+        .with_env(|env| -> jni::errors::Result<String> {
+            if text.is_null() {
+                Ok(String::new())
+            } else {
+                text.try_to_string(env)
+            }
+        })
+        .resolve::<LogErrorAndDefault>();
+    let _ = slint::invoke_from_event_loop(move || crate::a11y::perform(id, action, text));
+}
+
+extern "system" fn on_a11y_focus<'local>(
+    _env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    id: jint,
+) {
+    let _ = slint::invoke_from_event_loop(move || crate::a11y::set_focus(id));
 }
 
 pub fn page_count(path: &Path) -> Result<u32, String> {

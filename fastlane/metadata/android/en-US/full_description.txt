@@ -1,0 +1,27 @@
+<p>nøste keeps track of your crochet projects. <i>Nøste</i> is Norwegian for winding yarn into a ball.</p>
+
+<p><b>Projects and parts</b></p>
+<ul>
+<li>Split a project into parts (e.g. head, ears, body), each with its own row counter and an optional row goal</li>
+<li>The project list shows the pattern cover, the current part and the total progress</li>
+<li>Search by project or part name, continue where you left off with one tap</li>
+</ul>
+
+<p><b>Patterns</b></p>
+<ul>
+<li>Import PDF patterns; they are copied into the app and rendered on your device</li>
+<li>Count rows right in the pattern, switch parts there or enlarge the counter</li>
+<li>A movable reading line marks your row – it remembers its position on every page, color selectable</li>
+<li>Zoom, page and scroll position are saved per project</li>
+</ul>
+
+<p><b>Made for crocheting</b></p>
+<ul>
+<li>Large buttons for one-handed use, the screen stays on while you work</li>
+<li>Backup and restore of all data as a ZIP file, e.g. when you switch phones</li>
+<li>Light and dark mode, English and German, works with TalkBack</li>
+</ul>
+
+<p><b>Private</b>: no account, no ads, no tracking, no internet permission. Your data stays on your device.</p>
+
+<p>nøste is free software (GPLv3) written in Rust with the Slint UI toolkit.</p>

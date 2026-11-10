@@ -1,0 +1,1 @@
+First release: projects with parts and row counters, PDF patterns with a reading line, backup and restore, light/dark mode, English and German, TalkBack support.

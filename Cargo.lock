@@ -3096,6 +3096,7 @@ dependencies = [
  "dirs",
  "fontique",
  "hayro",
+ "i-slint-backend-testing",
  "jni 0.22.4",
  "png",
  "rfd",

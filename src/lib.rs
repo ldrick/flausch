@@ -1,9 +1,12 @@
+#[cfg(target_os = "android")]
+mod a11y;
 mod model;
 mod pdf;
 mod platform;
 mod storage;
 
 use std::cell::RefCell;
+use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use slint::{ComponentHandle, Image, ModelRc, VecModel};
@@ -16,7 +19,18 @@ slint::include_modules!();
 
 pub fn run() -> Result<(), slint::PlatformError> {
     let app = App::new()?;
-    let storage = Storage::new(platform::data_dir()).map_err(|e| {
+    start(&app, platform::data_dir())?;
+    #[cfg(target_os = "android")]
+    a11y::start(&app);
+    app.run()?;
+    stop();
+    Ok(())
+}
+
+/// Loads the data in `data_dir` and connects it to `app` on the current thread.
+/// `run` uses it, and the integration tests drive the app through it with Slint's testing backend.
+pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
+    let storage = Storage::new(data_dir).map_err(|e| {
         slint::PlatformError::Other(format!("cannot create the data directory: {e}"))
     })?;
 
@@ -52,11 +66,15 @@ pub fn run() -> Result<(), slint::PlatformError> {
         c.refresh();
         c.create_missing_covers();
     });
-    connect(&app);
+    connect(app);
     platform::set_dark_theme(app.global::<Theme>().get_dark());
-    app.run()?;
-    with(Controller::flush);
     Ok(())
+}
+
+/// Writes pending changes and disconnects the app started with `start`.
+pub fn stop() {
+    with(Controller::flush);
+    CONTROLLER.with_borrow_mut(Option::take);
 }
 
 #[cfg(target_os = "android")]
@@ -964,3 +982,6 @@ impl From<LineColor> for model::LineColor {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
