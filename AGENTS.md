@@ -97,8 +97,9 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   `theme.slint`.
 - Shadows are hard drop shadows: no `drop-shadow-blur`, only `drop-shadow-offset-y: Theme.shadow-offset` (or
   `Theme.shadow-offset-small` for small elements) with `drop-shadow-color: Theme.shadow`.
-- Logo: one yarn ball in mint everywhere. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (its
-  wraps are transparent, so it fits any background). If the mint changes, update `MINT` in `tools/logo.py`, run
+- Logo: soft mint line art of a ball of yarn with cat ears, a crochet hook behind it and the yarn end curled up
+  as the tail. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (only lines, so it fits any
+  background). If the mint changes, update `MINT` in `tools/logo.py`, run
   it, and update `ic_launcher_background` (light mint, `Theme.accent-soft`) in `android/res/values/colors.xml`.
 - Design window: Pixel 9a size, 412×924 logical px (1080×2424 at density 2.625). The AVD "noste" uses the
   `pixel_9a` profile.
