@@ -6,7 +6,7 @@ use hayro::hayro_syntax::Pdf;
 use hayro::vello_cpu::color::palette::css::WHITE;
 use hayro::{PixmapSettings, RenderCache, RenderSettings};
 
-use super::{PageImage, PickResult};
+use super::{DocumentKind, PageImage, PickResult};
 
 /// `NOSTE_DATA_DIR` overrides the data directory, e.g. to test without touching real data.
 pub fn data_dir() -> PathBuf {
@@ -30,23 +30,53 @@ pub fn hide_text_handles() {}
 
 /// Shows a file dialog on a background thread and copies the chosen file to `dest`.
 /// `done` runs on that background thread.
-pub fn pick_pdf(dest: PathBuf, done: impl FnOnce(PickResult) + Send + 'static) {
+pub fn pick_document(
+    kind: DocumentKind,
+    dest: PathBuf,
+    done: impl FnOnce(PickResult) + Send + 'static,
+) {
     std::thread::spawn(move || {
+        let (name, extensions) = kind.extensions();
         let Some(source) = rfd::FileDialog::new()
-            .add_filter("PDF", &["pdf", "PDF"])
+            .add_filter(name, extensions)
             .pick_file()
         else {
             return done(PickResult::Cancelled);
         };
-        let title = source
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default();
-        match std::fs::copy(&source, &dest) {
-            Ok(_) => done(PickResult::Picked { title }),
-            Err(e) => done(PickResult::Failed(e.to_string())),
-        }
+        done(copy(&source, &dest, &source));
     });
+}
+
+/// Shows a save dialog on a background thread, suggesting `name`, and copies `source` there.
+/// `done` runs on that background thread.
+pub fn save_document(
+    kind: DocumentKind,
+    source: PathBuf,
+    name: String,
+    done: impl FnOnce(PickResult) + Send + 'static,
+) {
+    std::thread::spawn(move || {
+        let (filter, extensions) = kind.extensions();
+        let Some(dest) = rfd::FileDialog::new()
+            .add_filter(filter, extensions)
+            .set_file_name(name)
+            .save_file()
+        else {
+            return done(PickResult::Cancelled);
+        };
+        done(copy(&source, &dest, &dest));
+    });
+}
+
+fn copy(source: &Path, dest: &Path, chosen: &Path) -> PickResult {
+    let title = chosen
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    match std::fs::copy(source, dest) {
+        Ok(_) => PickResult::Picked { title },
+        Err(e) => PickResult::Failed(e.to_string()),
+    }
 }
 
 thread_local! {

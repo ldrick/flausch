@@ -9,8 +9,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use slint::{ComponentHandle, Image, ModelRc, VecModel};
 
 use model::{Library, Pdf, Settings};
-use platform::PickResult;
-use storage::Storage;
+use platform::{DocumentKind, PickResult};
+use storage::{Backup, BackupError, Storage};
 
 slint::include_modules!();
 
@@ -162,6 +162,15 @@ fn connect(app: &App) {
     });
     store.on_set_line_color(|color| {
         with(|c| c.update_settings(|s| s.line_color = color.into()));
+    });
+    store.on_export_backup(|| {
+        with(Controller::export_backup);
+    });
+    store.on_import_backup(|| {
+        with(Controller::import_backup);
+    });
+    store.on_restore_backup(|| {
+        with(Controller::restore_backup);
     });
 }
 
@@ -454,7 +463,7 @@ impl Controller {
             .map_or(0, |d| d.as_nanos());
         let file = Storage::new_pdf_file(id, nanos);
         let dest = self.storage.pdf_path(&file);
-        platform::pick_pdf(dest, move |result| {
+        platform::pick_document(DocumentKind::Pdf, dest, move |result| {
             let _ = slint::invoke_from_event_loop(move || {
                 with(|c| c.pdf_picked(id, &file, result));
             });
@@ -718,6 +727,114 @@ impl Controller {
         }
     }
 
+    // Backups
+
+    fn set_busy(&self, busy: bool) {
+        self.app().global::<Store>().set_backup_busy(busy);
+    }
+
+    /// Writes a backup on a worker thread and lets the user choose where to save it.
+    fn export_backup(&mut self) {
+        self.flush();
+        self.set_busy(true);
+        let storage = self.storage.clone();
+        let library = self.library.clone();
+        let settings = self.settings.clone();
+        std::thread::spawn(move || {
+            let path = storage.export_path();
+            if let Err(e) = storage.export(&library, &settings, &path) {
+                eprintln!("nøste: cannot write the backup: {e}");
+                let _ = std::fs::remove_file(&path);
+                return backup_exported(PickResult::Failed(e.to_string()));
+            }
+            let name = storage::backup_name(now());
+            platform::save_document(DocumentKind::Backup, path.clone(), name, move |result| {
+                let _ = std::fs::remove_file(&path);
+                backup_exported(result);
+            });
+        });
+    }
+
+    fn import_backup(&mut self) {
+        self.set_busy(true);
+        let path = self.storage.import_path();
+        platform::pick_document(DocumentKind::Backup, path.clone(), move |result| {
+            let backup = match result {
+                PickResult::Picked { .. } => Some(Storage::read_backup(&path)),
+                PickResult::Cancelled => None,
+                PickResult::Failed(e) => {
+                    eprintln!("nøste: cannot copy the backup: {e}");
+                    Some(Err(BackupError::Io(std::io::Error::other(e))))
+                }
+            };
+            let _ = slint::invoke_from_event_loop(move || {
+                with(|c| c.backup_picked(backup));
+            });
+        });
+    }
+
+    fn backup_picked(&mut self, backup: Option<Result<Backup, BackupError>>) {
+        self.set_busy(false);
+        let app = self.app();
+        let store = app.global::<Store>();
+        match backup {
+            Some(Ok(backup)) => {
+                store.set_backup_projects(backup.library.projects.len() as i32);
+                store.set_dialog(DialogKind::RestoreBackup);
+                return;
+            }
+            Some(Err(e)) => {
+                eprintln!("nøste: cannot read the backup: {e}");
+                self.notify(match e {
+                    BackupError::TooNew => Notice::BackupTooNew,
+                    BackupError::Invalid => Notice::BackupInvalid,
+                    BackupError::Io(_) => Notice::BackupImportFailed,
+                });
+            }
+            None => {}
+        }
+        let _ = std::fs::remove_file(self.storage.import_path());
+    }
+
+    /// Replaces all data with the backup chosen before, on a worker thread.
+    fn restore_backup(&mut self) {
+        self.app().global::<Store>().set_dialog(DialogKind::None);
+        self.flush();
+        self.set_busy(true);
+        let storage = self.storage.clone();
+        std::thread::spawn(move || {
+            let path = storage.import_path();
+            let result = storage.restore(&path);
+            let _ = std::fs::remove_file(&path);
+            let _ = slint::invoke_from_event_loop(move || {
+                with(|c| c.backup_restored(result));
+            });
+        });
+    }
+
+    fn backup_restored(&mut self, result: Result<Backup, BackupError>) {
+        self.set_busy(false);
+        let backup = match result {
+            Ok(backup) => backup,
+            Err(e) => {
+                eprintln!("nøste: cannot restore the backup: {e}");
+                return self.notify(Notice::BackupRestoreFailed);
+            }
+        };
+        self.save_timer.stop();
+        self.library = backup.library;
+        if let Some(settings) = backup.settings {
+            self.settings = settings;
+            self.apply_settings();
+        }
+        self.current = None;
+        self.nav = vec![Screen::List];
+        self.refresh();
+        self.show();
+        self.create_missing_covers();
+        self.notify(Notice::BackupRestored);
+    }
+
     // Settings
 
     fn update_settings(&mut self, change: impl FnOnce(&mut Settings)) {
@@ -745,6 +862,22 @@ impl Controller {
         }
         self.update_keep_screen_on();
     }
+}
+
+fn backup_exported(result: PickResult) {
+    let _ = slint::invoke_from_event_loop(move || {
+        with(|c| {
+            c.set_busy(false);
+            match result {
+                PickResult::Picked { .. } => c.notify(Notice::BackupSaved),
+                PickResult::Cancelled => {}
+                PickResult::Failed(e) => {
+                    eprintln!("nøste: cannot save the backup: {e}");
+                    c.notify(Notice::BackupSaveFailed);
+                }
+            }
+        });
+    });
 }
 
 /// Copies the reading line of the page shown in `view` from `pdf`.

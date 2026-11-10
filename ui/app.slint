@@ -183,6 +183,13 @@ export component App inherits Window {
                     width: parent.width - 40px;
                     text: Store.notice == Notice.pdf-invalid ? @tr("This file could not be opened as a PDF.")
                         : Store.notice == Notice.pdf-render-failed ? @tr("The page could not be displayed.")
+                        : Store.notice == Notice.backup-saved ? @tr("Backup saved.")
+                        : Store.notice == Notice.backup-save-failed ? @tr("The backup could not be saved.")
+                        : Store.notice == Notice.backup-import-failed ? @tr("The file could not be read.")
+                        : Store.notice == Notice.backup-invalid ? @tr("This file is not a nøste backup.")
+                        : Store.notice == Notice.backup-too-new ? @tr("This backup is from a newer version of nøste. Please update the app first.")
+                        : Store.notice == Notice.backup-restored ? @tr("Backup restored.")
+                        : Store.notice == Notice.backup-restore-failed ? @tr("The backup could not be restored. Your data is unchanged.")
                         : @tr("The PDF could not be imported.");
                     color: Theme.background;
                     font-size: Theme.font-body;
@@ -332,6 +339,22 @@ export component App inherits Window {
                 confirm => {
                     root.close-dialog();
                     Store.remove-pdf();
+                }
+            }
+        }
+
+        if Store.dialog == DialogKind.restore-backup: Dialog {
+            title: @tr("Restore backup?");
+            message: @tr("The backup contains {n} project. It replaces all projects and settings on this device. This cannot be undone." | "The backup contains {n} projects. It replaces all projects and settings on this device. This cannot be undone." % Store.backup-projects);
+            dismissed => { root.close-dialog(); }
+
+            DialogButtons {
+                confirm-text: @tr("Restore");
+                destructive: true;
+                cancel => { root.close-dialog(); }
+                confirm => {
+                    root.close-dialog();
+                    Store.restore-backup();
                 }
             }
         }

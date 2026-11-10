@@ -18,10 +18,44 @@ pub struct PageImage {
     pub rgba: Vec<u8>,
 }
 
+/// The kinds of documents the app opens.
+#[derive(Clone, Copy, Debug)]
+pub enum DocumentKind {
+    Pdf,
+    Backup,
+}
+
+impl DocumentKind {
+    /// MIME types for the Android picker. Backups are also offered as `octet-stream`, because
+    /// some file providers don't recognize ZIP files.
+    #[cfg_attr(
+        not(target_os = "android"),
+        allow(dead_code, reason = "used on Android")
+    )]
+    fn mime_types(self) -> &'static str {
+        match self {
+            Self::Pdf => "application/pdf",
+            Self::Backup => "application/zip,application/x-zip-compressed,application/octet-stream",
+        }
+    }
+
+    #[cfg_attr(
+        target_os = "android",
+        allow(dead_code, reason = "used on the desktop")
+    )]
+    fn extensions(self) -> (&'static str, &'static [&'static str]) {
+        match self {
+            Self::Pdf => ("PDF", &["pdf", "PDF"]),
+            Self::Backup => ("ZIP", &["zip", "ZIP"]),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum PickResult {
-    /// The PDF was copied to the requested destination.
+    /// The document was copied (to the app's file when opening, from it when saving).
     Picked {
+        /// Display name of the chosen document.
         title: String,
     },
     Cancelled,

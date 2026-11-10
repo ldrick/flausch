@@ -38,44 +38,44 @@ msgctxt "App"
 msgid "The page could not be displayed."
 msgstr "Die Seite konnte nicht angezeigt werden."
 
-#: ui/app.slint:186
+#: ui/app.slint:193
 msgctxt "App"
 msgid "The PDF could not be imported."
 msgstr "Das PDF konnte nicht importiert werden."
 
-#: ui/app.slint:207
+#: ui/app.slint:214
 msgctxt "App"
 msgid "Delete project?"
 msgstr "Projekt löschen?"
 
-#: ui/app.slint:208
+#: ui/app.slint:215
 msgctxt "App"
 msgid "“{}” and its pattern will be removed. This cannot be undone."
 msgstr ""
 "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
 "werden."
 
-#: ui/app.slint:212 ui/app.slint:233
+#: ui/app.slint:219 ui/app.slint:240
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
-#: ui/app.slint:309
+#: ui/app.slint:316
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-#: ui/app.slint:314
+#: ui/app.slint:321
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: ui/app.slint:324
+#: ui/app.slint:331
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-#: ui/app.slint:329
+#: ui/app.slint:336
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
@@ -117,47 +117,47 @@ msgctxt "ListPage"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/pages/pdf.slint:107
+#: ui/pages/pdf.slint:108
 msgctxt "PdfPage"
 msgid "Zoom out"
 msgstr "Verkleinern"
 
-#: ui/pages/pdf.slint:116
+#: ui/pages/pdf.slint:117
 msgctxt "PdfPage"
 msgid "Zoom in"
 msgstr "Vergrößern"
 
-#: ui/pages/pdf.slint:157
+#: ui/pages/pdf.slint:158
 msgctxt "PdfPage"
 msgid "Page {} of {}"
 msgstr "Seite {} von {}"
 
-#: ui/pages/pdf.slint:173
+#: ui/pages/pdf.slint:174
 msgctxt "PdfPage"
 msgid "Loading…"
 msgstr "Wird geladen…"
 
-#: ui/pages/pdf.slint:246
+#: ui/pages/pdf.slint:247
 msgctxt "PdfPage"
 msgid "Previous page"
 msgstr "Vorherige Seite"
 
-#: ui/pages/pdf.slint:261
+#: ui/pages/pdf.slint:262
 msgctxt "PdfPage"
 msgid "Next page"
 msgstr "Nächste Seite"
 
-#: ui/pages/pdf.slint:313
+#: ui/pages/pdf.slint:314
 msgctxt "PdfPage"
 msgid "Previous row"
 msgstr "Vorherige Reihe"
 
-#: ui/pages/pdf.slint:352
+#: ui/pages/pdf.slint:353
 msgctxt "PdfPage"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/pages/pdf.slint:371
+#: ui/pages/pdf.slint:372
 msgctxt "PdfPage"
 msgid "Next row"
 msgstr "Nächste Reihe"
@@ -222,12 +222,12 @@ msgctxt "SettingsPage"
 msgid "While a project or pattern is open"
 msgstr "Solange ein Projekt oder eine Anleitung geöffnet ist"
 
-#: ui/pages/settings.slint:149
+#: ui/pages/settings.slint:185
 msgctxt "SettingsPage"
 msgid "About"
 msgstr "Über"
 
-#: ui/pages/settings.slint:175
+#: ui/pages/settings.slint:211
 msgctxt "SettingsPage"
 msgid "A crochet companion. Nøste is Norwegian for winding yarn into a ball."
 msgstr ""
@@ -370,22 +370,22 @@ msgctxt "PartDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/app.slint:228
+#: ui/app.slint:235
 msgctxt "App"
 msgid "Delete part?"
 msgstr "Teil löschen?"
 
-#: ui/app.slint:229
+#: ui/app.slint:236
 msgctxt "App"
 msgid "“{}” and its row counter will be removed."
 msgstr "„{}“ und sein Reihenzähler werden gelöscht."
 
-#: ui/app.slint:310
+#: ui/app.slint:317
 msgctxt "App"
 msgid "The row counter of “{}” goes back to 0."
 msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
 
-#: ui/app.slint:325
+#: ui/app.slint:332
 msgctxt "App"
 msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
@@ -416,27 +416,27 @@ msgctxt "ListPage"
 msgid "No matching projects"
 msgstr "Keine passenden Projekte"
 
-#: ui/pages/pdf.slint:275 ui/pages/pdf.slint:283 ui/pages/pdf.slint:412
+#: ui/pages/pdf.slint:276 ui/pages/pdf.slint:284 ui/pages/pdf.slint:413
 msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:244
+#: ui/app.slint:251
 msgctxt "App"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:283
+#: ui/app.slint:290
 msgctxt "App"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/app.slint:283
+#: ui/app.slint:290
 msgctxt "App"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/app.slint:301
+#: ui/app.slint:308
 msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -446,12 +446,12 @@ msgctxt "ProjectCard"
 msgid "Continue {}"
 msgstr "{} fortsetzen"
 
-#: ui/pages/pdf.slint:324
+#: ui/pages/pdf.slint:325
 msgctxt "PdfPage"
 msgid "Enlarge counter"
 msgstr "Zähler vergrößern"
 
-#: ui/pages/pdf.slint:447
+#: ui/pages/pdf.slint:448
 msgctxt "PdfPage"
 msgid "Shrink counter"
 msgstr "Zähler verkleinern"
@@ -486,17 +486,17 @@ msgctxt "CounterButtons"
 msgid "Reset counter"
 msgstr "Zähler zurücksetzen"
 
-#: ui/pages/pdf.slint:98
+#: ui/pages/pdf.slint:99
 msgctxt "PdfPage"
 msgid "Hide reading line"
 msgstr "Leselinie ausblenden"
 
-#: ui/pages/pdf.slint:98
+#: ui/pages/pdf.slint:99
 msgctxt "PdfPage"
 msgid "Show reading line"
 msgstr "Leselinie einblenden"
 
-#: ui/pages/pdf.slint:195
+#: ui/pages/pdf.slint:196
 msgctxt "PdfPage"
 msgid "Reading line"
 msgstr "Leselinie"
@@ -535,3 +535,92 @@ msgstr "Blau"
 msgctxt "SettingsPage"
 msgid "Green"
 msgstr "Grün"
+
+#: ui/pages/settings.slint:149
+msgctxt "SettingsPage"
+msgid "Data"
+msgstr "Daten"
+
+#: ui/pages/settings.slint:159
+msgctxt "SettingsPage"
+msgid ""
+"Save projects, row counters and patterns as a ZIP file, for example before "
+"switching phones."
+msgstr ""
+"Projekte, Reihenzähler und Anleitungen als ZIP-Datei sichern, zum Beispiel "
+"vor einem Handywechsel."
+
+#: ui/pages/settings.slint:167
+msgctxt "SettingsPage"
+msgid "Export"
+msgstr "Exportieren"
+
+#: ui/pages/settings.slint:174
+msgctxt "SettingsPage"
+msgid "Import"
+msgstr "Importieren"
+
+#: ui/app.slint:186
+msgctxt "App"
+msgid "Backup saved."
+msgstr "Sicherung gespeichert."
+
+#: ui/app.slint:187
+msgctxt "App"
+msgid "The backup could not be saved."
+msgstr "Die Sicherung konnte nicht gespeichert werden."
+
+#: ui/app.slint:188
+msgctxt "App"
+msgid "The file could not be read."
+msgstr "Die Datei konnte nicht gelesen werden."
+
+#: ui/app.slint:189
+msgctxt "App"
+msgid "This file is not a nøste backup."
+msgstr "Diese Datei ist keine nøste-Sicherung."
+
+#: ui/app.slint:190
+msgctxt "App"
+msgid ""
+"This backup is from a newer version of nøste. Please update the app first."
+msgstr ""
+"Diese Sicherung stammt aus einer neueren nøste-Version. Bitte aktualisiere "
+"zuerst die App."
+
+#: ui/app.slint:191
+msgctxt "App"
+msgid "Backup restored."
+msgstr "Sicherung wiederhergestellt."
+
+#: ui/app.slint:192
+msgctxt "App"
+msgid "The backup could not be restored. Your data is unchanged."
+msgstr ""
+"Die Sicherung konnte nicht wiederhergestellt werden. Deine Daten sind "
+"unverändert."
+
+#: ui/app.slint:347
+msgctxt "App"
+msgid "Restore backup?"
+msgstr "Sicherung wiederherstellen?"
+
+#: ui/app.slint:348
+msgctxt "App"
+msgid ""
+"The backup contains {n} project. It replaces all projects and settings on "
+"this device. This cannot be undone."
+msgid_plural ""
+"The backup contains {n} projects. It replaces all projects and settings on "
+"this device. This cannot be undone."
+msgstr[0] ""
+"Die Sicherung enthält {n} Projekt. Sie ersetzt alle Projekte und "
+"Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
+msgstr[1] ""
+"Die Sicherung enthält {n} Projekte. Sie ersetzt alle Projekte und "
+"Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
+
+#: ui/app.slint:352
+msgctxt "App"
+msgid "Restore"
+msgstr "Wiederherstellen"

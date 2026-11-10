@@ -1,7 +1,7 @@
 import { AboutSlint, Palette } from "std-widgets.slint";
 import { Theme, Appearance, LineColor } from "../theme.slint";
 import { Store, Language } from "../store.slint";
-import { Card, Icon, Segmented, Switch, TopBar } from "../components.slint";
+import { ButtonKind, Card, Icon, PillButton, Segmented, Switch, TopBar } from "../components.slint";
 
 component SectionTitle inherits Text {
     color: Theme.text-muted;
@@ -140,6 +140,42 @@ export component SettingsPage inherits Rectangle {
                                 label: option.label;
                                 selected: Store.line-color == option.value;
                                 select => { Store.set-line-color(option.value); }
+                            }
+                        }
+                    }
+                }
+
+                SectionTitle {
+                    text: @tr("Data");
+                }
+                Card {
+                    height: data.preferred-height;
+
+                    data := VerticalLayout {
+                        padding: 18px;
+                        spacing: 14px;
+
+                        Text {
+                            text: @tr("Save projects, row counters and patterns as a ZIP file, for example before switching phones.");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                        HorizontalLayout {
+                            spacing: 12px;
+                            PillButton {
+                                text: @tr("Export");
+                                kind: ButtonKind.secondary;
+                                horizontal-stretch: 1;
+                                enabled: !Store.backup-busy;
+                                clicked => { Store.export-backup(); }
+                            }
+                            PillButton {
+                                text: @tr("Import");
+                                kind: ButtonKind.secondary;
+                                horizontal-stretch: 1;
+                                enabled: !Store.backup-busy;
+                                clicked => { Store.import-backup(); }
                             }
                         }
                     }

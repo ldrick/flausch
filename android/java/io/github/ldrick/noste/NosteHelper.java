@@ -22,6 +22,7 @@ import android.view.WindowInsetsController;
 import android.view.WindowManager;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +41,7 @@ public class NosteHelper {
     static final int STATUS_CANCELLED = 1;
     static final int STATUS_FAILED = 2;
 
-    private static final String PICKER_TAG = "noste-pdf-picker";
+    private static final String PICKER_TAG = "noste-document-picker";
 
     private final Activity mActivity;
 
@@ -82,15 +83,27 @@ public class NosteHelper {
         });
     }
 
-    static native void onPdfPicked(int status, String text);
+    static native void onDocumentDone(int status, String text);
 
-    /** Opens the system document picker and copies the chosen PDF to {@code destPath}. */
-    public void pickPdf(final String destPath) {
+    /**
+     * Opens the system document picker for the comma-separated {@code mimeTypes} and copies the
+     * chosen document to {@code destPath}.
+     */
+    public void pickDocument(String mimeTypes, String destPath) {
+        showPicker(PickerFragment.create(false, mimeTypes, destPath, null));
+    }
+
+    /** Lets the user choose where to save {@code sourcePath}, suggesting {@code name}. */
+    public void saveDocument(String sourcePath, String name, String mimeType) {
+        showPicker(PickerFragment.create(true, mimeType, sourcePath, name));
+    }
+
+    private void showPicker(final PickerFragment fragment) {
         mActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 mActivity.getFragmentManager().beginTransaction()
-                        .add(PickerFragment.create(destPath), PICKER_TAG)
+                        .add(fragment, PICKER_TAG)
                         .commitAllowingStateLoss();
             }
         });
@@ -212,11 +225,11 @@ public class NosteHelper {
         }
     }
 
-    static void copyDocument(ContentResolver resolver, Uri uri, String destPath) {
+    static void copyDocument(ContentResolver resolver, Uri uri, String path, boolean save) {
         String title = displayName(resolver, uri);
-        try (InputStream in = resolver.openInputStream(uri);
-                OutputStream out = new FileOutputStream(destPath)) {
-            if (in == null) {
+        try (InputStream in = save ? new FileInputStream(path) : resolver.openInputStream(uri);
+                OutputStream out = save ? resolver.openOutputStream(uri, "wt") : new FileOutputStream(path)) {
+            if (in == null || out == null) {
                 throw new IOException("cannot open " + uri);
             }
             byte[] buffer = new byte[64 * 1024];
@@ -225,10 +238,10 @@ public class NosteHelper {
                 out.write(buffer, 0, n);
             }
         } catch (Exception e) {
-            onPdfPicked(STATUS_FAILED, e.toString());
+            onDocumentDone(STATUS_FAILED, e.toString());
             return;
         }
-        onPdfPicked(STATUS_OK, title);
+        onDocumentDone(STATUS_OK, title);
     }
 
     static String displayName(ContentResolver resolver, Uri uri) {
@@ -243,24 +256,31 @@ public class NosteHelper {
             // Fall back to the URI below.
         }
         String segment = uri.getLastPathSegment();
-        return segment != null ? segment : "PDF";
+        return segment != null ? segment : "document";
     }
 
     /**
      * Headless fragment that receives the picker result, because NativeActivity does not expose
-     * onActivityResult.
+     * onActivityResult. It either opens a document and copies it to the app's file at {@code path}
+     * or creates one and copies that file into it.
      */
     public static class PickerFragment extends Fragment {
         private static final int REQUEST_CODE = 4711;
-        private static final String ARG_DEST = "dest";
+        private static final String ARG_SAVE = "save";
+        private static final String ARG_MIME = "mime";
+        private static final String ARG_PATH = "path";
+        private static final String ARG_NAME = "name";
 
         public PickerFragment() {
         }
 
-        static PickerFragment create(String destPath) {
+        static PickerFragment create(boolean save, String mimeTypes, String path, String name) {
             PickerFragment fragment = new PickerFragment();
             Bundle args = new Bundle();
-            args.putString(ARG_DEST, destPath);
+            args.putBoolean(ARG_SAVE, save);
+            args.putString(ARG_MIME, mimeTypes);
+            args.putString(ARG_PATH, path);
+            args.putString(ARG_NAME, name);
             fragment.setArguments(args);
             return fragment;
         }
@@ -268,14 +288,28 @@ public class NosteHelper {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            Bundle args = getArguments();
+            String[] mimeTypes = args.getString(ARG_MIME).split(",");
+            Intent intent;
+            if (args.getBoolean(ARG_SAVE)) {
+                intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                intent.setType(mimeTypes[0]);
+                intent.putExtra(Intent.EXTRA_TITLE, args.getString(ARG_NAME));
+            } else {
+                intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                if (mimeTypes.length == 1) {
+                    intent.setType(mimeTypes[0]);
+                } else {
+                    intent.setType("*/*");
+                    intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
+                }
+            }
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("application/pdf");
             try {
                 startActivityForResult(intent, REQUEST_CODE);
             } catch (ActivityNotFoundException e) {
                 remove();
-                onPdfPicked(STATUS_FAILED, e.toString());
+                onDocumentDone(STATUS_FAILED, e.toString());
             }
         }
 
@@ -286,16 +320,17 @@ public class NosteHelper {
             }
             final Uri uri = resultCode == Activity.RESULT_OK && data != null ? data.getData() : null;
             final ContentResolver resolver = getActivity().getContentResolver();
-            final String destPath = getArguments().getString(ARG_DEST);
+            final String path = getArguments().getString(ARG_PATH);
+            final boolean save = getArguments().getBoolean(ARG_SAVE);
             remove();
             if (uri == null) {
-                onPdfPicked(STATUS_CANCELLED, null);
+                onDocumentDone(STATUS_CANCELLED, null);
                 return;
             }
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    copyDocument(resolver, uri, destPath);
+                    copyDocument(resolver, uri, path, save);
                 }
             }).start();
         }

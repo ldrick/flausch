@@ -45,7 +45,7 @@ src/
   lib.rs              Controller: wires Store callbacks, navigation, debounced saving, PDF sessions, android_main
   main.rs             thin desktop binary -> noste::run(); no logic here
   model.rs            UI-independent data model (Library, Project, Pdf, Settings) – no slint
-  storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes – no slint
+  storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes, ZIP backups – no slint
   pdf.rs              render workers: viewer pages (newest request only) and PNG covers of page 1
   platform/mod.rs     picks android.rs or desktop.rs via cfg
   platform/android.rs JNI: loads the dex built from android/java, picker, PdfRenderer, keep-screen-on, bar colors
@@ -81,6 +81,10 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   upgrades old data, e.g. version 1 rows per project become one part; add a test for every migration.
   Imported PDFs are copied to `pdfs/`; `covers/<pdf>.png` holds a thumbnail of page 1 for the project list,
   created after import and on start if missing. `Storage::remove_pdf` removes both.
+- Backups (Settings → Data) are ZIP files with `projects.json`, `settings.json` and `pdfs/`, but no covers.
+  `Storage::read_backup` refuses newer versions and runs `migrate`; `Storage::restore` replaces everything. The
+  Android side goes through the Storage Access Framework (`platform::pick_document` / `save_document`, no storage
+  permission), via temporary `export.zip` / `import.zip` files in the data directory.
 - `NOSTE_DATA_DIR=/tmp/x cargo run` uses a scratch data directory on the desktop.
 - PDF rendering: on Android, `android.graphics.pdf.PdfRenderer` through the Java helper; on the desktop, `hayro`
   (pure Rust). The worker renders at the display width and the viewer scales it.
@@ -147,7 +151,7 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 - Rust `stderr` shows up in logcat under the tag `RustStdoutStderr`. ANR traces:
   `adb shell dumpsys dropbox --print data_app_anr`.
 - After changing the Java helper, check the call signatures in `platform/android.rs` (jni 0.22: names and
-  signatures go through `jni_str!` / `jni_sig!`, e.g. `jni_sig!("(Z)V")`; `onPdfPicked` is registered by hand).
+  signatures go through `jni_str!` / `jni_sig!`, e.g. `jni_sig!("(Z)V")`; `onDocumentDone` is registered by hand).
 
 ## Testing on the emulator
 

@@ -4,9 +4,21 @@ export enum Screen { list, project, part, pdf, settings }
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, add-part, edit-part, delete-part, pick-part, reset, remove-pdf }
+export enum DialogKind { none, create, edit, delete, add-part, edit-part, delete-part, pick-part, reset, remove-pdf, restore-backup }
 
-export enum Notice { none, pdf-import-failed, pdf-invalid, pdf-render-failed }
+export enum Notice {
+    none,
+    pdf-import-failed,
+    pdf-invalid,
+    pdf-render-failed,
+    backup-saved,
+    backup-save-failed,
+    backup-import-failed,
+    backup-invalid,
+    backup-too-new,
+    backup-restored,
+    backup-restore-failed,
+}
 
 export struct PartItem {
     id: int,
@@ -75,6 +87,10 @@ export global Store {
     in property <Appearance> appearance: Appearance.system;
     in property <bool> keep-screen-on: true;
     in property <LineColor> line-color: LineColor.magenta;
+    // A backup is being written, chosen or restored.
+    in property <bool> backup-busy;
+    // Number of projects in the backup the restore dialog asks about.
+    in property <int> backup-projects;
 
     in-out property <DialogKind> dialog: DialogKind.none;
     // The PDF view shows the large counter instead of the floating one.
@@ -120,6 +136,11 @@ export global Store {
     callback set-appearance(Appearance);
     callback set-keep-screen-on(bool);
     callback set-line-color(LineColor);
+    callback export-backup();
+    // Lets the user choose a backup, then opens the restore dialog.
+    callback import-backup();
+    // Replaces all data with the chosen backup.
+    callback restore-backup();
     // A text field was focused from code (not by a tap); hides Android's cursor handles.
     callback hide-text-handles();
     // The effective theme changed (setting or system), for the system bar icons.

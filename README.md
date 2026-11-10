@@ -12,7 +12,8 @@ on the desktop via winit – so most development happens with a plain `cargo run
 
 Projects made of parts (e.g. head, body, legs), each with its own row counter and optional row goal; project
 list with pattern covers, total progress, search and a continue button; PDF patterns (imported and rendered on the
-device) with a row counter for any part that can be enlarged and a movable reading line (color selectable); keep screen on, Android back key, German/English, light/dark mode.
+device) with a row counter for any part that can be enlarged and a movable reading line (color selectable); backup and restore of all data as a ZIP file; keep screen on, Android back key, German/English,
+light/dark mode.
 
 ## Layout
 
@@ -22,7 +23,7 @@ device) with a row counter for any part that can be enlarged and a movable readi
 - `src/main.rs` – desktop entry point
 - `ui/` – Slint UI (`app.slint` root, `store.slint` Rust↔UI contract, `theme.slint`, `pages/`)
 - `lang/` – translations (gettext `.po`, bundled at build time)
-- `android/java/` – small Java helper (file picker, PdfRenderer), compiled by `build.rs`
+- `android/java/` – small Java helper (file picker and save dialog, PdfRenderer), compiled by `build.rs`
 - `android/res/` – Android resources (launcher icon)
 - `tools/logo.py` – generates the logo (`ui/icons/logo.svg`) and the launcher icon
 

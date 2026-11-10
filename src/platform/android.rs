@@ -10,7 +10,7 @@ use jni::sys::jint;
 use jni::{Env, EnvUnowned, JavaVM, NativeMethod, jni_sig, jni_str};
 use slint::android::AndroidApp;
 
-use super::{PageImage, PickResult};
+use super::{DocumentKind, PageImage, PickResult};
 
 const DEX: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/classes.dex"));
 const HELPER_CLASS: &str = "io.github.ldrick.noste.NosteHelper";
@@ -68,15 +68,15 @@ fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>
             )?
             .l()?;
         let class = env.cast_local::<JClass>(class)?;
-        // SAFETY: `on_pdf_picked` matches the static method `void onPdfPicked(int, String)`, and
+        // SAFETY: `on_document_done` matches the static method `void onDocumentDone(int, String)`, and
         // its second parameter is the class.
         unsafe {
             env.register_native_methods(
                 &class,
                 &[NativeMethod::from_raw_parts(
-                    jni_str!("onPdfPicked"),
+                    jni_str!("onDocumentDone"),
                     jni_str!("(ILjava/lang/String;)V"),
-                    on_pdf_picked as *mut std::ffi::c_void,
+                    on_document_done as *mut std::ffi::c_void,
                 )],
             )
         }?;
@@ -153,21 +153,61 @@ pub fn hide_text_handles() {
     }
 }
 
-/// Opens the system document picker and copies the chosen PDF to `dest`.
+/// Opens the system document picker and copies the chosen document to `dest`.
 /// `done` runs on a Java thread.
 #[allow(
     clippy::needless_pass_by_value,
     reason = "same signature as the desktop version"
 )]
-pub fn pick_pdf(dest: PathBuf, done: impl FnOnce(PickResult) + Send + 'static) {
+pub fn pick_document(
+    kind: DocumentKind,
+    dest: PathBuf,
+    done: impl FnOnce(PickResult) + Send + 'static,
+) {
     *PENDING_PICK.lock().unwrap() = Some(Box::new(done));
     let result = with_helper(|env, helper| {
+        let mime = env.new_string(kind.mime_types())?;
         let dest = env.new_string(dest.to_string_lossy())?;
         env.call_method(
             helper,
-            jni_str!("pickPdf"),
-            jni_sig!("(Ljava/lang/String;)V"),
-            &[JValue::Object(&dest)],
+            jni_str!("pickDocument"),
+            jni_sig!("(Ljava/lang/String;Ljava/lang/String;)V"),
+            &[JValue::Object(&mime), JValue::Object(&dest)],
+        )?;
+        Ok(())
+    });
+    if let Err(e) = result {
+        finish_pick(PickResult::Failed(e));
+    }
+}
+
+/// Lets the user create a document, suggesting `name`, and copies `source` into it.
+/// `done` runs on a Java thread.
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "same signature as the desktop version"
+)]
+pub fn save_document(
+    kind: DocumentKind,
+    source: PathBuf,
+    name: String,
+    done: impl FnOnce(PickResult) + Send + 'static,
+) {
+    *PENDING_PICK.lock().unwrap() = Some(Box::new(done));
+    let result = with_helper(|env, helper| {
+        let source = env.new_string(source.to_string_lossy())?;
+        let name = env.new_string(&name)?;
+        let mime = kind.mime_types().split(',').next().unwrap_or_default();
+        let mime = env.new_string(mime)?;
+        env.call_method(
+            helper,
+            jni_str!("saveDocument"),
+            jni_sig!("(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V"),
+            &[
+                JValue::Object(&source),
+                JValue::Object(&name),
+                JValue::Object(&mime),
+            ],
         )?;
         Ok(())
     });
@@ -183,7 +223,7 @@ fn finish_pick(result: PickResult) {
     }
 }
 
-extern "system" fn on_pdf_picked<'local>(
+extern "system" fn on_document_done<'local>(
     mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     status: jint,
