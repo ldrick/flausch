@@ -3,6 +3,8 @@ name = "noste"
 version = "0.1.0"
 edition = "2024"
 description = "A crochet app for Android"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/ldrick/noste"
 publish = false
 
 [lib]

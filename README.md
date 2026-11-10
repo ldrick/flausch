@@ -57,5 +57,7 @@ needed.
 
 ## License
 
+nøste is free software under the GNU General Public License v3.0 or later, see [LICENSE](LICENSE).
+
 Slint is used under its Royalty-free License 2.0 (mobile apps allowed; requires an attribution, e.g. the
 "Made with Slint" badge in the app or on its web page) – alternatively GPLv3.
