@@ -2,6 +2,8 @@ import { Palette } from "std-widgets.slint";
 
 export enum Appearance { system, light, dark }
 
+export enum LineColor { magenta, red, orange, blue, green }
+
 // Soft, light and minimal. All colors, sizes and radii live here so the look can be changed in
 // one place. Components use `Theme`, never `Palette` directly.
 export global Theme {
@@ -39,4 +41,20 @@ export global Theme {
     out property <length> font-counter: 112px;
 
     out property <duration> animation: 180ms;
+
+    // Reading line in the PDF view. It is drawn on the page, so the colors don't follow `dark`.
+    out property <length> line-width: 3px;
+    out property <color> on-line: #ffffff;
+    public pure function line-color(color: LineColor) -> color {
+        if color == LineColor.red {
+            return #e53935;
+        } else if color == LineColor.orange {
+            return #f57c00;
+        } else if color == LineColor.blue {
+            return #1e88e5;
+        } else if color == LineColor.green {
+            return #2e9d4f;
+        }
+        return #e6007e;
+    }
 }

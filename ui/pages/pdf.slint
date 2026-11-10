@@ -27,6 +27,10 @@ export component PdfPage inherits Rectangle {
     property <length> start-y;
     property <bool> restored: false;
     property <length> page-height: flick.width * root.zoom * Store.pdf.aspect;
+    // Top of the page within the visible area.
+    property <length> page-top: page.y + flick.content-y;
+    // Offset of the reading line while it is being dragged.
+    property <length> line-drag;
 
     function scroll-fraction(offset: length, range: length) -> float {
         return range > 0 ? clamp(-offset / range, 0, 1) : 0;
@@ -56,6 +60,15 @@ export component PdfPage inherits Rectangle {
         flick.content-x = 0;
         flick.content-y = 0;
         Store.pdf-view-changed(page, root.zoom, 0, 0, flick.width / 1phx);
+        // Each page keeps its own line; a page without one gets it in the middle of the view.
+        if Store.pdf.line-visible && !Store.pdf.line-saved {
+            Store.pdf-line-moved(visible-center());
+        }
+    }
+
+    // Position on the page (fraction of its height) that is in the middle of the visible area.
+    function visible-center() -> float {
+        return root.page-height > 0 ? clamp((flick.height / 2 - root.page-top) / root.page-height, 0, 1) : 0.5;
     }
 
     init => {
@@ -79,6 +92,15 @@ export component PdfPage inherits Rectangle {
             title: Store.current.pdf-title;
             back => { Store.back(); }
 
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/reading-line.svg");
+                    label: Store.pdf.line-visible ? @tr("Hide reading line") : @tr("Show reading line");
+                    tint: Store.pdf.line-visible ? Theme.line-color(Store.line-color) : Theme.text;
+                    clicked => { Store.pdf-line-shown(!Store.pdf.line-visible, root.visible-center()); }
+                }
+            }
             VerticalLayout {
                 alignment: center;
                 IconButton {
@@ -120,7 +142,7 @@ export component PdfPage inherits Rectangle {
                     content-height: max(self.height, root.page-height + 96px);
                     flicked => { root.report(); }
 
-                    Rectangle {
+                    page := Rectangle {
                         x: 0;
                         y: max(0, (flick.height - 96px - root.page-height) / 2);
                         width: flick.content-width;
@@ -152,6 +174,65 @@ export component PdfPage inherits Rectangle {
                 text: @tr("Loading…");
                 color: Theme.text-muted;
                 font-size: Theme.font-body;
+            }
+
+            // Reading line: sits on the page and scrolls with it; dragged by the grip on the right.
+            if Store.pdf.line-visible && Store.pdf.serial > 0: Rectangle {
+                property <length> line-y: root.page-top + Store.pdf.line * root.page-height + root.line-drag;
+                x: 0;
+                y: self.line-y - self.height / 2;
+                width: parent.width;
+                height: Theme.touch;
+
+                Rectangle {
+                    y: (parent.height - self.height) / 2;
+                    height: Theme.line-width;
+                    background: Theme.line-color(Store.line-color);
+                }
+                Rectangle {
+                    x: parent.width - Theme.touch;
+                    width: Theme.touch;
+                    accessible-role: slider;
+                    accessible-label: @tr("Reading line");
+                    accessible-value: round(Store.pdf.line * 100) + "%";
+                    accessible-action-increment => { Store.pdf-line-moved(Store.pdf.line + 0.02); }
+                    accessible-action-decrement => { Store.pdf-line-moved(Store.pdf.line - 0.02); }
+
+                    Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: self.height / 2;
+                        background: Theme.line-color(Store.line-color);
+                        border-width: 2px;
+                        border-color: Theme.on-line;
+
+                        VerticalLayout {
+                            alignment: center;
+                            padding-left: 8px;
+                            padding-right: 8px;
+                            spacing: 3px;
+                            for _ in 2: Rectangle {
+                                height: 2px;
+                                border-radius: 1px;
+                                background: Theme.on-line;
+                            }
+                        }
+                    }
+                    grip := TouchArea {
+                        moved => {
+                            root.line-drag = clamp(root.line-drag + self.mouse-y - self.pressed-y,
+                                -Store.pdf.line * root.page-height, (1 - Store.pdf.line) * root.page-height);
+                        }
+                        pointer-event(event) => {
+                            if event.kind == PointerEventKind.up || event.kind == PointerEventKind.cancel {
+                                if root.page-height > 0 && root.line-drag != 0 {
+                                    Store.pdf-line-moved(Store.pdf.line + root.line-drag / root.page-height);
+                                }
+                                root.line-drag = 0;
+                            }
+                        }
+                    }
+                }
             }
 
             // Page navigation
@@ -311,8 +392,9 @@ export component PdfPage inherits Rectangle {
             background: Theme.surface;
             border-top-left-radius: 28px;
             border-top-right-radius: 28px;
-            drop-shadow-offset-y: -Theme.shadow-offset;
-            drop-shadow-color: Theme.shadow;
+            // A border instead of a shadow sets it apart from the (usually white) page.
+            border-width: 1px;
+            border-color: Theme.border;
 
             VerticalLayout {
                 padding: 12px;

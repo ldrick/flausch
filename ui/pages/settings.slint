@@ -1,5 +1,5 @@
 import { AboutSlint, Palette } from "std-widgets.slint";
-import { Theme, Appearance } from "../theme.slint";
+import { Theme, Appearance, LineColor } from "../theme.slint";
 import { Store, Language } from "../store.slint";
 import { Card, Icon, Segmented, Switch, TopBar } from "../components.slint";
 
@@ -7,6 +7,33 @@ component SectionTitle inherits Text {
     color: Theme.text-muted;
     font-size: Theme.font-small;
     font-weight: 600;
+}
+
+component ColorSwatch inherits Rectangle {
+    in property <LineColor> value;
+    in property <string> label;
+    in property <bool> selected;
+    callback select();
+
+    width: Theme.touch;
+    height: Theme.touch;
+    border-radius: self.height / 2;
+    border-width: root.selected ? 3px : 0;
+    border-color: Theme.text;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-checked: root.selected;
+    accessible-action-default => { root.select(); }
+
+    Rectangle {
+        width: 34px;
+        height: 34px;
+        border-radius: self.height / 2;
+        background: Theme.line-color(root.value);
+    }
+    TouchArea {
+        clicked => { root.select(); }
+    }
 }
 
 export component SettingsPage inherits Rectangle {
@@ -80,6 +107,39 @@ export component SettingsPage inherits Rectangle {
                                 label: @tr("Keep screen on");
                                 checked: Store.keep-screen-on;
                                 toggled => { Store.set-keep-screen-on(!Store.keep-screen-on); }
+                            }
+                        }
+                    }
+                }
+
+                SectionTitle {
+                    text: @tr("Pattern");
+                }
+                Card {
+                    height: line.preferred-height;
+
+                    line := VerticalLayout {
+                        padding: 18px;
+                        spacing: 10px;
+
+                        Text {
+                            text: @tr("Reading line color");
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                        }
+                        HorizontalLayout {
+                            alignment: space-between;
+                            for option in [
+                                { value: LineColor.magenta, label: @tr("Magenta") },
+                                { value: LineColor.red, label: @tr("Red") },
+                                { value: LineColor.orange, label: @tr("Orange") },
+                                { value: LineColor.blue, label: @tr("Blue") },
+                                { value: LineColor.green, label: @tr("Green") },
+                            ]: ColorSwatch {
+                                value: option.value;
+                                label: option.label;
+                                selected: Store.line-color == option.value;
+                                select => { Store.set-line-color(option.value); }
                             }
                         }
                     }

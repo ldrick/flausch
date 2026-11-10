@@ -1,4 +1,4 @@
-import { Appearance } from "theme.slint";
+import { Appearance, LineColor } from "theme.slint";
 
 export enum Screen { list, project, part, pdf, settings }
 
@@ -45,6 +45,11 @@ export struct PdfView {
     loading: bool,
     // Incremented whenever a newly rendered page arrives.
     serial: int,
+    // Reading line of the current page: position as a fraction of the page height.
+    // `line-saved` is false if this page has no position yet.
+    line-visible: bool,
+    line-saved: bool,
+    line: float,
 }
 
 // The interface between Rust (src/lib.rs) and the UI. Rust sets the `in` properties and
@@ -69,6 +74,7 @@ export global Store {
     in property <Language> language: Language.system;
     in property <Appearance> appearance: Appearance.system;
     in property <bool> keep-screen-on: true;
+    in property <LineColor> line-color: LineColor.magenta;
 
     in-out property <DialogKind> dialog: DialogKind.none;
     // The PDF view shows the large counter instead of the floating one.
@@ -104,11 +110,16 @@ export global Store {
     callback open-pdf();
     // page, zoom, scroll-x, scroll-y, width of the page view in physical pixels
     callback pdf-view-changed(int, float, float, float, float);
+    // visible, position for a page without a saved line (fraction of the page height)
+    callback pdf-line-shown(bool, float);
+    // new position on the current page (fraction of the page height)
+    callback pdf-line-moved(float);
 
     callback dismiss-notice();
     callback set-language(Language);
     callback set-appearance(Appearance);
     callback set-keep-screen-on(bool);
+    callback set-line-color(LineColor);
     // A text field was focused from code (not by a tap); hides Android's cursor handles.
     callback hide-text-handles();
     // The effective theme changed (setting or system), for the system bar icons.

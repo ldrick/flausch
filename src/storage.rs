@@ -109,7 +109,7 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::Language;
+    use crate::model::{Language, LineColor};
 
     #[test]
     fn missing_files_load_defaults() {
@@ -152,6 +152,8 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let storage = Storage::new(dir.path().to_path_buf()).unwrap();
         fs::write(dir.path().join(SETTINGS_FILE), br#"{"version":1}"#).unwrap();
-        assert!(storage.load_settings().keep_screen_on);
+        let settings = storage.load_settings();
+        assert!(settings.keep_screen_on);
+        assert_eq!(settings.line_color, LineColor::Magenta);
     }
 }

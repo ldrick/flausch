@@ -12,7 +12,7 @@ on the desktop via winit – so most development happens with a plain `cargo run
 
 Projects made of parts (e.g. head, body, legs), each with its own row counter and optional row goal; project
 list with pattern covers, total progress, search and a continue button; PDF patterns (imported and rendered on the
-device) with a row counter for any part that can be enlarged; keep screen on, Android back key, German/English, light/dark mode.
+device) with a row counter for any part that can be enlarged and a movable reading line (color selectable); keep screen on, Android back key, German/English, light/dark mode.
 
 ## Layout
 

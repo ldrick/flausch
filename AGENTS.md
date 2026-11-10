@@ -70,7 +70,9 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 - Domain: a `Project` has a name, any number of `Part`s (e.g. head, legs) and an optional PDF. Each part has its
   own row counter and an optional row goal. `active_part` is the part opened last; the counter in the PDF view
   counts it (switchable there, and expandable to a large counter: `Store.counter-expanded`, Back collapses it),
-  and the project list shows it. Adding a part makes it active but stays on the project screen. List progress sums all parts with a goal
+  and the project list shows it. Adding a part makes it active but stays on the project screen. The PDF view has a
+  movable reading line (`Pdf::lines`: fraction of the page height per page, `show_line` per PDF; its color is
+  `Settings::line_color` → `Theme.line-color()`). List progress sums all parts with a goal
   (`Project::progress`); search matches project and part names (`Project::matches`). Navigation:
   list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to
   the list).

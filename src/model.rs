@@ -1,5 +1,7 @@
 //! UI-independent data model. Must not depend on `slint`.
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 
 pub const LIBRARY_VERSION: u32 = 2;
@@ -23,6 +25,11 @@ pub struct Pdf {
     pub scroll_x: f32,
     #[serde(default)]
     pub scroll_y: f32,
+    #[serde(default)]
+    pub show_line: bool,
+    /// Reading line per page (0-based) as a fraction (0.0–1.0) of the page height.
+    #[serde(default)]
+    pub lines: BTreeMap<u32, f32>,
 }
 
 fn default_zoom() -> f32 {
@@ -38,6 +45,8 @@ impl Pdf {
             zoom: MIN_ZOOM,
             scroll_x: 0.0,
             scroll_y: 0.0,
+            show_line: false,
+            lines: BTreeMap::new(),
         }
     }
 
@@ -46,6 +55,19 @@ impl Pdf {
         self.zoom = zoom.clamp(MIN_ZOOM, MAX_ZOOM);
         self.scroll_x = scroll_x.clamp(0.0, 1.0);
         self.scroll_y = scroll_y.clamp(0.0, 1.0);
+    }
+
+    pub fn line(&self, page: u32) -> Option<f32> {
+        self.lines.get(&page).copied()
+    }
+
+    pub fn set_line(&mut self, page: u32, line: f32) {
+        let line = if line.is_finite() {
+            line.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        self.lines.insert(page, line);
     }
 }
 
@@ -333,6 +355,19 @@ pub enum Appearance {
     Dark,
 }
 
+/// Color of the reading line in the PDF view.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LineColor {
+    /// Stands out from black text, white paper and most photos.
+    #[default]
+    Magenta,
+    Red,
+    Orange,
+    Blue,
+    Green,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     pub version: u32,
@@ -342,6 +377,8 @@ pub struct Settings {
     pub appearance: Appearance,
     #[serde(default = "default_true")]
     pub keep_screen_on: bool,
+    #[serde(default)]
+    pub line_color: LineColor,
 }
 
 fn default_true() -> bool {
@@ -355,6 +392,7 @@ impl Default for Settings {
             language: Language::default(),
             appearance: Appearance::default(),
             keep_screen_on: true,
+            line_color: LineColor::default(),
         }
     }
 }
@@ -477,6 +515,26 @@ mod tests {
             (pdf.page, pdf.zoom, pdf.scroll_x, pdf.scroll_y),
             (3, MAX_ZOOM, 0.0, 1.0)
         );
+    }
+
+    #[test]
+    fn reading_line_is_clamped() {
+        let mut pdf = Pdf::new("1.pdf".into(), "x.pdf".into());
+        pdf.set_line(2, 1.5);
+        assert_eq!(pdf.line(2), Some(1.0));
+        pdf.set_line(2, f32::NAN);
+        assert_eq!(pdf.line(2), Some(0.0));
+        assert_eq!(pdf.line(0), None);
+    }
+
+    #[test]
+    fn reading_line_is_kept_per_page() {
+        let mut pdf = Pdf::new("1.pdf".into(), "x.pdf".into());
+        pdf.set_line(0, 0.25);
+        pdf.set_line(1, 0.75);
+        let json = serde_json::to_string(&pdf).unwrap();
+        let pdf: Pdf = serde_json::from_str(&json).unwrap();
+        assert_eq!((pdf.line(0), pdf.line(1)), (Some(0.25), Some(0.75)));
     }
 
     #[test]

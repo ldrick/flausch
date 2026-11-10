@@ -80,84 +80,84 @@ msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
 
-#: ui/components.slint:308
+#: ui/components.slint:307
 msgctxt "DialogButtons"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ui/components.slint:338
+#: ui/components.slint:337
 msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
 
-#: ui/pages/list.slint:207
+#: ui/pages/list.slint:217
 msgctxt "ListPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ui/pages/list.slint:226
+#: ui/pages/list.slint:236
 msgctxt "ListPage"
 msgid "Projects"
 msgstr "Projekte"
 
-#: ui/pages/list.slint:276
+#: ui/pages/list.slint:286
 msgctxt "ListPage"
 msgid "No projects yet"
 msgstr "Noch keine Projekte"
 
-#: ui/pages/list.slint:283
+#: ui/pages/list.slint:293
 msgctxt "ListPage"
 msgid "Create a project to count your rows and keep your pattern at hand."
 msgstr ""
 "Leg ein Projekt an, um Reihen zu zählen und deine Anleitung griffbereit zu "
 "haben."
 
-#: ui/pages/list.slint:296
+#: ui/pages/list.slint:306
 msgctxt "ListPage"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/pages/pdf.slint:87
+#: ui/pages/pdf.slint:107
 msgctxt "PdfPage"
 msgid "Zoom out"
 msgstr "Verkleinern"
 
-#: ui/pages/pdf.slint:96
+#: ui/pages/pdf.slint:116
 msgctxt "PdfPage"
 msgid "Zoom in"
 msgstr "Vergrößern"
 
-#: ui/pages/pdf.slint:137
+#: ui/pages/pdf.slint:157
 msgctxt "PdfPage"
 msgid "Page {} of {}"
 msgstr "Seite {} von {}"
 
-#: ui/pages/pdf.slint:153
+#: ui/pages/pdf.slint:173
 msgctxt "PdfPage"
 msgid "Loading…"
 msgstr "Wird geladen…"
 
-#: ui/pages/pdf.slint:167
+#: ui/pages/pdf.slint:246
 msgctxt "PdfPage"
 msgid "Previous page"
 msgstr "Vorherige Seite"
 
-#: ui/pages/pdf.slint:182
+#: ui/pages/pdf.slint:261
 msgctxt "PdfPage"
 msgid "Next page"
 msgstr "Nächste Seite"
 
-#: ui/pages/pdf.slint:234
+#: ui/pages/pdf.slint:313
 msgctxt "PdfPage"
 msgid "Previous row"
 msgstr "Vorherige Reihe"
 
-#: ui/pages/pdf.slint:273
+#: ui/pages/pdf.slint:352
 msgctxt "PdfPage"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/pages/pdf.slint:292
+#: ui/pages/pdf.slint:371
 msgctxt "PdfPage"
 msgid "Next row"
 msgstr "Nächste Reihe"
@@ -177,57 +177,57 @@ msgctxt "ProjectPage"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/pages/settings.slint:15
+#: ui/pages/settings.slint:42
 msgctxt "SettingsPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ui/pages/settings.slint:30
+#: ui/pages/settings.slint:57
 msgctxt "SettingsPage"
 msgid "Language"
 msgstr "Sprache"
 
-#: ui/pages/settings.slint:33 ui/pages/settings.slint:44
+#: ui/pages/settings.slint:60 ui/pages/settings.slint:71
 msgctxt "SettingsPage"
 msgid "System"
 msgstr "System"
 
-#: ui/pages/settings.slint:41
+#: ui/pages/settings.slint:68
 msgctxt "SettingsPage"
 msgid "Appearance"
 msgstr "Erscheinungsbild"
 
-#: ui/pages/settings.slint:44
+#: ui/pages/settings.slint:71
 msgctxt "SettingsPage"
 msgid "Light"
 msgstr "Hell"
 
-#: ui/pages/settings.slint:44
+#: ui/pages/settings.slint:71
 msgctxt "SettingsPage"
 msgid "Dark"
 msgstr "Dunkel"
 
-#: ui/pages/settings.slint:52
+#: ui/pages/settings.slint:79
 msgctxt "SettingsPage"
 msgid "Counting"
 msgstr "Zählen"
 
-#: ui/pages/settings.slint:67 ui/pages/settings.slint:81
+#: ui/pages/settings.slint:93 ui/pages/settings.slint:107
 msgctxt "SettingsPage"
 msgid "Keep screen on"
 msgstr "Bildschirm bleibt an"
 
-#: ui/pages/settings.slint:72
+#: ui/pages/settings.slint:98
 msgctxt "SettingsPage"
 msgid "While a project or pattern is open"
 msgstr "Solange ein Projekt oder eine Anleitung geöffnet ist"
 
-#: ui/pages/settings.slint:90
+#: ui/pages/settings.slint:149
 msgctxt "SettingsPage"
 msgid "About"
 msgstr "Über"
 
-#: ui/pages/settings.slint:107
+#: ui/pages/settings.slint:175
 msgctxt "SettingsPage"
 msgid "A crochet companion. Nøste is Norwegian for winding yarn into a ball."
 msgstr ""
@@ -401,7 +401,7 @@ msgctxt "ListPage"
 msgid "Close search"
 msgstr "Suche schließen"
 
-#: ui/pages/list.slint:173 ui/pages/list.slint:199
+#: ui/pages/list.slint:173 ui/pages/list.slint:209
 msgctxt "ListPage"
 msgid "Search"
 msgstr "Suchen"
@@ -411,12 +411,12 @@ msgctxt "ListPage"
 msgid "Search projects"
 msgstr "Projekte suchen"
 
-#: ui/pages/list.slint:244
+#: ui/pages/list.slint:254
 msgctxt "ListPage"
 msgid "No matching projects"
 msgstr "Keine passenden Projekte"
 
-#: ui/pages/pdf.slint:196 ui/pages/pdf.slint:204 ui/pages/pdf.slint:332
+#: ui/pages/pdf.slint:275 ui/pages/pdf.slint:283 ui/pages/pdf.slint:412
 msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
@@ -446,42 +446,92 @@ msgctxt "ProjectCard"
 msgid "Continue {}"
 msgstr "{} fortsetzen"
 
-#: ui/pages/pdf.slint:245
+#: ui/pages/pdf.slint:324
 msgctxt "PdfPage"
 msgid "Enlarge counter"
 msgstr "Zähler vergrößern"
 
-#: ui/pages/pdf.slint:367
+#: ui/pages/pdf.slint:447
 msgctxt "PdfPage"
 msgid "Shrink counter"
 msgstr "Zähler verkleinern"
 
-#: ui/counter.slint:52
+#: ui/counter.slint:51
 msgctxt "RowCount"
 msgid "Row"
 msgstr "Reihe"
 
-#: ui/counter.slint:64
+#: ui/counter.slint:63
 msgctxt "RowCount"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/counter.slint:72
+#: ui/counter.slint:71
 msgctxt "RowCount"
 msgid "of {}"
 msgstr "von {}"
 
-#: ui/counter.slint:101
+#: ui/counter.slint:100
 msgctxt "CounterButtons"
 msgid "Previous row"
 msgstr "Vorherige Reihe"
 
-#: ui/counter.slint:110
+#: ui/counter.slint:109
 msgctxt "CounterButtons"
 msgid "Next row"
 msgstr "Nächste Reihe"
 
-#: ui/counter.slint:118
+#: ui/counter.slint:117
 msgctxt "CounterButtons"
 msgid "Reset counter"
 msgstr "Zähler zurücksetzen"
+
+#: ui/pages/pdf.slint:98
+msgctxt "PdfPage"
+msgid "Hide reading line"
+msgstr "Leselinie ausblenden"
+
+#: ui/pages/pdf.slint:98
+msgctxt "PdfPage"
+msgid "Show reading line"
+msgstr "Leselinie einblenden"
+
+#: ui/pages/pdf.slint:195
+msgctxt "PdfPage"
+msgid "Reading line"
+msgstr "Leselinie"
+
+#: ui/pages/settings.slint:116
+msgctxt "SettingsPage"
+msgid "Pattern"
+msgstr "Anleitung"
+
+#: ui/pages/settings.slint:126
+msgctxt "SettingsPage"
+msgid "Reading line color"
+msgstr "Farbe der Leselinie"
+
+#: ui/pages/settings.slint:133
+msgctxt "SettingsPage"
+msgid "Magenta"
+msgstr "Magenta"
+
+#: ui/pages/settings.slint:134
+msgctxt "SettingsPage"
+msgid "Red"
+msgstr "Rot"
+
+#: ui/pages/settings.slint:135
+msgctxt "SettingsPage"
+msgid "Orange"
+msgstr "Orange"
+
+#: ui/pages/settings.slint:136
+msgctxt "SettingsPage"
+msgid "Blue"
+msgstr "Blau"
+
+#: ui/pages/settings.slint:137
+msgctxt "SettingsPage"
+msgid "Green"
+msgstr "Grün"

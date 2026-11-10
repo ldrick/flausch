@@ -140,6 +140,12 @@ fn connect(app: &App) {
     store.on_pdf_view_changed(|page, zoom, scroll_x, scroll_y, width| {
         with(|c| c.pdf_view_changed(page, zoom, scroll_x, scroll_y, width));
     });
+    store.on_pdf_line_shown(|visible, center| {
+        with(|c| c.pdf_line_shown(visible, center));
+    });
+    store.on_pdf_line_moved(|line| {
+        with(|c| c.pdf_line_moved(line));
+    });
     store.on_dismiss_notice(|| {
         with(|c| c.notify(Notice::None));
     });
@@ -153,6 +159,9 @@ fn connect(app: &App) {
     store.on_hide_text_handles(platform::hide_text_handles);
     store.on_set_keep_screen_on(|on| {
         with(|c| c.update_settings(|s| s.keep_screen_on = on));
+    });
+    store.on_set_line_color(|color| {
+        with(|c| c.update_settings(|s| s.line_color = color.into()));
     });
 }
 
@@ -560,6 +569,9 @@ impl Controller {
             aspect: 1.414,
             loading: true,
             serial: 0,
+            line_visible: pdf.show_line,
+            line_saved: pdf.line(pdf.page).is_some(),
+            line: pdf.line(pdf.page).unwrap_or(0.5),
         });
         // The page view reports its size when it appears, which triggers the first render.
         self.navigate(Screen::Pdf);
@@ -592,6 +604,9 @@ impl Controller {
         if view.page != page as i32 {
             view.page = page as i32;
             view.loading = true;
+            if let Some(pdf) = self.current_pdf() {
+                set_line_view(&mut view, pdf);
+            }
             store.set_pdf(view);
         }
 
@@ -611,6 +626,34 @@ impl Controller {
             page,
             width,
         });
+    }
+
+    /// Shows or hides the reading line. A page without a saved line gets it at `center`.
+    fn pdf_line_shown(&mut self, visible: bool, center: f32) {
+        self.update_line(|pdf, page| {
+            pdf.show_line = visible;
+            if visible && pdf.line(page).is_none() {
+                pdf.set_line(page, center);
+            }
+        });
+    }
+
+    fn pdf_line_moved(&mut self, line: f32) {
+        self.update_line(|pdf, page| pdf.set_line(page, line));
+    }
+
+    fn update_line(&mut self, change: impl FnOnce(&mut Pdf, u32)) {
+        let Some(id) = self.current else { return };
+        let app = self.app();
+        let store = app.global::<Store>();
+        let mut view = store.get_pdf();
+        let Some(pdf) = self.library.get_mut(id).and_then(|p| p.pdf.as_mut()) else {
+            return;
+        };
+        change(pdf, view.page.max(0) as u32);
+        set_line_view(&mut view, pdf);
+        store.set_pdf(view);
+        self.save_later();
     }
 
     fn pdf_rendered(&mut self, rendered: pdf::Rendered) {
@@ -692,6 +735,7 @@ impl Controller {
         store.set_language(self.settings.language.into());
         store.set_appearance(self.settings.appearance.into());
         store.set_keep_screen_on(self.settings.keep_screen_on);
+        store.set_line_color(self.settings.line_color.into());
         let language = self
             .settings
             .language
@@ -701,6 +745,14 @@ impl Controller {
         }
         self.update_keep_screen_on();
     }
+}
+
+/// Copies the reading line of the page shown in `view` from `pdf`.
+fn set_line_view(view: &mut PdfView, pdf: &Pdf) {
+    let line = pdf.line(view.page.max(0) as u32);
+    view.line_visible = pdf.show_line;
+    view.line_saved = line.is_some();
+    view.line = line.unwrap_or(0.5);
 }
 
 fn parse_goal(goal: &str) -> Option<u32> {
@@ -752,6 +804,30 @@ impl From<Appearance> for model::Appearance {
             Appearance::Light => model::Appearance::Light,
             Appearance::Dark => model::Appearance::Dark,
             Appearance::System => model::Appearance::System,
+        }
+    }
+}
+
+impl From<model::LineColor> for LineColor {
+    fn from(color: model::LineColor) -> Self {
+        match color {
+            model::LineColor::Magenta => LineColor::Magenta,
+            model::LineColor::Red => LineColor::Red,
+            model::LineColor::Orange => LineColor::Orange,
+            model::LineColor::Blue => LineColor::Blue,
+            model::LineColor::Green => LineColor::Green,
+        }
+    }
+}
+
+impl From<LineColor> for model::LineColor {
+    fn from(color: LineColor) -> Self {
+        match color {
+            LineColor::Magenta => model::LineColor::Magenta,
+            LineColor::Red => model::LineColor::Red,
+            LineColor::Orange => model::LineColor::Orange,
+            LineColor::Blue => model::LineColor::Blue,
+            LineColor::Green => model::LineColor::Green,
         }
     }
 }
