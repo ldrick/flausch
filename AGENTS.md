@@ -49,6 +49,7 @@ src/
 tests/ui.rs           UI tests: drive the app through accessibility labels; fixtures in tests/fixtures/
   model.rs            UI-independent data model (Library, Project, Pdf, Settings) – no slint
   storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes, ZIP backups – no slint
+  changes.rs          "What's new": the F-Droid changelogs embedded by build.rs, version codes
   a11y.rs             Android only: TalkBack bridge (walks the Slint element tree, sends virtual views to Java)
   pdf.rs              render workers: viewer pages (newest request only) and PNG covers of page 1
   platform/mod.rs     picks android.rs or desktop.rs via cfg
@@ -64,6 +65,7 @@ ui/
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings
   icons/              SVG icons; logo.svg is the app logo
+tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
 tools/logo.py         generates ui/icons/logo.svg, the launcher icon and the store icon (needs resvg) – never edit those by hand
 fastlane/metadata/    F-Droid store texts, icon, screenshots (en-US, de-DE)
 fdroid/               F-Droid recipe and release steps (fdroid/README.md)
@@ -245,8 +247,7 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
 
 ## Workflow
 
-`main` isn't protected yet (private repo), so these rules are a convention; follow them anyway. The planned
-automation (release-please, release workflow, "What's new" in the app) is tracked in #28.
+`main` isn't protected yet (private repo), so these rules are a convention; follow them anyway.
 
 - Don't commit unless asked. Never push to `main` directly: every change goes through a pull request.
 - One branch per issue, named `<type>/<issue>-<short-name>` (e.g. `feat/16-project-status`). The PR body says
@@ -255,7 +256,16 @@ automation (release-please, release workflow, "What's new" in the app) is tracke
   `chore:`, `refactor:`, `test:`, `ci:`), written in English and user-facing for `feat`/`fix`, because they end up
   in the changelog. PRs are squash merged, so the PR title becomes the commit message.
 - CI must pass before a merge. Merge only when the user says so.
-- Versions are bumped only in a release PR, never in feature PRs: `feat` → minor, `fix` → patch (`0.x` until 1.0).
-  The release PR updates `version` and `[package.metadata.fdroid] version_code` in `Cargo.toml`, `CHANGELOG.md`
-  and the F-Droid changelogs in `fastlane/metadata/android/*/changelogs/<versionCode>.txt` (en-US and de-DE).
-  After the merge, tag `vX.Y.Z` on `main` (see `fdroid/README.md`).
+- Versions are bumped only in a release PR, never in feature PRs. Run the **Release** workflow by hand (Actions →
+  Release → Run workflow, or `gh workflow run release.yml [-f version=X.Y.Z]`). It runs `tools/release.py prepare`
+  and opens the PR `chore: release vX.Y.Z`. The next version follows the commits since the last tag (breaking →
+  major, `feat` → minor, `fix` → patch); the first release needs an explicit version. The PR updates `version` and
+  `version_code` in `Cargo.toml`, `Cargo.lock`, the F-Droid recipe, `CHANGELOG.md` and drafts the F-Droid
+  changelogs `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`.
+- In the release PR, rewrite both changelogs for users (short, max. 500 characters) and translate the German one;
+  it starts with `TODO` and `cargo test` fails until it doesn't. These texts are also "What's new" in the app
+  (Settings → About, and once after an update; `src/changes.rs`, embedded by `build.rs`). The first release
+  is left out there, since everything in it is new; the button appears with the second release.
+- Merging the release PR runs the `publish` job: it tags `vX.Y.Z`, creates the GitHub release with the
+  `CHANGELOG.md` section and, if the `RELEASE_KEYSTORE` (base64) and `RELEASE_KEYSTORE_PASSWORD` secrets are set,
+  attaches a signed APK. F-Droid picks up the tag (see `fdroid/README.md`).

@@ -1,0 +1,116 @@
+name: Release
+
+# Run "Prepare release" by hand (Actions → Release → Run workflow) to open the release PR. Merging that PR
+# ("chore: release vX.Y.Z") tags the version, creates the GitHub release and attaches the signed APK.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version (empty = next version from the commits since the last tag)
+        required: false
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Open the release PR
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Bump the version and write the changelogs
+        id: release
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: echo "version=$(python3 tools/release.py prepare $REQUESTED)" >> "$GITHUB_OUTPUT"
+      - name: Open the pull request
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          branch="release/v$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -A
+          git commit -m "chore: release v$VERSION"
+          git push --force origin "$branch"
+          body="$(printf '%s\n\n%s\n\n%s' \
+            "Release v$VERSION. Before merging, edit the user-facing texts in \`fastlane/metadata/android/{en-US,de-DE}/changelogs/\` (max. 500 characters; the German one starts with TODO until it is translated) and, if needed, \`CHANGELOG.md\`." \
+            "Merging tags \`v$VERSION\`, creates the GitHub release and attaches the APK." \
+            "$(python3 tools/release.py notes "$VERSION")")"
+          gh pr create --base main --head "$branch" --title "chore: release v$VERSION" --body "$body" \
+            || gh pr edit "$branch" --body "$body"
+          # Pull requests opened with GITHUB_TOKEN don't trigger workflows, so start CI by hand.
+          gh workflow run ci.yml --ref "$branch"
+
+  publish:
+    name: Tag, release and APK
+    if: >-
+      github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore: release v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+      KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Version
+        id: version
+        run: |
+          version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "::error::v$version is already tagged"
+            exit 1
+          fi
+      - name: Create the release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python3 tools/release.py notes "$VERSION" > notes.md
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Flausch $VERSION" --notes-file notes.md
+      - run: rustup toolchain install
+        if: env.KEYSTORE != ''
+      - name: Android SDK, NDK and JDK
+        if: env.KEYSTORE != ''
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+      - uses: taiki-e/install-action@v2
+        if: env.KEYSTORE != ''
+        with:
+          tool: cargo-apk
+      - name: Build and attach the signed APK
+        if: env.KEYSTORE != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          CARGO_APK_RELEASE_KEYSTORE="$RUNNER_TEMP/release.jks" \
+            CARGO_APK_RELEASE_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" \
+            cargo apk build --lib --locked --release --target aarch64-linux-android
+          cp target/release/apk/flausch.apk "flausch-$VERSION.apk"
+          gh release upload "v$VERSION" "flausch-$VERSION.apk"
+      - name: No keystore
+        if: env.KEYSTORE == ''
+        run: echo "::warning::RELEASE_KEYSTORE is not set, so the release has no APK"

@@ -55,27 +55,27 @@ msgstr ""
 "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
 "werden."
 
-#: ui/app.slint:251 ui/app.slint:332
+#: ui/app.slint:251 ui/app.slint:373
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
-#: ui/app.slint:408
+#: ui/app.slint:449
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-#: ui/app.slint:413
+#: ui/app.slint:454
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: ui/app.slint:423
+#: ui/app.slint:464
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-#: ui/app.slint:428
+#: ui/app.slint:469
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
@@ -368,22 +368,22 @@ msgctxt "PartDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/app.slint:327
+#: ui/app.slint:368
 msgctxt "App"
 msgid "Delete part?"
 msgstr "Teil löschen?"
 
-#: ui/app.slint:328
+#: ui/app.slint:369
 msgctxt "App"
 msgid "“{}” and its row counter will be removed."
 msgstr "„{}“ und sein Reihenzähler werden gelöscht."
 
-#: ui/app.slint:409
+#: ui/app.slint:450
 msgctxt "App"
 msgid "The row counter of “{}” goes back to 0."
 msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
 
-#: ui/app.slint:424
+#: ui/app.slint:465
 msgctxt "App"
 msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
@@ -419,22 +419,22 @@ msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:343
+#: ui/app.slint:384
 msgctxt "App"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:382
+#: ui/app.slint:423
 msgctxt "App"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/app.slint:382
+#: ui/app.slint:423
 msgctxt "App"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/app.slint:400
+#: ui/app.slint:441
 msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -598,12 +598,12 @@ msgstr ""
 "Die Sicherung konnte nicht wiederhergestellt werden. Deine Daten sind "
 "unverändert."
 
-#: ui/app.slint:439
+#: ui/app.slint:480
 msgctxt "App"
 msgid "Restore backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: ui/app.slint:440
+#: ui/app.slint:481
 msgctxt "App"
 msgid ""
 "The backup contains {n} project. It replaces all projects and settings on "
@@ -618,7 +618,7 @@ msgstr[1] ""
 "Die Sicherung enthält {n} Projekte. Sie ersetzt alle Projekte und "
 "Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
 
-#: ui/app.slint:444
+#: ui/app.slint:485
 msgctxt "App"
 msgid "Restore"
 msgstr "Wiederherstellen"
@@ -762,3 +762,28 @@ msgstr "{} plus eins"
 msgctxt "SecondCounter"
 msgid "Reset {}"
 msgstr "{} zurücksetzen"
+
+#: ui/pages/settings.slint:249
+msgctxt "SettingsPage"
+msgid "What's new"
+msgstr "Was ist neu"
+
+#: ui/app.slint:327
+msgctxt "App"
+msgid "What's new"
+msgstr "Was ist neu"
+
+#: ui/app.slint:341
+msgctxt "App"
+msgid "Version {}: {}"
+msgstr "Version {}: {}"
+
+#: ui/app.slint:344
+msgctxt "App"
+msgid "Version {}"
+msgstr "Version {}"
+
+#: ui/app.slint:361
+msgctxt "App"
+msgid "OK"
+msgstr "OK"

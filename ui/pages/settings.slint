@@ -1,6 +1,6 @@
 import { AboutSlint, Palette } from "std-widgets.slint";
 import { Theme, Appearance, LineColor } from "../theme.slint";
-import { Store, Language } from "../store.slint";
+import { Store, Language, DialogKind } from "../store.slint";
 import { ButtonKind, Card, Icon, PillButton, Segmented, Switch, TopBar } from "../components.slint";
 
 component SectionTitle inherits Text {
@@ -244,6 +244,11 @@ export component SettingsPage inherits Rectangle {
                             color: Theme.text-muted;
                             font-size: Theme.font-small;
                             wrap: word-wrap;
+                        }
+                        if Store.changes.length > 0: PillButton {
+                            text: @tr("What's new");
+                            kind: ButtonKind.secondary;
+                            clicked => { Store.dialog = DialogKind.changes; }
                         }
                         // AboutSlint follows Palette, not Theme, so give it a matching backdrop.
                         Rectangle {

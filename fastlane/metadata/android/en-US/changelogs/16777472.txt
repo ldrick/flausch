@@ -1,1 +1,1 @@
-First release: projects with parts and row counters, PDF patterns with a reading line, backup and restore, light/dark mode, English and German, TalkBack support.
+First release: projects with parts, row counters and a second counter for repeats, project status and notes, PDF patterns with a reading line (also opened from other apps), counting with the volume keys, backup and restore, light/dark mode, English and German, TalkBack support.

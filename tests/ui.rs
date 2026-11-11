@@ -4,10 +4,10 @@
 use std::path::Path;
 use std::time::Duration;
 
-use flausch::{App, DialogKind, Language, Screen, Store};
-use i_slint_backend_testing::{AccessibleRole, ElementHandle};
+use flausch::{App, ChangeItem, DialogKind, Language, Screen, Store};
+use i_slint_backend_testing::{AccessibleRole, ElementHandle, ElementQuery};
 use slint::platform::{Key, WindowEvent};
-use slint::{ComponentHandle, Model};
+use slint::{ComponentHandle, Model, ModelRc, VecModel};
 
 /// Starts the app on `dir` as if it was launched again.
 fn launch(dir: &Path) -> App {
@@ -215,4 +215,39 @@ fn the_language_setting_is_applied_and_kept() {
     let app = launch(dir.path());
     settle();
     assert!(exists(&app, "Neues Projekt"));
+}
+
+#[test]
+fn whats_new_lists_the_releases() {
+    let (app, _dir) = fresh();
+    // The element tree only holds what is visible, and About is at the end of the settings.
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
+    tap(&app, "Settings");
+    // The first release has no news in the app; it is listed on F-Droid only.
+    store(&app).set_changes(ModelRc::new(VecModel::from(Vec::new())));
+    settle();
+    assert!(!exists(&app, "What's new"));
+
+    let text = "Longer text that has to wrap onto several lines in the dialog, ".repeat(3);
+    store(&app).set_changes(ModelRc::new(VecModel::from(vec![ChangeItem {
+        version: "1.1.0".into(),
+        text: text.clone().into(),
+    }])));
+    settle();
+    tap(&app, "What's new");
+    assert_eq!(store(&app).get_dialog(), DialogKind::Changes);
+    let entry = find(
+        &app,
+        AccessibleRole::Text,
+        &format!("Version 1.1.0: {text}"),
+    )
+    .expect("the release is listed");
+    // The dialog must be tall enough for the wrapped text.
+    let list = ElementQuery::from_root(&app)
+        .match_id("App::news-flick")
+        .find_first()
+        .unwrap();
+    assert!(list.size().height >= entry.size().height);
+    tap(&app, "OK");
+    assert_eq!(store(&app).get_dialog(), DialogKind::None);
 }

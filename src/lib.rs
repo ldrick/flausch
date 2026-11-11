@@ -1,5 +1,6 @@
 #[cfg(target_os = "android")]
 mod a11y;
+mod changes;
 mod model;
 mod pdf;
 mod platform;
@@ -73,6 +74,7 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         c.apply_settings();
         c.refresh();
         c.create_missing_covers();
+        c.show_news();
         c.check_incoming();
     });
     connect(app);
@@ -1071,6 +1073,19 @@ impl Controller {
         self.apply_settings();
     }
 
+    /// Shows "What's new" once after an update. A fresh install only remembers the version.
+    fn show_news(&mut self) {
+        let current = changes::current();
+        let seen = self.settings.seen_version;
+        if seen == Some(current) {
+            return;
+        }
+        if seen.is_some_and(changes::news_since) {
+            self.app().global::<Store>().set_dialog(DialogKind::Changes);
+        }
+        self.update_settings(|s| s.seen_version = Some(current));
+    }
+
     fn apply_settings(&mut self) {
         let app = self.app();
         let store = app.global::<Store>();
@@ -1087,6 +1102,14 @@ impl Controller {
         if let Err(e) = slint::select_bundled_translation(language) {
             eprintln!("flausch: cannot select language {language}: {e}");
         }
+        let changes: Vec<ChangeItem> = changes::list(language)
+            .into_iter()
+            .map(|(version, text)| ChangeItem {
+                version: version.into(),
+                text: text.into(),
+            })
+            .collect();
+        store.set_changes(ModelRc::new(VecModel::from(changes)));
         self.update_keep_screen_on();
         self.update_volume_keys();
     }

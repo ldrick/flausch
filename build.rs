@@ -9,10 +9,43 @@ fn main() {
         .with_debug_info(true);
     slint_build::compile_with_config("ui/app.slint", config).expect("Slint build failed");
     println!("cargo:rerun-if-changed=lang");
+    embed_changelogs();
 
     if android {
         build_java_helper();
     }
+}
+
+/// Writes the F-Droid changelogs (`fastlane/metadata/android/<locale>/changelogs/<version code>.txt`) to
+/// `$OUT_DIR/changes.rs` as `CHANGES: &[(version code, English, German)]`, newest first, for "What's new".
+fn embed_changelogs() {
+    use std::fmt::Write;
+
+    let mut changes: std::collections::BTreeMap<u32, [String; 2]> =
+        std::collections::BTreeMap::new();
+    for (i, locale) in ["en-US", "de-DE"].into_iter().enumerate() {
+        let dir = format!("fastlane/metadata/android/{locale}/changelogs");
+        println!("cargo:rerun-if-changed={dir}");
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            let Some(code) = path.file_stem().and_then(|s| s.to_str()?.parse().ok()) else {
+                continue;
+            };
+            let text = std::fs::read_to_string(&path).unwrap();
+            text.trim()
+                .clone_into(&mut changes.entry(code).or_default()[i]);
+        }
+    }
+    let mut out = String::from(
+        "#[allow(clippy::unreadable_literal, reason = \"generated\")]\npub(crate) const CHANGES: &[(u32, &str, &str)] = &[\n",
+    );
+    for (code, [en, de]) in changes.iter().rev() {
+        let de = if de.is_empty() { en } else { de };
+        writeln!(out, "    ({code}, {en:?}, {de:?}),").unwrap();
+    }
+    out += "];\n";
+    let out_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
+    std::fs::write(out_dir.join("changes.rs"), out).unwrap();
 }
 
 /// Compiles `android/java` to `$OUT_DIR/classes.dex`, which `src/platform/android.rs` loads at

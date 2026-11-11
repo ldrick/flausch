@@ -6,10 +6,14 @@ F-Droid builds Flausch from source and signs it with its own key. Store texts, i
 
 ## A new version
 
-1. Bump `version` in `Cargo.toml` and `version_code` in `[package.metadata.fdroid]`
-   (`1 << 24 | major << 16 | minor << 8 | patch`, which cargo-apk uses; `cargo test` checks it).
-2. Add `fastlane/metadata/android/{en-US,de-DE}/changelogs/<version_code>.txt` (max. 500 characters).
-3. Commit, tag `v<version>` and push the tag. After the first release, F-Droid picks up new tags by itself
+Releases go through a release PR (see "Workflow" in `AGENTS.md`):
+
+1. Run the Release workflow (`gh workflow run release.yml`, for the first release `-f version=1.0.0`). It bumps
+   `version` and `version_code` (`1 << 24 | major << 16 | minor << 8 | patch`, which cargo-apk uses; `cargo test`
+   checks it), updates this recipe and `CHANGELOG.md`, drafts
+   `fastlane/metadata/android/{en-US,de-DE}/changelogs/<version_code>.txt` and opens the PR.
+2. Edit the changelogs in the PR (max. 500 characters, German translated) and merge it.
+3. The workflow tags `v<version>`. After the first release, F-Droid picks up new tags by itself
    (`UpdateCheckMode: Tags`).
 
 ## First submission

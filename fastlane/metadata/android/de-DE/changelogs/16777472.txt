@@ -1,1 +1,1 @@
-Erste Version: Projekte mit Teilen und Reihenzählern, PDF-Anleitungen mit Leselinie, Sicherung und Wiederherstellung, hell/dunkel, Deutsch und Englisch, TalkBack-Unterstützung.
+Erste Version: Projekte mit Teilen, Reihenzählern und einem zweiten Zähler für Rapporte, Projektstatus und Notizen, PDF-Anleitungen mit Leselinie (auch aus anderen Apps geöffnet), Zählen mit den Lautstärketasten, Sicherung und Wiederherstellung, hell/dunkel, Deutsch und Englisch, TalkBack-Unterstützung.

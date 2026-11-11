@@ -1,5 +1,5 @@
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus } from "store.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem } from "store.slint";
 import { Dialog, DialogButtons, Field, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
@@ -7,7 +7,7 @@ import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem }
 
 component ProjectDialog inherits Dialog {
     in property <bool> editing;
@@ -320,6 +320,53 @@ export component App inherits Window {
                 confirm-text: @tr("New project");
                 cancel => { Store.discard-incoming(); }
                 confirm => { Store.incoming-to-new-project(); }
+            }
+        }
+
+        if Store.dialog == DialogKind.changes: Dialog {
+            title: @tr("What's new");
+            dismissed => { root.close-dialog(); }
+
+            news-flick := Flickable {
+                height: min(news.preferred-height, root.height * 0.55);
+                content-height: news.preferred-height;
+
+                news := VerticalLayout {
+                    width: news-flick.width;
+                    alignment: start;
+                    spacing: 16px;
+
+                    // The outer layout doesn't see the wrapped height of a repeated layout, so pin it.
+                    for change in Store.changes: Rectangle {
+                        height: entry.preferred-height;
+
+                        entry := VerticalLayout {
+                            spacing: 4px;
+                            accessible-role: text;
+                            accessible-label: @tr("Version {}: {}", change.version, change.text);
+
+                            Text {
+                                text: @tr("Version {}", change.version);
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: change.text;
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                wrap: word-wrap;
+                            }
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                alignment: end;
+                PillButton {
+                    text: @tr("OK");
+                    clicked => { root.close-dialog(); }
+                }
             }
         }
 
