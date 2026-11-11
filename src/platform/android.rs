@@ -3,7 +3,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, PoisonError};
 
 use jni::errors::LogErrorAndDefault;
 use jni::objects::{Global, JByteArray, JClass, JObject, JString, JValue};
@@ -16,25 +16,30 @@ use super::{DocumentKind, PageImage, PickResult};
 const DEX: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/classes.dex"));
 const HELPER_CLASS: &str = "io.github.ldrick.flausch.FlauschHelper";
 
-static APP: OnceLock<AndroidApp> = OnceLock::new();
-static HELPER: OnceLock<Global<JObject<'static>>> = OnceLock::new();
+// Not `OnceLock`s: when the activity finishes, the process can stay alive, and the next launch calls
+// `android_main` (and `init`) again with a new activity.
+static APP: Mutex<Option<AndroidApp>> = Mutex::new(None);
+static HELPER: Mutex<Option<Arc<Global<JObject<'static>>>>> = Mutex::new(None);
 type PickCallback = Box<dyn FnOnce(PickResult) + Send>;
 static PENDING_PICK: Mutex<Option<PickCallback>> = Mutex::new(None);
 static A11Y_ENABLED: AtomicBool = AtomicBool::new(false);
 
-/// Must be called once from `android_main` before anything else in this module.
+/// Must be called from `android_main` (once per activity) before anything else in this module.
 pub fn init(app: AndroidApp) {
-    match load_helper(&app) {
-        Ok(helper) => {
-            let _ = HELPER.set(helper);
-        }
-        Err(e) => eprintln!("flausch: cannot load the Java helper: {e}"),
-    }
-    let _ = APP.set(app);
+    A11Y_ENABLED.store(false, Ordering::Relaxed);
+    let helper = load_helper(&app)
+        .inspect_err(|e| eprintln!("flausch: cannot load the Java helper: {e}"))
+        .ok()
+        .map(Arc::new);
+    *HELPER.lock().unwrap_or_else(PoisonError::into_inner) = helper;
+    *APP.lock().unwrap_or_else(PoisonError::into_inner) = Some(app);
 }
 
-fn app() -> &'static AndroidApp {
-    APP.get().expect("platform::init was not called")
+fn app() -> AndroidApp {
+    APP.lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clone()
+        .expect("platform::init was not called")
 }
 
 /// Loads `FlauschHelper` from the embedded dex and creates an instance for the activity.
@@ -114,9 +119,13 @@ fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>
 fn with_helper<T>(
     f: impl FnOnce(&mut Env, &JObject) -> jni::errors::Result<T>,
 ) -> Result<T, String> {
-    let helper = HELPER.get().ok_or("Java helper not loaded")?;
+    let helper = HELPER
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clone()
+        .ok_or("Java helper not loaded")?;
     let vm = JavaVM::singleton().map_err(|e| e.to_string())?;
-    vm.attach_current_thread(|env| f(env, helper))
+    vm.attach_current_thread(|env| f(env, &helper))
         .map_err(|e: jni::errors::Error| e.to_string())
 }
 
