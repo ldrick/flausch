@@ -121,8 +121,12 @@ export component Field inherits Rectangle {
     in property <string> label;
     in property <string> placeholder;
     in property <InputType> input-type: InputType.text;
+    // Shows the label above a filled-in value, so it stays clear what the value is.
+    in property <bool> show-label: true;
     in-out property <string> text <=> input.text;
     callback accepted();
+
+    property <bool> label-shown: root.show-label && input.text != "";
 
     public function focus-input() {
         input.focus();
@@ -148,10 +152,22 @@ export component Field inherits Rectangle {
         vertical-alignment: center;
     }
 
+    if root.label-shown: Text {
+        x: 16px;
+        y: 7px;
+        width: parent.width - 32px;
+        accessible-role: none;
+        text: root.label;
+        color: input.has-focus ? Theme.accent-pressed : Theme.text-muted;
+        font-size: Theme.font-small - 1px;
+        overflow: elide;
+    }
+
     input := TextInput {
         x: 16px;
+        y: root.label-shown ? 12px : 0;
         width: parent.width - 32px;
-        height: parent.height;
+        height: parent.height - self.y;
         single-line: true;
         input-type: root.input-type;
         color: Theme.text;

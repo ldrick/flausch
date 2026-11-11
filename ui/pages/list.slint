@@ -204,6 +204,7 @@ export component ListPage inherits Rectangle {
                 horizontal-stretch: 1;
                 Field {
                     height: 48px;
+                    show-label: false;
                     label: @tr("Search");
                     placeholder: @tr("Search projects");
                     text <=> Store.query;
