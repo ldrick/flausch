@@ -14,7 +14,7 @@ use slint::android::AndroidApp;
 use super::{DocumentKind, PageImage, PickResult};
 
 const DEX: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/classes.dex"));
-const HELPER_CLASS: &str = "io.github.ldrick.noste.NosteHelper";
+const HELPER_CLASS: &str = "io.github.ldrick.flausch.FlauschHelper";
 
 static APP: OnceLock<AndroidApp> = OnceLock::new();
 static HELPER: OnceLock<Global<JObject<'static>>> = OnceLock::new();
@@ -28,7 +28,7 @@ pub fn init(app: AndroidApp) {
         Ok(helper) => {
             let _ = HELPER.set(helper);
         }
-        Err(e) => eprintln!("nøste: cannot load the Java helper: {e}"),
+        Err(e) => eprintln!("flausch: cannot load the Java helper: {e}"),
     }
     let _ = APP.set(app);
 }
@@ -37,7 +37,7 @@ fn app() -> &'static AndroidApp {
     APP.get().expect("platform::init was not called")
 }
 
-/// Loads `NosteHelper` from the embedded dex and creates an instance for the activity.
+/// Loads `FlauschHelper` from the embedded dex and creates an instance for the activity.
 fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>> {
     // SAFETY: android-activity hands out a valid pointer to the process JavaVM.
     let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) };
@@ -123,7 +123,7 @@ fn with_helper<T>(
 pub fn data_dir() -> PathBuf {
     app()
         .internal_data_path()
-        .unwrap_or_else(|| PathBuf::from("/data/local/tmp/noste"))
+        .unwrap_or_else(|| PathBuf::from("/data/local/tmp/flausch"))
 }
 
 pub fn system_language() -> Option<String> {
@@ -143,7 +143,7 @@ pub fn keep_screen_on(on: bool) {
         Ok(())
     });
     if let Err(e) = result {
-        eprintln!("nøste: cannot change keep screen on: {e}");
+        eprintln!("flausch: cannot change keep screen on: {e}");
     }
 }
 
@@ -158,7 +158,7 @@ pub fn set_dark_theme(dark: bool) {
         Ok(())
     });
     if let Err(e) = result {
-        eprintln!("nøste: cannot set the system bar colors: {e}");
+        eprintln!("flausch: cannot set the system bar colors: {e}");
     }
 }
 
@@ -169,7 +169,7 @@ pub fn hide_text_handles() {
         Ok(())
     });
     if let Err(e) = result {
-        eprintln!("nøste: cannot hide the text handles: {e}");
+        eprintln!("flausch: cannot hide the text handles: {e}");
     }
 }
 
@@ -277,7 +277,7 @@ pub fn a11y_install() {
         Ok(())
     });
     if let Err(e) = result {
-        eprintln!("nøste: cannot install the accessibility bridge: {e}");
+        eprintln!("flausch: cannot install the accessibility bridge: {e}");
     }
 }
 
@@ -319,7 +319,7 @@ pub fn a11y_update(nodes: &[crate::a11y::Node], reset: bool) {
         Ok(())
     });
     if let Err(e) = result {
-        eprintln!("nøste: cannot update the accessibility nodes: {e}");
+        eprintln!("flausch: cannot update the accessibility nodes: {e}");
     }
 }
 
@@ -336,7 +336,7 @@ pub fn a11y_announce(text: &str) {
         Ok(())
     });
     if let Err(e) = result {
-        eprintln!("nøste: cannot announce: {e}");
+        eprintln!("flausch: cannot announce: {e}");
     }
 }
 

@@ -1,6 +1,6 @@
 //! TalkBack support. Slint's Android backend has no accessibility bridge, so this module walks the
 //! element tree (through the element API of `i-slint-backend-testing`) while an accessibility service is on and
-//! sends a flat list of nodes to `NosteHelper`, which exposes them as virtual views. Actions on
+//! sends a flat list of nodes to `FlauschHelper`, which exposes them as virtual views. Actions on
 //! those views come back through `perform`.
 
 use std::cell::RefCell;
@@ -15,13 +15,13 @@ use slint::platform::{PointerEventButton, WindowEvent};
 
 use crate::{A11yFocus, App, DialogKind, Screen, Store, platform};
 
-/// `NosteHelper.NO_NODE`: nothing has accessibility focus.
+/// `FlauschHelper.NO_NODE`: nothing has accessibility focus.
 const NO_NODE: i32 = i32::MIN;
 const POLL_INTERVAL: Duration = Duration::from_millis(300);
 /// `accessible-id` of the dialog card; while it is shown, only nodes inside it are exposed.
 const DIALOG_ID: &str = "dialog";
 
-// Node kinds, mirrored in NosteHelper.
+// Node kinds, mirrored in FlauschHelper.
 const KIND_TEXT: i32 = 0;
 const KIND_BUTTON: i32 = 1;
 const KIND_SWITCH: i32 = 2;
@@ -31,7 +31,7 @@ const KIND_SLIDER: i32 = 5;
 const KIND_IMAGE: i32 = 6;
 const KIND_RADIO: i32 = 7;
 
-// Node flags, mirrored in NosteHelper.
+// Node flags, mirrored in FlauschHelper.
 const FLAG_ENABLED: i32 = 1;
 const FLAG_CHECKABLE: i32 = 2;
 const FLAG_CHECKED: i32 = 4;

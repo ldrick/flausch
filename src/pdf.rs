@@ -95,7 +95,7 @@ impl Covers {
                     match write_cover(&pdf, &cover) {
                         Ok(()) => on_done(),
                         Err(e) => {
-                            eprintln!("nøste: cannot create a cover for {}: {e}", pdf.display());
+                            eprintln!("flausch: cannot create a cover for {}: {e}", pdf.display());
                         }
                     }
                 }

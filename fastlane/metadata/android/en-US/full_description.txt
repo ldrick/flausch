@@ -1,4 +1,4 @@
-<p>nøste keeps track of your crochet projects. <i>Nøste</i> is Norwegian for winding yarn into a ball.</p>
+<p>Flausch keeps track of your crochet projects. The name is German for fluff (from <i>flauschig</i>, fluffy).</p>
 
 <p><b>Projects and parts</b></p>
 <ul>
@@ -24,4 +24,4 @@
 
 <p><b>Private</b>: no account, no ads, no tracking, no internet permission. Your data stays on your device.</p>
 
-<p>nøste is free software (GPLv3) written in Rust with the Slint UI toolkit.</p>
+<p>Flausch is free software (GPLv3) written in Rust with the Slint UI toolkit.</p>

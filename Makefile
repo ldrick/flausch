@@ -1,9 +1,9 @@
-# Build and run nøste. Paths can be overridden: make apk ANDROID_HOME=… JAVA_HOME=…
+# Build and run Flausch. Paths can be overridden: make apk ANDROID_HOME=… JAVA_HOME=…
 ANDROID_HOME     ?= $(HOME)/Android/Sdk
 ANDROID_NDK_ROOT ?= $(lastword $(sort $(wildcard $(ANDROID_HOME)/ndk/*)))
 JAVA_HOME        ?= $(HOME)/.local/opt/jdk-21
 TARGET           ?= aarch64-linux-android
-AVD              ?= noste
+AVD              ?= flausch
 
 export ANDROID_HOME ANDROID_NDK_ROOT JAVA_HOME
 export PATH := $(HOME)/.cargo/bin:$(PATH)
@@ -28,7 +28,7 @@ deny:           ## Advisories, licenses and sources of dependencies (needs cargo
 
 ci: check check-android test deny  ## Everything CI runs, except the APK build
 
-apk:            ## Build a debug APK (target/debug/apk/noste.apk)
+apk:            ## Build a debug APK (target/debug/apk/flausch.apk)
 	cargo apk build --lib --target $(TARGET)
 
 apk-release:    ## Build a release APK

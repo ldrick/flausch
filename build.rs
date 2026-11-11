@@ -20,12 +20,12 @@ fn main() {
 fn build_java_helper() {
     use android_build::{Dexer, JavaBuild};
 
-    let src = "android/java/io/github/ldrick/noste/NosteHelper.java";
+    let src = "android/java/io/github/ldrick/flausch/FlauschHelper.java";
     println!("cargo:rerun-if-changed={src}");
 
     let release = env::var("PROFILE").as_deref() == Ok("release");
     let out_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
-    let classes = out_dir.join("noste-java");
+    let classes = out_dir.join("flausch-java");
     let _ = std::fs::remove_dir_all(&classes);
     std::fs::create_dir_all(&classes).unwrap();
 

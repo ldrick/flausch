@@ -234,7 +234,7 @@ impl Controller {
     fn save(&mut self) {
         self.save_timer.stop();
         if let Err(e) = self.storage.save_library(&self.library) {
-            eprintln!("nøste: cannot save projects: {e}");
+            eprintln!("flausch: cannot save projects: {e}");
         }
     }
 
@@ -496,7 +496,7 @@ impl Controller {
                 return;
             }
             PickResult::Failed(e) => {
-                eprintln!("nøste: PDF import failed: {e}");
+                eprintln!("flausch: PDF import failed: {e}");
                 self.storage.remove_pdf(file);
                 return self.notify(Notice::PdfImportFailed);
             }
@@ -505,7 +505,7 @@ impl Controller {
             0 => Err("no pages".into()),
             n => Ok(n),
         }) {
-            eprintln!("nøste: {title} is not a usable PDF: {e}");
+            eprintln!("flausch: {title} is not a usable PDF: {e}");
             self.storage.remove_pdf(file);
             return self.notify(Notice::PdfInvalid);
         }
@@ -724,7 +724,7 @@ impl Controller {
                 }
             }
             Err(e) => {
-                eprintln!("nøste: cannot render page {}: {e}", rendered.page);
+                eprintln!("flausch: cannot render page {}: {e}", rendered.page);
                 self.pdf.page_count = rendered.page_count;
                 view.page_count = rendered.page_count as i32;
                 store.set_pdf(view);
@@ -761,7 +761,7 @@ impl Controller {
         std::thread::spawn(move || {
             let path = storage.export_path();
             if let Err(e) = storage.export(&library, &settings, &path) {
-                eprintln!("nøste: cannot write the backup: {e}");
+                eprintln!("flausch: cannot write the backup: {e}");
                 let _ = std::fs::remove_file(&path);
                 return backup_exported(PickResult::Failed(e.to_string()));
             }
@@ -781,7 +781,7 @@ impl Controller {
                 PickResult::Picked { .. } => Some(Storage::read_backup(&path)),
                 PickResult::Cancelled => None,
                 PickResult::Failed(e) => {
-                    eprintln!("nøste: cannot copy the backup: {e}");
+                    eprintln!("flausch: cannot copy the backup: {e}");
                     Some(Err(BackupError::Io(std::io::Error::other(e))))
                 }
             };
@@ -802,7 +802,7 @@ impl Controller {
                 return;
             }
             Some(Err(e)) => {
-                eprintln!("nøste: cannot read the backup: {e}");
+                eprintln!("flausch: cannot read the backup: {e}");
                 self.notify(match e {
                     BackupError::TooNew => Notice::BackupTooNew,
                     BackupError::Invalid => Notice::BackupInvalid,
@@ -835,7 +835,7 @@ impl Controller {
         let backup = match result {
             Ok(backup) => backup,
             Err(e) => {
-                eprintln!("nøste: cannot restore the backup: {e}");
+                eprintln!("flausch: cannot restore the backup: {e}");
                 return self.notify(Notice::BackupRestoreFailed);
             }
         };
@@ -858,7 +858,7 @@ impl Controller {
     fn update_settings(&mut self, change: impl FnOnce(&mut Settings)) {
         change(&mut self.settings);
         if let Err(e) = self.storage.save_settings(&self.settings) {
-            eprintln!("nøste: cannot save settings: {e}");
+            eprintln!("flausch: cannot save settings: {e}");
         }
         self.apply_settings();
     }
@@ -876,7 +876,7 @@ impl Controller {
             .language
             .translation(platform::system_language().as_deref());
         if let Err(e) = slint::select_bundled_translation(language) {
-            eprintln!("nøste: cannot select language {language}: {e}");
+            eprintln!("flausch: cannot select language {language}: {e}");
         }
         self.update_keep_screen_on();
     }
@@ -890,7 +890,7 @@ fn backup_exported(result: PickResult) {
                 PickResult::Picked { .. } => c.notify(Notice::BackupSaved),
                 PickResult::Cancelled => {}
                 PickResult::Failed(e) => {
-                    eprintln!("nøste: cannot save the backup: {e}");
+                    eprintln!("flausch: cannot save the backup: {e}");
                     c.notify(Notice::BackupSaveFailed);
                 }
             }

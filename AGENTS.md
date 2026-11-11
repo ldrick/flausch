@@ -1,6 +1,6 @@
-# AGENTS.md – nøste
+# AGENTS.md – Flausch
 
-nøste is an Android crochet app (projects made of parts with their own row counters, PDF patterns) written in Rust
+Flausch is an Android crochet app (projects made of parts with their own row counters, PDF patterns) written in Rust
 (edition 2024) with a [Slint](https://slint.dev) 1.18 UI. The same code runs on the desktop via winit, so most
 development and checks happen with `cargo run`. APKs are built with `cargo-apk`. Only Android is a release target;
 there is no iOS.
@@ -22,10 +22,10 @@ make check               # cargo fmt --check && cargo clippy --all-targets -- -D
 make check-android       # clippy for the Android code (cargo clippy --lib --target $TARGET)
 make deny                # cargo deny check: advisories, licenses, sources (deny.toml; needs cargo-deny)
 make ci                  # check + check-android + test + deny
-make apk                 # debug APK -> target/debug/apk/noste.apk (TARGET defaults to aarch64-linux-android)
+make apk                 # debug APK -> target/debug/apk/flausch.apk (TARGET defaults to aarch64-linux-android)
 make apk-release         # release APK (lto + strip; needs CARGO_APK_RELEASE_KEYSTORE(_PASSWORD))
 make install             # cargo apk run: build, install, launch (then streams logcat until stopped)
-make emulator            # start the AVD "noste"; then build with TARGET=x86_64-linux-android
+make emulator            # start the AVD "flausch"; then build with TARGET=x86_64-linux-android
 ```
 
 Before you finish a change, run `make check` (clippy uses `-D warnings`) and `make test`. If you touched
@@ -45,7 +45,7 @@ src/
   lib.rs              Controller: wires Store callbacks, navigation, debounced saving, PDF sessions, android_main;
                       pub start/stop connect an App to a data dir (used by run and the tests)
   tests.rs            controller tests on Slint's testing backend
-  main.rs             thin desktop binary -> noste::run(); no logic here
+  main.rs             thin desktop binary -> flausch::run(); no logic here
 tests/ui.rs           UI tests: drive the app through accessibility labels; fixtures in tests/fixtures/
   model.rs            UI-independent data model (Library, Project, Pdf, Settings) – no slint
   storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes, ZIP backups – no slint
@@ -54,8 +54,8 @@ tests/ui.rs           UI tests: drive the app through accessibility labels; fixt
   platform/mod.rs     picks android.rs or desktop.rs via cfg
   platform/android.rs JNI: loads the dex built from android/java, picker, PdfRenderer, keep-screen-on, bar colors
   platform/desktop.rs dirs + rfd file dialog + hayro rendering; most other functions are no-ops
-android/java/.../NosteHelper.java   Java helper (compiled by build.rs with javac + d8, embedded as classes.dex)
-android/res/          launcher icon (mint logo on light mint, also the monochrome themed icon)
+android/java/.../FlauschHelper.java   Java helper (compiled by build.rs with javac + d8, embedded as classes.dex)
+android/res/          launcher icon (pink logo on light pink, also the monochrome themed icon)
 ui/
   app.slint           root window App: page switch, dialogs, notice, Back key, safe-area insets
   store.slint         Store global = the Rust↔UI contract (state properties, enums, structs, callbacks)
@@ -67,7 +67,7 @@ ui/
 tools/logo.py         generates ui/icons/logo.svg, the launcher icon and the store icon (needs resvg) – never edit those by hand
 fastlane/metadata/    F-Droid store texts, icon, screenshots (en-US, de-DE)
 fdroid/               F-Droid recipe and release steps (fdroid/README.md)
-lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
+lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
 ```
 
 - Data flow: the UI only reads `Store` properties and calls `Store` callbacks. `src/lib.rs` handles the
@@ -91,12 +91,12 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
   `Storage::read_backup` refuses newer versions and runs `migrate`; `Storage::restore` replaces everything. The
   Android side goes through the Storage Access Framework (`platform::pick_document` / `save_document`, no storage
   permission), via temporary `export.zip` / `import.zip` files in the data directory.
-- `NOSTE_DATA_DIR=/tmp/x cargo run` uses a scratch data directory on the desktop.
+- `FLAUSCH_DATA_DIR=/tmp/x cargo run` uses a scratch data directory on the desktop.
 - PDF rendering: on Android, `android.graphics.pdf.PdfRenderer` through the Java helper; on the desktop, `hayro`
   (pure Rust). The worker renders at the display width and the viewer scales it.
 - Keep platform-specific code behind `cfg(target_os = ...)` so `cargo run` and `cargo test` keep working on the
   desktop. Android builds always use `--lib` (cargo-apk packages the `cdylib`).
-- Android config is in `Cargo.toml` under `[package.metadata.android]`: package `io.github.ldrick.noste`,
+- Android config is in `Cargo.toml` under `[package.metadata.android]`: package `io.github.ldrick.flausch`,
   `minSdk` 29 and `targetSdk` 36. cargo-apk derives the versionCode from `version`
   (`1<<24 | major<<16 | minor<<8 | patch`); `[package.metadata.fdroid] version_code` mirrors it for F-Droid's
   update check, and a test keeps both in sync. A release needs a changelog per version code in
@@ -104,17 +104,17 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 
 ## UI conventions
 
-- Design: soft, light and minimalist (cool off-white background, white cards, mint accent, pill buttons). Use
+- Design: soft, light and minimalist (warm off-white background, white cards, soft pink accent, pill buttons). Use
   colors and sizes from `Theme` only, never hard-coded colors and not `Palette`. `Theme.dark` follows the
   appearance setting (system, light, dark). The color scheme isn't final, so keep it centralized in
   `theme.slint`.
 - Shadows are hard drop shadows: no `drop-shadow-blur`, only `drop-shadow-offset-y: Theme.shadow-offset` (or
   `Theme.shadow-offset-small` for small elements) with `drop-shadow-color: Theme.shadow`.
-- Logo: soft mint line art of a ball of yarn with cat ears, a crochet hook behind it and the yarn end curled up
+- Logo: soft pink line art of a ball of yarn with cat ears, a crochet hook behind it and the yarn end curled up
   as the tail. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (only lines, so it fits any
-  background). If the mint changes, update `MINT` in `tools/logo.py`, run
-  it, and update `ic_launcher_background` (light mint, `Theme.accent-soft`) in `android/res/values/colors.xml`.
-- Design window: Pixel 9a size, 412×924 logical px (1080×2424 at density 2.625). The AVD "noste" uses the
+  background). If the pink changes, update `PINK` in `tools/logo.py`, run
+  it, and update `ic_launcher_background` (light pink, `Theme.accent-soft`) in `android/res/values/colors.xml`.
+- Design window: Pixel 9a size, 412×924 logical px (1080×2424 at density 2.625). The AVD "flausch" uses the
   `pixel_9a` profile.
 - `Rectangle` already has a (deprecated) `color` property, so name custom color properties differently
   (for example `tint`).
@@ -128,13 +128,13 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 ## Translations
 
 - Write UI strings in English with `@tr("…")`. Bundled languages are English (source) and German
-  (`lang/de/LC_MESSAGES/noste.po`). The language setting calls `slint::select_bundled_translation`.
+  (`lang/de/LC_MESSAGES/flausch.po`). The language setting calls `slint::select_bundled_translation`.
 - `@tr` without an explicit context uses the **component name as msgctxt**. Update the `.po` file with
   `slint-tr-extractor` (`cargo install slint-tr-extractor`):
 
   ```sh
-  find ui -name '*.slint' | xargs slint-tr-extractor -o /tmp/noste.pot
-  msgmerge -U lang/de/LC_MESSAGES/noste.po /tmp/noste.pot   # then translate the new or fuzzy entries
+  find ui -name '*.slint' | xargs slint-tr-extractor -o /tmp/flausch.pot
+  msgmerge -U lang/de/LC_MESSAGES/flausch.po /tmp/flausch.pot   # then translate the new or fuzzy entries
   ```
 
   Without gettext installed, merge with Python's `polib` in a venv (`po.merge(pot)`, fill the empty or fuzzy
@@ -145,16 +145,16 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 ## Android gotchas
 
 - **Don't call `AndroidApp::set_window_flags`** from UI callbacks. It deadlocks (ANR) because Slint holds the
-  read lock during input dispatch. Keep-screen-on goes through `NosteHelper.setKeepScreenOn` (`runOnUiThread`).
+  read lock during input dispatch. Keep-screen-on goes through `FlauschHelper.setKeepScreenOn` (`runOnUiThread`).
 - **Back is delivered twice** with targetSdk 36 (OnBackInvokedCallback and the native KeyEvent). The
   `Controller::back()` method drops a second Back within 300 ms. Dialogs are closed in Rust. An unhandled Back on
   the project list finishes the activity.
 - The status bar icon color follows `Theme.dark` (`Store.dark-changed` → `platform::set_dark_theme` →
-  `NosteHelper.setLightSystemBars`).
+  `FlauschHelper.setLightSystemBars`).
 - Pages are inset by `safe-area-insets`. Dialogs and the scrim cover the whole window. `App` copies the
   on-screen keyboard height into the `Keyboard` global, and `Dialog` moves up so the keyboard never covers it.
 - Slint shows Android's cursor handles whenever the last touch was a tap, also when a dialog focuses a field from
-  code. `Field.focus-input()` therefore calls `Store.hide-text-handles()` → `NosteHelper.hideTextHandles`, which
+  code. `Field.focus-input()` therefore calls `Store.hide-text-handles()` → `FlauschHelper.hideTextHandles`, which
   sends the unchanged text through Slint's `SlintAndroidJavaHelper.updateText` (reflection). Tapping or selecting
   text still shows the handles.
 - Rust `stderr` shows up in logcat under the tag `RustStdoutStderr`. ANR traces:
@@ -164,12 +164,12 @@ lang/de/LC_MESSAGES/noste.po   German translations (bundled at build time)
 
 ## Accessibility (TalkBack)
 
-Slint's Android backend has no accessibility support, so nøste brings its own bridge:
+Slint's Android backend has no accessibility support, so Flausch brings its own bridge:
 
 - `src/a11y.rs` polls the element tree every 300 ms while any accessibility service is on, using
   `i-slint-backend-testing`'s `ElementHandle` API. It is pinned to the exact Slint version (`=1.18.x`); bump both
   together. The walk needs Slint debug info, so `build.rs` sets `with_debug_info` for Android.
-- `NosteHelper` exposes the nodes as virtual views through an `AccessibilityNodeProvider` on the NativeActivity
+- `FlauschHelper` exposes the nodes as virtual views through an `AccessibilityNodeProvider` on the NativeActivity
   content view; hover events (touch exploration) map to nodes. Actions (click, scroll = increment/decrement,
   set text) go back to Rust through `onA11yAction`.
 - Android can't draw the focus frame over the native surface, so Java reports focus (`onA11yFocus`) and
@@ -189,7 +189,7 @@ Slint's Android backend has no accessibility support, so nøste brings its own b
   (per test thread, no window) with a `tempfile` data dir. It calls `Controller` methods and feeds worker
   results (`pdf_picked`, `pdf_rendered`, `backup_picked`, …) directly, because `invoke_from_event_loop` does
   nothing without an event loop. `mock_elapsed_time` fires timers such as the debounced save.
-- `tests/ui.rs` is black-box: `noste::start`/`stop`, then `ElementHandle::find_by_accessible_label` and
+- `tests/ui.rs` is black-box: `flausch::start`/`stop`, then `ElementHandle::find_by_accessible_label` and
   `invoke_accessible_default_action`/`set_accessible_value`, the same labels TalkBack uses. New UI features
   should get a flow there; they need an `accessible-label` anyway. Call `settle()` after changes so `changed`
   handlers run and `if` elements appear. Two Back presses within 300 ms count as one, so `go_back` waits.
@@ -199,10 +199,10 @@ Slint's Android backend has no accessibility support, so nøste brings its own b
 ## Testing on the emulator
 
 ```sh
-make emulator                                   # separate terminal; AVD "noste"
+make emulator                                   # separate terminal; AVD "flausch"
 make apk TARGET=x86_64-linux-android
-adb install -r target/debug/apk/noste.apk
-adb shell am start -n io.github.ldrick.noste/android.app.NativeActivity
+adb install -r target/debug/apk/flausch.apk
+adb shell am start -n io.github.ldrick.flausch/android.app.NativeActivity
 adb exec-out screencap -p > /tmp/screen.png     # 1080×2424 physical pixels
 adb shell input tap X Y                         # physical pixels (logical px × 2.625 at density 420)
 ```

@@ -1,17 +1,17 @@
 [package]
-name = "noste"
+name = "flausch"
 version = "0.1.0"
 edition = "2024"
 description = "A crochet app for Android"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/ldrick/noste"
+repository = "https://github.com/ldrick/flausch"
 publish = false
 
 [lib]
 crate-type = ["lib", "cdylib"]
 
 [[bin]]
-name = "noste"
+name = "flausch"
 path = "src/main.rs"
 
 [dependencies]
@@ -72,7 +72,7 @@ strip = true
 version_code = 16777472
 
 [package.metadata.android]
-package = "io.github.ldrick.noste"
+package = "io.github.ldrick.flausch"
 build_targets = ["aarch64-linux-android", "x86_64-linux-android"]
 resources = "android/res"
 
@@ -81,7 +81,7 @@ min_sdk_version = 29
 target_sdk_version = 36
 
 [package.metadata.android.application]
-label = "nøste"
+label = "Flausch"
 icon = "@mipmap/ic_launcher"
 
 [package.metadata.android.application.activity]

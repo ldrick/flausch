@@ -1,3 +1,3 @@
 fn main() -> Result<(), slint::PlatformError> {
-    noste::run()
+    flausch::run()
 }

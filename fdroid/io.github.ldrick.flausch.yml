@@ -3,13 +3,13 @@ Categories:
   - Reading
 License: GPL-3.0-or-later
 AuthorName: ldrick
-SourceCode: https://github.com/ldrick/noste
-IssueTracker: https://github.com/ldrick/noste/issues
+SourceCode: https://github.com/ldrick/flausch
+IssueTracker: https://github.com/ldrick/flausch/issues
 
-AutoName: nøste
+AutoName: Flausch
 
 RepoType: git
-Repo: https://github.com/ldrick/noste.git
+Repo: https://github.com/ldrick/flausch.git
 
 Builds:
   - versionName: 0.1.0
@@ -18,7 +18,7 @@ Builds:
     sudo:
       - apt-get update
       - apt-get install -y openjdk-21-jdk-headless
-    output: target/release/apk/noste.apk
+    output: target/release/apk/flausch.apk
     srclibs:
       - rustup@1.29.3
     prebuild: sdkmanager "platforms;android-36" "build-tools;36.0.0"
@@ -32,7 +32,7 @@ Builds:
       - export ANDROID_PLATFORM=android-36 ANDROID_BUILD_TOOLS_VERSION=36.0.0
       - cargo fetch --locked
       - keytool -genkeypair -keystore $HOME/throwaway.jks -storepass android -keypass
-        android -alias noste -dname CN=noste -keyalg RSA -validity 10000
+        android -alias flausch -dname CN=flausch -keyalg RSA -validity 10000
       - CARGO_APK_RELEASE_KEYSTORE=$HOME/throwaway.jks CARGO_APK_RELEASE_KEYSTORE_PASSWORD=android
         cargo apk build --lib --release
     ndk: r28c

@@ -12,7 +12,7 @@ unmaintained = "workspace"
 ignore = []
 
 [licenses]
-# nøste itself (GPL-3.0-or-later) is not published, so its own license is not checked.
+# Flausch itself (GPL-3.0-or-later) is not published, so its own license is not checked.
 private = { ignore = true }
 # Licenses allowed for dependencies. Slint is used under its Royalty-free License 2.0 (see README).
 allow = [

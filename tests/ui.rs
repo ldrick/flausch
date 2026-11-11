@@ -4,16 +4,16 @@
 use std::path::Path;
 use std::time::Duration;
 
+use flausch::{App, DialogKind, Language, Screen, Store};
 use i_slint_backend_testing::{AccessibleRole, ElementHandle};
-use noste::{App, DialogKind, Language, Screen, Store};
 use slint::platform::{Key, WindowEvent};
 use slint::{ComponentHandle, Model};
 
 /// Starts the app on `dir` as if it was launched again.
 fn launch(dir: &Path) -> App {
-    noste::stop();
+    flausch::stop();
     let app = App::new().unwrap();
-    noste::start(&app, dir.to_path_buf()).unwrap();
+    flausch::start(&app, dir.to_path_buf()).unwrap();
     app
 }
 

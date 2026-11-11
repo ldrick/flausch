@@ -8,14 +8,14 @@ use hayro::{PixmapSettings, RenderCache, RenderSettings};
 
 use super::{DocumentKind, PageImage, PickResult};
 
-/// `NOSTE_DATA_DIR` overrides the data directory, e.g. to test without touching real data.
+/// `FLAUSCH_DATA_DIR` overrides the data directory, e.g. to test without touching real data.
 pub fn data_dir() -> PathBuf {
-    if let Some(dir) = std::env::var_os("NOSTE_DATA_DIR") {
+    if let Some(dir) = std::env::var_os("FLAUSCH_DATA_DIR") {
         return dir.into();
     }
     dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("noste")
+        .join("flausch")
 }
 
 pub fn system_language() -> Option<String> {

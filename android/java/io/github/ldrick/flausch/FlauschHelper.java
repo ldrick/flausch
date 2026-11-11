@@ -1,4 +1,4 @@
-package io.github.ldrick.noste;
+package io.github.ldrick.flausch;
 
 import android.app.Activity;
 import android.app.Application;
@@ -40,20 +40,20 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 
 /**
- * Java side of nøste's Android integration. It is compiled to a dex file by build.rs and loaded
+ * Java side of Flausch's Android integration. It is compiled to a dex file by build.rs and loaded
  * at runtime with an InMemoryDexClassLoader, because cargo-apk packages no Java code. Native
  * methods are registered from Rust (src/platform/android.rs).
  */
-public class NosteHelper {
+public class FlauschHelper {
     static final int STATUS_OK = 0;
     static final int STATUS_CANCELLED = 1;
     static final int STATUS_FAILED = 2;
 
-    private static final String PICKER_TAG = "noste-document-picker";
+    private static final String PICKER_TAG = "flausch-document-picker";
 
     private final Activity mActivity;
 
-    public NosteHelper(Activity activity) {
+    public FlauschHelper(Activity activity) {
         mActivity = activity;
         // The picker fragment's class cannot be found by the system class loader. Drop the saved
         // fragment state so a recreated activity does not try to instantiate it.
@@ -179,7 +179,7 @@ public class NosteHelper {
                     update.invoke(null, field(view, input, "mText"), field(view, input, "mCursorPosition"),
                             field(view, input, "mAnchorPosition"), 0, 0);
                 } catch (ReflectiveOperationException | RuntimeException e) {
-                    Log.w("noste", "cannot hide the text handles", e);
+                    Log.w("flausch", "cannot hide the text handles", e);
                 }
             }
         });
@@ -223,7 +223,7 @@ public class NosteHelper {
             public void run() {
                 ViewGroup content = mActivity.findViewById(android.R.id.content);
                 if (content == null || content.getChildCount() == 0) {
-                    Log.w("noste", "no content view for accessibility");
+                    Log.w("flausch", "no content view for accessibility");
                     return;
                 }
                 mA11yHost = content.getChildAt(0);

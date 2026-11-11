@@ -55,6 +55,6 @@ jobs:
       - run: cargo apk build --lib --target aarch64-linux-android
       - uses: actions/upload-artifact@v7
         with:
-          name: noste-debug-apk
-          path: target/debug/apk/noste.apk
+          name: flausch-debug-apk
+          path: target/debug/apk/flausch.apk
           if-no-files-found: error

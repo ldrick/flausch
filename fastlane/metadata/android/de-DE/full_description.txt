@@ -1,4 +1,4 @@
-<p>nøste behält deine Häkelprojekte im Blick. <i>Nøste</i> ist Norwegisch und heißt, Garn zu einem Knäuel aufwickeln.</p>
+<p>Flausch behält deine Häkelprojekte im Blick. Der Name kommt von <i>flauschig</i>.</p>
 
 <p><b>Projekte und Teile</b></p>
 <ul>
@@ -24,4 +24,4 @@
 
 <p><b>Privat</b>: kein Konto, keine Werbung, kein Tracking, keine Internet-Berechtigung. Deine Daten bleiben auf deinem Gerät.</p>
 
-<p>nøste ist freie Software (GPLv3), geschrieben in Rust mit dem UI-Toolkit Slint.</p>
+<p>Flausch ist freie Software (GPLv3), geschrieben in Rust mit dem UI-Toolkit Slint.</p>

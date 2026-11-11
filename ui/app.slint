@@ -95,7 +95,7 @@ component PartDialog inherits Dialog {
 }
 
 export component App inherits Window {
-    title: "nøste";
+    title: "Flausch";
     preferred-width: 412px;
     preferred-height: 924px;
     background: Theme.background;
@@ -186,8 +186,8 @@ export component App inherits Window {
                         : Store.notice == Notice.backup-saved ? @tr("Backup saved.")
                         : Store.notice == Notice.backup-save-failed ? @tr("The backup could not be saved.")
                         : Store.notice == Notice.backup-import-failed ? @tr("The file could not be read.")
-                        : Store.notice == Notice.backup-invalid ? @tr("This file is not a nøste backup.")
-                        : Store.notice == Notice.backup-too-new ? @tr("This backup is from a newer version of nøste. Please update the app first.")
+                        : Store.notice == Notice.backup-invalid ? @tr("This file is not a Flausch backup.")
+                        : Store.notice == Notice.backup-too-new ? @tr("This backup is from a newer version of Flausch. Please update the app first.")
                         : Store.notice == Notice.backup-restored ? @tr("Backup restored.")
                         : Store.notice == Notice.backup-restore-failed ? @tr("The backup could not be restored. Your data is unchanged.")
                         : @tr("The PDF could not be imported.");

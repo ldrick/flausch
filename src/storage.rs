@@ -37,7 +37,7 @@ pub struct Backup {
 
 #[derive(Debug)]
 pub enum BackupError {
-    /// The file is not a nøste backup (no ZIP, or no readable `projects.json`).
+    /// The file is not a Flausch backup (no ZIP, or no readable `projects.json`).
     Invalid,
     /// The backup was written by a newer version of the app.
     TooNew,
@@ -47,7 +47,7 @@ pub enum BackupError {
 impl fmt::Display for BackupError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Invalid => f.write_str("not a nøste backup"),
+            Self::Invalid => f.write_str("not a Flausch backup"),
             Self::TooNew => f.write_str("backup from a newer version"),
             Self::Io(e) => e.fmt(f),
         }
@@ -203,7 +203,7 @@ fn extract_pdfs(path: &Path, library: &Library, dest: &Path) -> Result<(), Backu
     Ok(())
 }
 
-/// File name for a backup written at `secs` (Unix time), e.g. `noste-2026-11-10.zip`.
+/// File name for a backup written at `secs` (Unix time), e.g. `flausch-2026-11-10.zip`.
 pub fn backup_name(secs: u64) -> String {
     // Civil date from days since 1970-01-01 (Howard Hinnant's algorithm), in UTC.
     let days = (secs / 86_400) as i64 + 719_468;
@@ -215,7 +215,7 @@ pub fn backup_name(secs: u64) -> String {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
-    format!("noste-{year:04}-{month:02}-{day:02}.zip")
+    format!("flausch-{year:04}-{month:02}-{day:02}.zip")
 }
 
 /// A file name without any directory part, so it stays inside the PDF directory.
@@ -234,7 +234,7 @@ fn remove_file(path: &Path) {
     if let Err(e) = fs::remove_file(path)
         && e.kind() != io::ErrorKind::NotFound
     {
-        eprintln!("nøste: cannot remove {}: {e}", path.display());
+        eprintln!("flausch: cannot remove {}: {e}", path.display());
     }
 }
 
@@ -245,14 +245,14 @@ fn load_or_default<T: DeserializeOwned + Default>(path: &Path) -> T {
         Ok(data) => data,
         Err(e) if e.kind() == io::ErrorKind::NotFound => return T::default(),
         Err(e) => {
-            eprintln!("nøste: cannot read {}: {e}", path.display());
+            eprintln!("flausch: cannot read {}: {e}", path.display());
             return T::default();
         }
     };
     match serde_json::from_slice(&data) {
         Ok(value) => value,
         Err(e) => {
-            eprintln!("nøste: cannot parse {}: {e}", path.display());
+            eprintln!("flausch: cannot parse {}: {e}", path.display());
             let _ = fs::rename(path, path.with_extension("json.broken"));
             T::default()
         }
@@ -385,9 +385,9 @@ mod tests {
 
     #[test]
     fn backup_names_use_the_date() {
-        assert_eq!(backup_name(0), "noste-1970-01-01.zip");
-        assert_eq!(backup_name(1_794_337_200), "noste-2026-11-10.zip");
-        assert_eq!(backup_name(951_782_400), "noste-2000-02-29.zip");
+        assert_eq!(backup_name(0), "flausch-1970-01-01.zip");
+        assert_eq!(backup_name(1_794_337_200), "flausch-2026-11-10.zip");
+        assert_eq!(backup_name(951_782_400), "flausch-2000-02-29.zip");
     }
 
     #[test]

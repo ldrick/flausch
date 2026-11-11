@@ -1,8 +1,8 @@
 <img src="ui/icons/logo.svg" width="72" alt="">
 
-# nøste
+# Flausch
 
-An Android app for crocheting, written in Rust. *Nøste* is Norwegian for winding yarn into a ball.
+An Android app for crocheting, written in Rust. *Flausch* is German for fluff (from *flauschig*, fluffy).
 
 The UI uses [Slint](https://slint.dev) (`ui/*.slint`), which runs on Android via its `android-activity` backend and
 on the desktop via winit – so most development happens with a plain `cargo run`. APKs are built with
@@ -50,10 +50,10 @@ make run                 # desktop window
 make test                # unit, controller and UI tests (headless)
 make check               # rustfmt + clippy
 make ci                  # everything CI checks: also Android clippy, cargo-deny (cargo install cargo-deny)
-make apk                 # target/debug/apk/noste.apk (arm64)
+make apk                 # target/debug/apk/flausch.apk (arm64)
 make apk-release         # release APK (needs a keystore, see below)
 make install             # build, install and start on a connected device
-make emulator            # start the AVD "noste"; then: make install TARGET=x86_64-linux-android
+make emulator            # start the AVD "flausch"; then: make install TARGET=x86_64-linux-android
 ```
 
 On Linux the desktop build loads fontconfig at runtime (`fontique/fontconfig-dlopen`), so no `-dev` packages are
@@ -67,11 +67,11 @@ needed.
 
 ## Privacy
 
-nøste requests no permissions, has no internet access and collects no data. Projects and PDFs stay on the device.
+Flausch requests no permissions, has no internet access and collects no data. Projects and PDFs stay on the device.
 
 ## License
 
-nøste is free software under the GNU General Public License v3.0 or later, see [LICENSE](LICENSE).
+Flausch is free software under the GNU General Public License v3.0 or later, see [LICENSE](LICENSE).
 
 Slint is used under its Royalty-free License 2.0 (mobile apps allowed; requires an attribution, e.g. the
 "Made with Slint" badge in the app or on its web page) – alternatively GPLv3.

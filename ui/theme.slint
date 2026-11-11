@@ -10,21 +10,21 @@ export global Theme {
     in-out property <Appearance> appearance: Appearance.system;
     out property <bool> dark: appearance == Appearance.system ? Palette.color-scheme == ColorScheme.dark : appearance == Appearance.dark;
 
-    out property <color> background: dark ? #15191b : #f2f5f6;
-    out property <color> surface: dark ? #1e2427 : #ffffff;
-    out property <color> surface-muted: dark ? #273033 : #eaeff0;
-    out property <color> border: dark ? #303a3e : #dde4e6;
-    out property <color> text: dark ? #e4eaec : #2c3437;
-    out property <color> text-muted: dark ? #8d9a9f : #8b989c;
-    out property <color> accent: dark ? #7dcbb9 : #66b8a6;
-    out property <color> accent-pressed: dark ? #69b7a5 : #57a593;
-    out property <color> accent-soft: dark ? #223c37 : #e2f2ee;
+    out property <color> background: dark ? #1b1618 : #f8f3f4;
+    out property <color> surface: dark ? #251f22 : #ffffff;
+    out property <color> surface-muted: dark ? #312a2d : #f3eaed;
+    out property <color> border: dark ? #3d3438 : #eadfe3;
+    out property <color> text: dark ? #eee4e8 : #3b3034;
+    out property <color> text-muted: dark ? #a6969c : #9c8c92;
+    out property <color> accent: dark ? #f2a7bc : #e3879f;
+    out property <color> accent-pressed: dark ? #e292a9 : #d27390;
+    out property <color> accent-soft: dark ? #44262f : #fbe7ed;
     // Frame around the element TalkBack has focused; has to stand out on every surface.
     out property <color> a11y-focus: dark ? #ffd54f : #1a5fd0;
-    out property <color> on-accent: dark ? #0f2420 : #ffffff;
-    out property <color> danger: dark ? #e79a95 : #cf726c;
-    out property <color> scrim: dark ? #000000a0 : #2c343766;
-    out property <color> shadow: dark ? #00000060 : #2c34371a;
+    out property <color> on-accent: dark ? #33121c : #ffffff;
+    out property <color> danger: dark ? #f0877e : #c4473f;
+    out property <color> scrim: dark ? #000000a0 : #3b303466;
+    out property <color> shadow: dark ? #00000060 : #3b30341a;
     // Hard drop shadows: no blur, only offset downwards (drop-shadow-blur stays 0 everywhere).
     out property <length> shadow-offset: 6px;
     out property <length> shadow-offset-small: 2px;
