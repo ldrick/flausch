@@ -241,4 +241,21 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
 - On Linux, `fontique` loads fontconfig at runtime (`fontconfig-dlopen`). Don't add dependencies that need
   system `-dev` packages or pkg-config. Our `fontique` must stay on the version Slint uses (Dependabot ignores it);
   bump it together with Slint.
-- Don't commit unless asked. Local plans and notes go in `.scratch/` (gitignored).
+- Local plans and notes go in `.scratch/` (gitignored).
+
+## Workflow
+
+`main` isn't protected yet (private repo), so these rules are a convention; follow them anyway. The planned
+automation (release-please, release workflow, "What's new" in the app) is tracked in #28.
+
+- Don't commit unless asked. Never push to `main` directly: every change goes through a pull request.
+- One branch per issue, named `<type>/<issue>-<short-name>` (e.g. `feat/16-project-status`). The PR body says
+  `Closes #<issue>`.
+- PR titles follow [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `docs:`,
+  `chore:`, `refactor:`, `test:`, `ci:`), written in English and user-facing for `feat`/`fix`, because they end up
+  in the changelog. PRs are squash merged, so the PR title becomes the commit message.
+- CI must pass before a merge. Merge only when the user says so.
+- Versions are bumped only in a release PR, never in feature PRs: `feat` → minor, `fix` → patch (`0.x` until 1.0).
+  The release PR updates `version` and `[package.metadata.fdroid] version_code` in `Cargo.toml`, `CHANGELOG.md`
+  and the F-Droid changelogs in `fastlane/metadata/android/*/changelogs/<versionCode>.txt` (en-US and de-DE).
+  After the merge, tag `vX.Y.Z` on `main` (see `fdroid/README.md`).
