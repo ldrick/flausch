@@ -171,8 +171,8 @@ export component Field inherits Rectangle {
         single-line: true;
         input-type: root.input-type;
         color: Theme.text;
-        selection-background-color: Theme.accent-soft;
-        selection-foreground-color: Theme.text;
+        selection-background-color: Theme.selection;
+        selection-foreground-color: Theme.on-accent;
         font-size: Theme.font-body;
         vertical-alignment: center;
         accessible-label: root.label;
@@ -223,8 +223,8 @@ export component TextArea inherits Rectangle {
             single-line: false;
             wrap: word-wrap;
             color: Theme.text;
-            selection-background-color: Theme.accent-soft;
-            selection-foreground-color: Theme.text;
+            selection-background-color: Theme.selection;
+            selection-foreground-color: Theme.on-accent;
             font-size: Theme.font-body;
             accessible-label: root.label;
             accessible-placeholder-text: root.placeholder;
