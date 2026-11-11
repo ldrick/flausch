@@ -217,6 +217,41 @@ fn search_finds_projects_by_part_name() {
 }
 
 #[test]
+fn the_list_filters_and_groups_by_status() {
+    let (app, dir) = fresh();
+    create_project(&app, "Bunny");
+    tap(&app, "Finished");
+    go_back(&app);
+    create_project(&app, "Hat");
+    tap(&app, "Planned");
+    go_back(&app);
+    create_project(&app, "Scarf");
+    go_back(&app);
+
+    // Finished projects wait in a collapsed section at the bottom.
+    assert!(exists(&app, "Scarf") && exists(&app, "Hat (Planned)"));
+    assert!(!exists(&app, "Bunny (Finished)"));
+    tap(&app, "Show finished projects (1)");
+    assert!(exists(&app, "Bunny (Finished)"));
+    tap(&app, "Hide finished projects (1)");
+    assert!(!exists(&app, "Bunny (Finished)"));
+
+    tap(&app, "Planned");
+    assert!(exists(&app, "Hat (Planned)"));
+    assert!(!exists(&app, "Scarf"));
+    let app = launch(dir.path());
+    settle();
+    assert!(exists(&app, "Hat (Planned)"));
+    assert!(!exists(&app, "Scarf"), "the filter is kept");
+
+    tap(&app, "All");
+    tap(&app, "Search");
+    type_into(&app, "Search", "finis");
+    assert!(exists(&app, "Bunny (Finished)"));
+    assert!(!exists(&app, "Scarf") && !exists(&app, "Hat (Planned)"));
+}
+
+#[test]
 fn escape_closes_the_dialog_first() {
     let (app, _dir) = fresh();
     create_project(&app, "Bunny");

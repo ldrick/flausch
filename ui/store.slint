@@ -13,6 +13,7 @@ export struct ChangeItem {
 }
 
 export enum ProjectStatus { planned, active, paused, finished }
+export enum StatusFilter { all, active, planned, paused, finished }
 
 export enum Notice {
     none,
@@ -100,8 +101,16 @@ export struct A11yFocus {
 // The interface between Rust (src/lib.rs) and the UI. Rust sets the `in` properties and
 // handles the callbacks.
 export global Store {
-    // Projects matching `query`, most recently used first.
+    // Projects matching `query` and `status-filter`, grouped by status (active, then planned and
+    // paused, then finished) and most recently used first within a group. Without a query and
+    // with the filter "all", finished projects are in `finished` instead.
     in property <[ProjectItem]> projects;
+    in property <[ProjectItem]> finished;
+    // The collapsed section with the finished projects is open.
+    in-out property <bool> finished-open;
+    in property <StatusFilter> status-filter: StatusFilter.all;
+    // For the search, in ProjectStatus order.
+    out property <[string]> status-names: [@tr("Planned"), @tr("In progress"), @tr("Paused"), @tr("Finished")];
     // Whether there are any projects at all, regardless of `query`.
     in property <bool> has-projects;
     in-out property <bool> searching;
@@ -148,6 +157,7 @@ export global Store {
     callback set-notes(string);
 
     callback query-changed();
+    callback set-status-filter(StatusFilter);
 
     // Makes a part active without leaving the screen.
     callback select-part(int);

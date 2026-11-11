@@ -1,5 +1,5 @@
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem, PartForm } from "store.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ChangeItem, PartForm } from "store.slint";
 import { Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
@@ -7,7 +7,7 @@ import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem, PartForm }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ChangeItem, PartForm }
 
 component ProjectDialog inherits Dialog {
     in property <bool> editing;

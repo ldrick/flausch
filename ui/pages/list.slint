@@ -1,6 +1,6 @@
 import { Theme } from "../theme.slint";
-import { Store, DialogKind, ProjectItem, ProjectStatus } from "../store.slint";
-import { Card, Field, Icon, IconButton, PillButton, ProgressBar } from "../components.slint";
+import { Store, DialogKind, ProjectItem, ProjectStatus, StatusFilter } from "../store.slint";
+import { Card, Chips, Field, Icon, IconButton, PillButton, ProgressBar } from "../components.slint";
 
 component ProjectCard inherits Card {
     in property <ProjectItem> project;
@@ -110,6 +110,10 @@ component ProjectCard inherits Card {
                         }
                     }
                 }
+                // Keeps the badge as wide as its text.
+                Rectangle {
+                    horizontal-stretch: 1;
+                }
             }
             Text {
                 text: !root.project.has-active ? (root.project.part-count == 0 ? @tr("No parts yet") : @tr("{n} part" | "{n} parts" % root.project.part-count))
@@ -137,7 +141,8 @@ component ProjectCard inherits Card {
             }
         }
 
-        if !root.project.has-pdf: VerticalLayout {
+        // Finished projects have nothing to continue.
+        if !root.project.has-pdf || root.project.status == ProjectStatus.finished: VerticalLayout {
             alignment: center;
             Icon {
                 source: @image-url("../icons/chevron-right.svg");
@@ -147,7 +152,7 @@ component ProjectCard inherits Card {
             }
         }
         // Continue at the saved page of the pattern.
-        if root.project.has-pdf: VerticalLayout {
+        if root.project.has-pdf && root.project.status != ProjectStatus.finished: VerticalLayout {
             alignment: center;
             Rectangle {
                 width: 44px;
@@ -249,38 +254,92 @@ export component ListPage inherits Rectangle {
             }
         }
 
-        if Store.projects.length > 0: Flickable {
+        if Store.has-projects: Chips {
+            options: [
+                { label: @tr("All") },
+                { label: @tr("In progress") },
+                { label: @tr("Planned") },
+                { label: @tr("Paused") },
+                { label: @tr("Finished") },
+            ];
+            selected: Store.status-filter == StatusFilter.active ? 1
+                : Store.status-filter == StatusFilter.planned ? 2
+                : Store.status-filter == StatusFilter.paused ? 3
+                : Store.status-filter == StatusFilter.finished ? 4 : 0;
+            select(index) => {
+                Store.set-status-filter(index == 1 ? StatusFilter.active
+                    : index == 2 ? StatusFilter.planned
+                    : index == 3 ? StatusFilter.paused
+                    : index == 4 ? StatusFilter.finished : StatusFilter.all);
+            }
+        }
+
+        if Store.projects.length + Store.finished.length > 0: Flickable {
             vertical-stretch: 1;
             content-height: list.preferred-height;
 
             list := VerticalLayout {
                 padding: Theme.padding;
-                padding-top: 4px;
+                padding-top: Theme.spacing;
                 // Leave room for the floating button.
                 padding-bottom: 112px;
                 spacing: Theme.spacing;
                 alignment: start;
 
-                Text {
-                    text: @tr("Projects");
-                    color: Theme.text-muted;
-                    font-size: Theme.font-small;
-                    font-weight: 600;
-                }
                 for project in Store.projects: ProjectCard {
                     project: project;
                     clicked => { Store.open-project(project.id); }
                 }
+                if Store.finished.length > 0: Rectangle {
+                    height: 32px;
+                    accessible-role: button;
+                    accessible-label: Store.finished-open ? @tr("Hide finished projects ({})", Store.finished.length) : @tr("Show finished projects ({})", Store.finished.length);
+                    accessible-expandable: true;
+                    accessible-expanded: Store.finished-open;
+                    accessible-action-default => { Store.finished-open = !Store.finished-open; }
+
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: @tr("Finished ({})", Store.finished.length);
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                            horizontal-stretch: 0;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            Icon {
+                                source: Store.finished-open ? @image-url("../icons/chevron-up.svg") : @image-url("../icons/chevron-down.svg");
+                                color: Theme.text-muted;
+                                width: 18px;
+                                height: 18px;
+                            }
+                        }
+                        Rectangle {}
+                    }
+                    TouchArea {
+                        clicked => { Store.finished-open = !Store.finished-open; }
+                    }
+                }
+                if Store.finished-open: VerticalLayout {
+                    spacing: Theme.spacing;
+                    for project in Store.finished: ProjectCard {
+                        project: project;
+                        clicked => { Store.open-project(project.id); }
+                    }
+                }
             }
         }
 
-        if Store.has-projects && Store.projects.length == 0: VerticalLayout {
+        if Store.has-projects && Store.projects.length + Store.finished.length == 0: VerticalLayout {
             vertical-stretch: 1;
             alignment: start;
             padding: 40px;
 
             Text {
-                text: @tr("No matching projects");
+                text: Store.query.is-empty ? @tr("No projects with this status") : @tr("No matching projects");
                 color: Theme.text-muted;
                 font-size: Theme.font-body;
                 horizontal-alignment: center;

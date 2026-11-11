@@ -80,39 +80,34 @@ msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
 
-#: ui/components.slint:370
+#: ui/components.slint:413
 msgctxt "DialogButtons"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ui/components.slint:400
+#: ui/components.slint:443
 msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
 
-#: ui/pages/list.slint:246
+#: ui/pages/list.slint:251
 msgctxt "ListPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ui/pages/list.slint:265
-msgctxt "ListPage"
-msgid "Projects"
-msgstr "Projekte"
-
-#: ui/pages/list.slint:315
+#: ui/pages/list.slint:374
 msgctxt "ListPage"
 msgid "No projects yet"
 msgstr "Noch keine Projekte"
 
-#: ui/pages/list.slint:322
+#: ui/pages/list.slint:381
 msgctxt "ListPage"
 msgid "Create a project to count your rows and keep your pattern at hand."
 msgstr ""
 "Leg ein Projekt an, um Reihen zu zählen und deine Anleitung griffbereit zu "
 "haben."
 
-#: ui/pages/list.slint:335
+#: ui/pages/list.slint:394
 msgctxt "ListPage"
 msgid "New project"
 msgstr "Neues Projekt"
@@ -242,24 +237,24 @@ msgctxt "PartPage"
 msgid "Delete part"
 msgstr "Teil löschen"
 
-#: ui/pages/list.slint:115
+#: ui/pages/list.slint:119
 msgctxt "ProjectCard"
 msgid "No parts yet"
 msgstr "Noch keine Teile"
 
-#: ui/pages/list.slint:115
+#: ui/pages/list.slint:119
 msgctxt "ProjectCard"
 msgid "{n} part"
 msgid_plural "{n} parts"
 msgstr[0] "{n} Teil"
 msgstr[1] "{n} Teile"
 
-#: ui/pages/list.slint:116
+#: ui/pages/list.slint:120
 msgctxt "ProjectCard"
 msgid "{} · row {} of {}"
 msgstr "{} · Reihe {} von {}"
 
-#: ui/pages/list.slint:117
+#: ui/pages/list.slint:121
 msgctxt "ProjectCard"
 msgid "{} · row {}"
 msgstr "{} · Reihe {}"
@@ -389,27 +384,27 @@ msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
 "Das PDF wird aus diesem Projekt entfernt. Die Reihenzähler bleiben erhalten."
 
-#: ui/pages/list.slint:132
+#: ui/pages/list.slint:136
 msgctxt "ProjectCard"
 msgid "{}%"
 msgstr "{} %"
 
-#: ui/pages/list.slint:193
+#: ui/pages/list.slint:198
 msgctxt "ListPage"
 msgid "Close search"
 msgstr "Suche schließen"
 
-#: ui/pages/list.slint:202 ui/pages/list.slint:238
+#: ui/pages/list.slint:207 ui/pages/list.slint:243
 msgctxt "ListPage"
 msgid "Search"
 msgstr "Suchen"
 
-#: ui/pages/list.slint:203
+#: ui/pages/list.slint:208
 msgctxt "ListPage"
 msgid "Search projects"
 msgstr "Projekte suchen"
 
-#: ui/pages/list.slint:283
+#: ui/pages/list.slint:342
 msgctxt "ListPage"
 msgid "No matching projects"
 msgstr "Keine passenden Projekte"
@@ -439,7 +434,7 @@ msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ui/pages/list.slint:158
+#: ui/pages/list.slint:163
 msgctxt "ProjectCard"
 msgid "Continue {}"
 msgstr "{} fortsetzen"
@@ -790,3 +785,72 @@ msgstr "{} bearbeiten"
 msgctxt "PartDialog"
 msgid "Delete part"
 msgstr "Teil löschen"
+
+#: ui/pages/list.slint:259
+msgctxt "ListPage"
+msgid "All"
+msgstr "Alle"
+
+#: ui/pages/list.slint:260
+msgctxt "ListPage"
+msgid "In progress"
+msgstr "In Arbeit"
+
+#: ui/pages/list.slint:261
+msgctxt "ListPage"
+msgid "Planned"
+msgstr "Geplant"
+
+#: ui/pages/list.slint:262
+msgctxt "ListPage"
+msgid "Paused"
+msgstr "Pausiert"
+
+#: ui/pages/list.slint:263
+msgctxt "ListPage"
+msgid "Finished"
+msgstr "Fertig"
+
+#: ui/pages/list.slint:296
+msgctxt "ListPage"
+msgid "Hide finished projects ({})"
+msgstr "Fertige Projekte ausblenden ({})"
+
+#: ui/pages/list.slint:296
+msgctxt "ListPage"
+msgid "Show finished projects ({})"
+msgstr "Fertige Projekte einblenden ({})"
+
+#: ui/pages/list.slint:304
+msgctxt "ListPage"
+msgid "Finished ({})"
+msgstr "Fertig ({})"
+
+#: ui/pages/list.slint:342
+msgctxt "ListPage"
+msgid "No projects with this status"
+msgstr "Keine Projekte mit diesem Status"
+
+#. For the search, in ProjectStatus order.
+#: ui/store.slint:113
+msgctxt "Store"
+msgid "Planned"
+msgstr "Geplant"
+
+#. For the search, in ProjectStatus order.
+#: ui/store.slint:113
+msgctxt "Store"
+msgid "In progress"
+msgstr "In Arbeit"
+
+#. For the search, in ProjectStatus order.
+#: ui/store.slint:113
+msgctxt "Store"
+msgid "Paused"
+msgstr "Pausiert"
+
+#. For the search, in ProjectStatus order.
+#: ui/store.slint:113
+msgctxt "Store"
+msgid "Finished"
+msgstr "Fertig"

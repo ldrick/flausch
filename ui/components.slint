@@ -266,6 +266,49 @@ export component Segmented inherits Rectangle {
     }
 }
 
+// A row of filter chips that scrolls sideways when it doesn't fit.
+export component Chips inherits Flickable {
+    in property <[SegmentOption]> options;
+    in property <int> selected;
+    callback select(int);
+
+    height: 36px;
+    content-width: row.preferred-width;
+    content-height: self.height;
+
+    row := HorizontalLayout {
+        padding-left: Theme.padding;
+        padding-right: Theme.padding;
+        spacing: 8px;
+        for option[index] in root.options: Rectangle {
+            border-radius: self.height / 2;
+            background: index == root.selected ? Theme.accent-soft : Theme.surface;
+            border-width: 1px;
+            border-color: index == root.selected ? Theme.accent-soft : Theme.border;
+            accessible-role: button;
+            accessible-label: option.label;
+            accessible-checked: index == root.selected;
+            accessible-action-default => { root.select(index); }
+            animate background { duration: Theme.animation; }
+
+            HorizontalLayout {
+                padding-left: 14px;
+                padding-right: 14px;
+                Text {
+                    text: option.label;
+                    color: index == root.selected ? Theme.accent-pressed : Theme.text-muted;
+                    font-size: Theme.font-small + 1px;
+                    font-weight: index == root.selected ? 600 : 400;
+                    vertical-alignment: center;
+                }
+            }
+            TouchArea {
+                clicked => { root.select(index); }
+            }
+        }
+    }
+}
+
 export component Switch inherits Rectangle {
     in property <bool> checked;
     in property <string> label;

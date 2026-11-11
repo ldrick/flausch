@@ -175,6 +175,41 @@ pub enum Status {
     Finished,
 }
 
+impl Status {
+    /// Position in the project list: active first, then planned and paused, finished last.
+    pub fn group(self) -> u8 {
+        match self {
+            Status::Active => 0,
+            Status::Planned | Status::Paused => 1,
+            Status::Finished => 2,
+        }
+    }
+}
+
+/// Which projects the list shows.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum StatusFilter {
+    #[default]
+    All,
+    Active,
+    Planned,
+    Paused,
+    Finished,
+}
+
+impl StatusFilter {
+    pub fn allows(self, status: Status) -> bool {
+        match self {
+            StatusFilter::All => true,
+            StatusFilter::Active => status == Status::Active,
+            StatusFilter::Planned => status == Status::Planned,
+            StatusFilter::Paused => status == Status::Paused,
+            StatusFilter::Finished => status == Status::Finished,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Project {
     pub id: u64,
@@ -221,8 +256,9 @@ impl Project {
             .fold((0, 0), |(done, total), (d, g)| (done + d, total + g))
     }
 
-    /// Case-insensitive search in the project and part names.
-    pub fn matches(&self, query: &str) -> bool {
+    /// Case-insensitive search in the project and part names, and in the name of the status in
+    /// the current language (from the start of a word, so "e" doesn't match every status).
+    pub fn matches(&self, query: &str, status_name: &str) -> bool {
         let query = query.trim().to_lowercase();
         query.is_empty()
             || self.name.to_lowercase().contains(&query)
@@ -230,6 +266,11 @@ impl Project {
                 .parts
                 .iter()
                 .any(|p| p.name.to_lowercase().contains(&query))
+            || status_name
+                .to_lowercase()
+                .split_whitespace()
+                .any(|word| word.starts_with(query.as_str()))
+            || status_name.to_lowercase().starts_with(&query)
     }
 }
 
@@ -419,10 +460,19 @@ impl Library {
         })
     }
 
-    /// Projects ordered by most recently used first.
-    pub fn recent(&self) -> Vec<&Project> {
-        let mut projects: Vec<_> = self.projects.iter().collect();
-        projects.sort_by(|a, b| b.updated.cmp(&a.updated).then(b.id.cmp(&a.id)));
+    /// Projects the filter allows, grouped by status (`Status::group`) and most recently used
+    /// first within a group.
+    pub fn recent(&self, filter: StatusFilter) -> Vec<&Project> {
+        let mut projects: Vec<_> = self
+            .projects
+            .iter()
+            .filter(|p| filter.allows(p.status))
+            .collect();
+        projects.sort_by(|a, b| {
+            (a.status.group().cmp(&b.status.group()))
+                .then(b.updated.cmp(&a.updated))
+                .then(b.id.cmp(&a.id))
+        });
         projects
     }
 }
@@ -493,6 +543,8 @@ pub struct Settings {
     /// Version code of the last build whose "What's new" the user has seen.
     #[serde(default)]
     pub seen_version: Option<u32>,
+    #[serde(default)]
+    pub project_filter: StatusFilter,
 }
 
 fn default_true() -> bool {
@@ -509,6 +561,7 @@ impl Default for Settings {
             line_color: LineColor::default(),
             volume_keys: false,
             seen_version: None,
+            project_filter: StatusFilter::default(),
         }
     }
 }
@@ -612,9 +665,31 @@ mod tests {
         let mut lib = Library::default();
         let a = lib.create("A", 1);
         let b = lib.create("B", 2);
-        assert_eq!(lib.recent()[0].id, b);
+        assert_eq!(lib.recent(StatusFilter::All)[0].id, b);
         lib.rename(a, "A2", 3);
-        assert_eq!(lib.recent()[0].id, a);
+        assert_eq!(lib.recent(StatusFilter::All)[0].id, a);
+    }
+
+    #[test]
+    fn recent_groups_and_filters_by_status() {
+        let mut lib = Library::default();
+        let done = lib.create("Done", 1);
+        let planned = lib.create("Planned", 2);
+        let active = lib.create("Active", 3);
+        let paused = lib.create("Paused", 4);
+        let newest = lib.create("Newest", 5);
+        lib.set_status(done, Status::Finished, 10);
+        lib.set_status(planned, Status::Planned, 6);
+        lib.set_status(paused, Status::Paused, 7);
+        let ids = |filter| -> Vec<u64> { lib.recent(filter).iter().map(|p| p.id).collect() };
+        assert_eq!(
+            ids(StatusFilter::All),
+            [newest, active, paused, planned, done]
+        );
+        assert_eq!(ids(StatusFilter::Active), [newest, active]);
+        assert_eq!(ids(StatusFilter::Planned), [planned]);
+        assert_eq!(ids(StatusFilter::Paused), [paused]);
+        assert_eq!(ids(StatusFilter::Finished), [done]);
     }
 
     #[test]
@@ -733,10 +808,22 @@ mod tests {
         let id = lib.create("Hase Hoppel", 1);
         lib.add_part(id, &PartSpec::new("Kopf", None), 2);
         let project = lib.get(id).unwrap();
-        assert!(project.matches(""));
-        assert!(project.matches(" hoppel "));
-        assert!(project.matches("KOPF"));
-        assert!(!project.matches("Schal"));
+        assert!(project.matches("", ""));
+        assert!(project.matches(" hoppel ", ""));
+        assert!(project.matches("KOPF", ""));
+        assert!(!project.matches("Schal", ""));
+    }
+
+    #[test]
+    fn matches_the_status_name_from_the_start_of_a_word() {
+        let mut lib = Library::default();
+        let id = lib.create("Mütze", 1);
+        let project = lib.get(id).unwrap();
+        assert!(project.matches("fertig", "Fertig"));
+        assert!(project.matches("arbeit", "In Arbeit"));
+        assert!(project.matches("in arb", "In Arbeit"));
+        assert!(!project.matches("ertig", "Fertig"));
+        assert!(!project.matches("fertig", "In Arbeit"));
     }
 
     #[test]

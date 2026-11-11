@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use slint::{ComponentHandle, Image, ModelRc, VecModel};
+use slint::{ComponentHandle, Image, Model, ModelRc, VecModel};
 
 use model::{Library, PartSpec, Pdf, Settings};
 use platform::{DocumentKind, PickResult};
@@ -171,6 +171,9 @@ fn connect(app: &App) {
     });
     store.on_set_notes(|notes| {
         with(|c| c.set_notes(&notes));
+    });
+    store.on_set_status_filter(|filter| {
+        with(|c| c.set_status_filter(filter.into()));
     });
     store.on_query_changed(|| {
         with(|c| c.refresh());
@@ -340,14 +343,28 @@ impl Controller {
         let app = self.app();
         let store = app.global::<Store>();
         let query = store.get_query();
-        let items: Vec<ProjectItem> = self
+        let names = store.get_status_names();
+        let status_name = |status: model::Status| {
+            let index = match status {
+                model::Status::Planned => 0,
+                model::Status::Active => 1,
+                model::Status::Paused => 2,
+                model::Status::Finished => 3,
+            };
+            names.row_data(index).unwrap_or_default()
+        };
+        let filter = self.settings.project_filter;
+        // While searching, finished projects show up right in the list.
+        let collapse = filter == model::StatusFilter::All && query.trim().is_empty();
+        let (finished, items): (Vec<ProjectItem>, Vec<ProjectItem>) = self
             .library
-            .recent()
+            .recent(filter)
             .into_iter()
-            .filter(|p| p.matches(&query))
+            .filter(|p| p.matches(&query, &status_name(p.status)))
             .map(|p| self.project_item(p))
-            .collect();
+            .partition(|p| collapse && p.status == ProjectStatus::Finished);
         store.set_projects(ModelRc::new(VecModel::from(items)));
+        store.set_finished(ModelRc::new(VecModel::from(finished)));
         store.set_has_projects(!self.library.projects.is_empty());
         if let Some(project) = self.current.and_then(|id| self.library.get(id)) {
             store.set_current(self.project_item(project));
@@ -494,6 +511,11 @@ impl Controller {
         }
         self.library.rename(id, name, now());
         self.save();
+        self.refresh();
+    }
+
+    fn set_status_filter(&mut self, filter: model::StatusFilter) {
+        self.update_settings(|s| s.project_filter = filter);
         self.refresh();
     }
 
@@ -1075,6 +1097,7 @@ impl Controller {
         store.set_keep_screen_on(self.settings.keep_screen_on);
         store.set_line_color(self.settings.line_color.into());
         store.set_volume_keys(self.settings.volume_keys);
+        store.set_status_filter(self.settings.project_filter.into());
         let language = self
             .settings
             .language
@@ -1167,6 +1190,30 @@ impl From<ProjectStatus> for model::Status {
             ProjectStatus::Active => model::Status::Active,
             ProjectStatus::Paused => model::Status::Paused,
             ProjectStatus::Finished => model::Status::Finished,
+        }
+    }
+}
+
+impl From<model::StatusFilter> for StatusFilter {
+    fn from(filter: model::StatusFilter) -> Self {
+        match filter {
+            model::StatusFilter::All => StatusFilter::All,
+            model::StatusFilter::Active => StatusFilter::Active,
+            model::StatusFilter::Planned => StatusFilter::Planned,
+            model::StatusFilter::Paused => StatusFilter::Paused,
+            model::StatusFilter::Finished => StatusFilter::Finished,
+        }
+    }
+}
+
+impl From<StatusFilter> for model::StatusFilter {
+    fn from(filter: StatusFilter) -> Self {
+        match filter {
+            StatusFilter::All => model::StatusFilter::All,
+            StatusFilter::Active => model::StatusFilter::Active,
+            StatusFilter::Planned => model::StatusFilter::Planned,
+            StatusFilter::Paused => model::StatusFilter::Paused,
+            StatusFilter::Finished => model::StatusFilter::Finished,
         }
     }
 }
