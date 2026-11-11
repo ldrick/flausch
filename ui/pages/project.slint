@@ -82,7 +82,7 @@ component PartCard inherits Card {
     border-width: root.active ? 1.5px : 0;
     border-color: Theme.accent;
     accessible-role: button;
-    accessible-label: root.part.goal > 0 ? @tr("{}, row {} of {}", root.part.name, root.part.row, root.part.goal) : @tr("{}, row {}", root.part.name, root.part.row);
+    accessible-label: root.part.goal > 0 ? @tr("{}, row {} of {}", root.part.title, root.part.row, root.part.goal) : @tr("{}, row {}", root.part.title, root.part.row);
     accessible-action-default => { root.clicked(); }
 
     touch := TouchArea {
@@ -103,7 +103,7 @@ component PartCard inherits Card {
                 spacing: 8px;
 
                 Text {
-                    text: root.part.name;
+                    text: root.part.title;
                     color: Theme.text;
                     font-size: Theme.font-body + 1px;
                     font-weight: 600;

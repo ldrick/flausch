@@ -1,13 +1,13 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind } from "../store.slint";
 import { Card, IconButton, TopBar } from "../components.slint";
-import { CounterButtons, RowCount, SecondCounter } from "../counter.slint";
+import { CounterButtons, NextPieceButton, RowCount } from "../counter.slint";
 import { PatternCard } from "project.slint";
 
 export component PartPage inherits Rectangle {
     VerticalLayout {
         TopBar {
-            title: Store.part.name;
+            title: Store.part.title;
             subtitle: Store.current.name;
             back => { Store.back(); }
 
@@ -45,9 +45,9 @@ export component PartPage inherits Rectangle {
                 }
             }
 
-            if Store.part.has-counter: SecondCounter { }
-
             CounterButtons { }
+
+            if Store.part.can-next-piece: NextPieceButton { }
 
             if Store.current.has-pdf: PatternCard {
                 removable: false;

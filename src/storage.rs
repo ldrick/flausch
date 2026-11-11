@@ -310,14 +310,16 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{Language, LineColor, Pdf};
+    use crate::model::{Language, LineColor, PartSpec, Pdf};
 
     /// A storage with one project whose pattern is the PDF `file` with `content`.
     fn with_pdf(dir: &Path, file: &str, content: &[u8]) -> (Storage, Library) {
         let storage = Storage::new(dir.to_path_buf()).unwrap();
         let mut library = Library::default();
         let id = library.create("Hase", 1);
-        library.add_part(id, "Kopf", Some(22), "", 1).unwrap();
+        library
+            .add_part(id, &PartSpec::new("Kopf", Some(22)), 1)
+            .unwrap();
         library.get_mut(id).unwrap().pdf = Some(Pdf::new(file.into(), "Hase.pdf".into()));
         fs::write(storage.pdf_path(file), content).unwrap();
         storage.save_library(&library).unwrap();
@@ -440,7 +442,9 @@ mod tests {
         let storage = Storage::new(dir.path().to_path_buf()).unwrap();
         let mut library = Library::default();
         let id = library.create("Mütze", 1);
-        let part = library.add_part(id, "Krempe", Some(12), "", 2).unwrap();
+        let part = library
+            .add_part(id, &PartSpec::new("Krempe", Some(12)), 2)
+            .unwrap();
         library.increment(id, part, 3);
         storage.save_library(&library).unwrap();
         assert_eq!(storage.load_library(), library);

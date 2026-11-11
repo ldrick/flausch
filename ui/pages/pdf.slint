@@ -1,7 +1,7 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind } from "../store.slint";
 import { Icon, IconButton, TopBar } from "../components.slint";
-import { CounterButtons, RowCount, SecondCounter } from "../counter.slint";
+import { CounterButtons, NextPieceButton, RowCount } from "../counter.slint";
 
 component FloatingPill inherits Rectangle {
     height: 56px;
@@ -312,7 +312,7 @@ export component PdfPage inherits Rectangle {
                     y: 4px;
                     icon: @image-url("../icons/minus.svg");
                     label: @tr("Previous row");
-                    enabled: Store.part.row > 0;
+                    enabled: Store.part.row > 0 || Store.part.piece > 1;
                     clicked => { Store.decrement(); }
                 }
                 // Tap to enlarge the counter.
@@ -334,7 +334,7 @@ export component PdfPage inherits Rectangle {
                             alignment: center;
                             spacing: 2px;
                             Text {
-                                text: Store.part.name;
+                                text: Store.part.title;
                                 color: Theme.text-muted;
                                 font-size: Theme.font-small;
                                 overflow: elide;
@@ -413,7 +413,7 @@ export component PdfPage inherits Rectangle {
                         background: pick-touch.pressed ? Theme.surface-muted : transparent;
                         accessible-role: button;
                         accessible-enabled: Store.parts.length > 1;
-                        accessible-label: Store.parts.length > 1 ? @tr("Choose part") : Store.part.name;
+                        accessible-label: Store.parts.length > 1 ? @tr("Choose part") : Store.part.title;
                         accessible-action-default => { Store.dialog = DialogKind.pick-part; }
 
                         HorizontalLayout {
@@ -421,7 +421,7 @@ export component PdfPage inherits Rectangle {
                             padding-right: 12px;
                             spacing: 4px;
                             Text {
-                                text: Store.part.name;
+                                text: Store.part.title;
                                 color: Theme.text;
                                 font-size: Theme.font-body;
                                 font-weight: 600;
@@ -459,17 +459,15 @@ export component PdfPage inherits Rectangle {
                     inset: 0;
                 }
 
-                if Store.part.has-counter: VerticalLayout {
-                    padding-top: 8px;
-                    SecondCounter {
-                        height: 52px;
-                    }
-                }
-
                 CounterButtons {
                     padding-top: 12px;
                     size: 56px;
                     primary-size: 84px;
+                }
+
+                if Store.part.can-next-piece: VerticalLayout {
+                    padding-top: 12px;
+                    NextPieceButton { }
                 }
             }
         }

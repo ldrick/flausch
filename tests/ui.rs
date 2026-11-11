@@ -105,7 +105,7 @@ fn counting_rows_survives_a_restart() {
 }
 
 #[test]
-fn status_notes_and_a_second_counter() {
+fn status_and_notes() {
     let (app, dir) = fresh();
     create_project(&app, "Bunny");
     tap(&app, "Paused");
@@ -120,22 +120,33 @@ fn status_notes_and_a_second_counter() {
     tap(&app, "Save");
     assert!(exists(&app, "Edit notes"));
 
-    tap(&app, "Add part");
-    type_into(&app, "Name", "Head");
-    type_into(&app, "Second counter (optional)", "Repeats");
-    tap(&app, "Add");
-    tap(&app, "Head, row 0");
-    tap(&app, "Repeats plus one");
-    tap(&app, "Repeats plus one");
-    tap(&app, "Repeats minus one");
-    assert_eq!(store(&app).get_part().counter, 1);
-    tap(&app, "Reset Repeats");
-    assert_eq!(store(&app).get_part().counter, 0);
-
     let app = launch(dir.path());
     settle();
     tap(&app, "Bunny (Paused)");
     assert_eq!(store(&app).get_current().notes, "4 mm hook");
+}
+
+#[test]
+fn a_part_made_several_times() {
+    let (app, _dir) = fresh();
+    create_project(&app, "Bunny");
+    tap(&app, "Add part");
+    type_into(&app, "Name", "Leg");
+    type_into(&app, "Rows (optional)", "2");
+    type_into(&app, "How many (optional)", "4");
+    tap(&app, "Add");
+    tap(&app, "Leg 1/4, row 0 of 2");
+    tap(&app, "Next row");
+    assert!(!exists(&app, "Next piece (2/4)"));
+    tap(&app, "Next row");
+    tap(&app, "Next piece (2/4)");
+    assert_eq!(store(&app).get_part().title, "Leg 2/4");
+    assert_eq!(store(&app).get_current().rows_done, 2);
+    tap(&app, "Previous row");
+    assert_eq!(
+        (store(&app).get_part().piece, store(&app).get_part().row),
+        (1, 2)
+    );
 }
 
 #[test]

@@ -53,11 +53,19 @@ fn back() -> bool {
     })
 }
 
+fn form(name: &str, rows: &str) -> PartForm {
+    PartForm {
+        name: name.into(),
+        rows: rows.into(),
+        ..PartForm::default()
+    }
+}
+
 /// Creates the project "Bunny" with the part "Head" (10 rows) and returns their ids.
 fn project_with_part() -> (u64, u64) {
     ctl(|c| {
         c.create_project("Bunny");
-        c.add_part("Head", "10", "");
+        c.add_part(&form("Head", "10"));
         c.active_part().unwrap()
     })
 }
@@ -363,35 +371,56 @@ fn hand_over(h: &Harness, bytes: &[u8], title: &str) {
 }
 
 #[test]
-fn status_notes_and_the_second_counter_are_saved() {
+fn a_part_made_four_times() {
     let h = Harness::new();
-    let (id, part) = project_with_part();
+    ctl(|c| {
+        c.create_project("Bunny");
+        c.add_part(&PartForm {
+            quantity: "4".into(),
+            ..form("Leg", "2")
+        });
+        c.open_part(c.active_part().unwrap().1);
+    });
+    let part = || h.store().get_part();
+    assert_eq!(
+        (part().title.as_str(), part().can_next_piece),
+        ("Leg 1/4", false)
+    );
+    ctl(|c| {
+        c.count(Library::increment);
+        c.count(Library::increment);
+    });
+    assert!(part().can_next_piece);
+    ctl(|c| c.count(Library::next_piece));
+    assert_eq!(
+        (part().title.as_str(), part().row, part().piece),
+        ("Leg 2/4", 0, 2)
+    );
+    assert_eq!(
+        (
+            h.store().get_current().rows_done,
+            h.store().get_current().rows_total
+        ),
+        (2, 8)
+    );
+    assert_eq!(h.saved().projects[0].parts[0].pieces_done, 1);
+}
+
+#[test]
+fn status_and_notes_are_saved() {
+    let h = Harness::new();
+    let (id, _) = project_with_part();
     ctl(|c| {
         c.set_status(model::Status::Paused);
         c.set_notes("  4 mm hook\n");
-        c.edit_part("Head", "10", "Repeats");
-        c.count_second(|n| n + 1);
-        c.count_second(|n| n + 1);
     });
     assert_eq!(h.store().get_current().status, ProjectStatus::Paused);
     assert_eq!(h.store().get_current().notes, "4 mm hook");
-    assert_eq!(h.store().get_part().counter, 2);
 
     let saved = h.saved();
     let project = saved.get(id).unwrap();
     assert_eq!(project.status, model::Status::Paused);
     assert_eq!(project.notes, "4 mm hook");
-    let counter = project
-        .parts
-        .iter()
-        .find(|p| p.id == part)
-        .unwrap()
-        .counter
-        .clone();
-    assert_eq!(
-        counter.map(|c| (c.name, c.count)),
-        Some(("Repeats".into(), 2))
-    );
 }
 
 #[test]

@@ -1,7 +1,7 @@
 // Row counter building blocks, shared by the part screen and the PDF view.
 import { Theme } from "theme.slint";
 import { Store, DialogKind } from "store.slint";
-import { Icon, IconButton, ProgressBar } from "components.slint";
+import { Icon, IconButton, PillButton, ProgressBar } from "components.slint";
 
 export component RoundButton inherits Rectangle {
     in property <image> icon;
@@ -98,7 +98,7 @@ export component CounterButtons inherits HorizontalLayout {
             size: root.size;
             icon: @image-url("icons/minus.svg");
             label: @tr("Previous row");
-            enabled: Store.part.row > 0;
+            enabled: Store.part.row > 0 || Store.part.piece > 1;
             clicked => { Store.decrement(); }
         }
     }
@@ -115,69 +115,14 @@ export component CounterButtons inherits HorizontalLayout {
             size: root.size;
             icon: @image-url("icons/reset.svg");
             label: @tr("Reset counter");
-            enabled: Store.part.row > 0;
+            enabled: Store.part.row > 0 || Store.part.piece > 1;
             clicked => { Store.dialog = DialogKind.reset; }
         }
     }
 }
 
-// The optional second counter of the active part, e.g. for repeats, as one compact row.
-export component SecondCounter inherits Rectangle {
-    height: 64px;
-    border-radius: Theme.radius;
-    background: Theme.surface-muted;
-
-    HorizontalLayout {
-        padding-left: 18px;
-        padding-right: 6px;
-        spacing: 4px;
-
-        Text {
-            text: Store.part.counter-name;
-            color: Theme.text-muted;
-            font-size: Theme.font-body;
-            vertical-alignment: center;
-            overflow: elide;
-            horizontal-stretch: 1;
-        }
-        Text {
-            text: Store.part.counter;
-            color: Theme.text;
-            font-size: Theme.font-title;
-            font-weight: 600;
-            vertical-alignment: center;
-            horizontal-alignment: center;
-            min-width: 40px;
-            accessible-role: text;
-            accessible-label: @tr("{}: {}", Store.part.counter-name, Store.part.counter);
-        }
-        VerticalLayout {
-            alignment: center;
-            IconButton {
-                icon: @image-url("icons/minus.svg");
-                label: @tr("{} minus one", Store.part.counter-name);
-                enabled: Store.part.counter > 0;
-                clicked => { Store.decrement-counter(); }
-            }
-        }
-        VerticalLayout {
-            alignment: center;
-            IconButton {
-                icon: @image-url("icons/plus.svg");
-                tint: Theme.accent-pressed;
-                label: @tr("{} plus one", Store.part.counter-name);
-                clicked => { Store.increment-counter(); }
-            }
-        }
-        VerticalLayout {
-            alignment: center;
-            IconButton {
-                icon: @image-url("icons/reset.svg");
-                tint: Theme.text-muted;
-                label: @tr("Reset {}", Store.part.counter-name);
-                enabled: Store.part.counter > 0;
-                clicked => { Store.reset-counter(); }
-            }
-        }
-    }
+// Shown once the current piece of a part made several times is done.
+export component NextPieceButton inherits PillButton {
+    text: @tr("Next piece ({}/{})", Store.part.piece + 1, Store.part.quantity);
+    clicked => { Store.next-piece(); }
 }

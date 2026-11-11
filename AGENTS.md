@@ -84,8 +84,10 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   (`Project::progress`); search matches project and part names (`Project::matches`). Navigation:
   list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to
   the list). A project also has a `Status` (planned, in progress, paused, finished; shown as a badge in the list)
-  and free-text `notes`. A part can have a named second counter (`Part::counter`, e.g. repeats) shown on the part
-  screen and in the expanded PDF counter. With `Settings::volume_keys`, the volume keys count the active part, but
+  and free-text `notes`. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
+  finished pieces, "Next piece" (`Library::next_piece`) starts the next one at row 0, Previous row at row 0 goes
+  back to the last row of the piece before, Reset starts over, and progress counts `goal × quantity` rows; the UI
+  shows `PartItem.title` ("Leg 2/4"). There is deliberately no second counter (removed as too complicated). With `Settings::volume_keys`, the volume keys count the active part, but
   only on the part and PDF screens (`update_volume_keys`).
 - Opening or sharing a PDF into Flausch (VIEW/SEND intent filters in `Cargo.toml`): NativeActivity has no
   `onNewIntent`, so every intent starts a new activity. `android_main` first calls `platform::receive_document`;

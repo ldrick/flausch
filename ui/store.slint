@@ -31,13 +31,23 @@ export enum Notice {
 export struct PartItem {
     id: int,
     name: string,
+    // The name, with "2/4" for a part made several times.
+    title: string,
     row: int,
     // 0 means no goal.
     goal: int,
-    // Optional second counter, e.g. for repeats.
-    has-counter: bool,
-    counter-name: string,
-    counter: int,
+    // How many times the part is made, and the piece being worked on (from 1).
+    quantity: int,
+    piece: int,
+    // The current piece is done and another one is left.
+    can-next-piece: bool,
+}
+
+// The fields of the part dialog, as typed; empty optional fields mean none.
+export struct PartForm {
+    name: string,
+    rows: string,
+    quantity: string,
 }
 
 export struct ProjectItem {
@@ -142,19 +152,16 @@ export global Store {
     callback open-part(int);
     // Opens the pattern of a project from the project list, at the saved page.
     callback continue-project(int);
-    // name, rows (optional, may be empty), name of the second counter (empty for none)
-    callback add-part(string, string, string);
-    callback edit-part(string, string, string);
+    callback add-part(PartForm);
+    callback edit-part(PartForm);
     callback delete-part();
 
     // The counter callbacks act on the active part.
     callback increment();
     callback decrement();
     callback reset();
-    // The second counter of the active part.
-    callback increment-counter();
-    callback decrement-counter();
-    callback reset-counter();
+    // Counts the current piece of the active part as done and starts the next one.
+    callback next-piece();
 
     callback pick-pdf();
     callback remove-pdf();

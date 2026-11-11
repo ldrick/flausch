@@ -71,12 +71,42 @@ impl Pdf {
     }
 }
 
-/// A second counter of a part next to the row counter, e.g. for repeats.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Counter {
-    pub name: String,
-    #[serde(default)]
-    pub count: u32,
+/// What the part dialog sets. A `quantity` of 0 counts as 1.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PartSpec<'a> {
+    pub name: &'a str,
+    pub row_goal: Option<u32>,
+    pub quantity: u32,
+}
+
+impl<'a> PartSpec<'a> {
+    pub fn new(name: &'a str, row_goal: Option<u32>) -> Self {
+        Self {
+            name,
+            row_goal,
+            ..Self::default()
+        }
+    }
+}
+
+fn one() -> u32 {
+    1
+}
+
+#[allow(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde's skip_serializing_if"
+)]
+fn is_one(n: &u32) -> bool {
+    *n == 1
+}
+
+#[allow(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde's skip_serializing_if"
+)]
+fn is_zero(n: &u32) -> bool {
+    *n == 0
 }
 
 /// A piece of a project with its own row counter, e.g. the head of a toy.
@@ -89,37 +119,49 @@ pub struct Part {
     /// Target number of rows, if any.
     #[serde(default)]
     pub row_goal: Option<u32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub counter: Option<Counter>,
+    /// How many times the part is made, e.g. 4 legs.
+    #[serde(default = "one", skip_serializing_if = "is_one")]
+    pub quantity: u32,
+    /// Pieces finished so far; `row` counts the piece after them.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub pieces_done: u32,
 }
 
 impl Part {
-    fn new(id: u64, name: &str, row_goal: Option<u32>, counter: &str) -> Self {
+    fn new(id: u64, spec: &PartSpec) -> Self {
         let mut part = Self {
             id,
-            name: clean_name(name),
+            name: String::new(),
             row: 0,
             row_goal: None,
-            counter: None,
+            quantity: 1,
+            pieces_done: 0,
         };
-        part.edit(name, row_goal, counter);
+        part.edit(spec);
         part
     }
 
-    /// An empty `counter` name removes the second counter; renaming it keeps its count.
-    fn edit(&mut self, name: &str, row_goal: Option<u32>, counter: &str) {
-        self.name = clean_name(name);
-        self.row_goal = row_goal.filter(|g| *g > 0);
-        let counter = clean_name(counter);
-        self.counter = if counter.is_empty() {
-            None
-        } else {
-            let count = self.counter.as_ref().map_or(0, |c| c.count);
-            Some(Counter {
-                name: counter,
-                count,
-            })
-        };
+    fn edit(&mut self, spec: &PartSpec) {
+        self.name = clean_name(spec.name);
+        self.row_goal = spec.row_goal.filter(|g| *g > 0);
+        self.quantity = spec.quantity.max(1);
+        self.pieces_done = self.pieces_done.min(self.quantity - 1);
+    }
+
+    /// Whether the current piece is done (its goal reached, or any row without a goal) and
+    /// another one is left.
+    pub fn can_start_next_piece(&self) -> bool {
+        self.pieces_done + 1 < self.quantity && self.row >= self.row_goal.unwrap_or(1)
+    }
+
+    /// Rows done and rows planned for all pieces, if the part has a goal.
+    pub fn progress(&self) -> Option<(u32, u32)> {
+        self.row_goal.map(|goal| {
+            (
+                self.pieces_done * goal + self.row.min(goal),
+                self.quantity * goal,
+            )
+        })
     }
 }
 
@@ -175,7 +217,7 @@ impl Project {
     pub fn progress(&self) -> (u32, u32) {
         self.parts
             .iter()
-            .filter_map(|p| p.row_goal.map(|goal| (p.row.min(goal), goal)))
+            .filter_map(Part::progress)
             .fold((0, 0), |(done, total), (d, g)| (done + d, total + g))
     }
 
@@ -219,7 +261,7 @@ impl Library {
                     let name = project.name.clone();
                     let id = self.next_id();
                     let project = &mut self.projects[i];
-                    let mut part = Part::new(id, &name, row_goal, "");
+                    let mut part = Part::new(id, &PartSpec::new(&name, row_goal));
                     part.row = row.unwrap_or(0);
                     project.parts.push(part);
                     project.active_part = Some(id);
@@ -291,35 +333,20 @@ impl Library {
         Some(self.projects.remove(index))
     }
 
-    /// Adds a part and makes it the active one. A non-empty `counter` adds a second counter.
-    pub fn add_part(
-        &mut self,
-        project: u64,
-        name: &str,
-        row_goal: Option<u32>,
-        counter: &str,
-        now: u64,
-    ) -> Option<u64> {
+    /// Adds a part and makes it the active one.
+    pub fn add_part(&mut self, project: u64, spec: &PartSpec, now: u64) -> Option<u64> {
         self.get(project)?;
         let id = self.next_id();
         let project = self.touch(project, now)?;
-        project.parts.push(Part::new(id, name, row_goal, counter));
+        project.parts.push(Part::new(id, spec));
         project.active_part = Some(id);
         Some(id)
     }
 
-    pub fn edit_part(
-        &mut self,
-        project: u64,
-        part: u64,
-        name: &str,
-        row_goal: Option<u32>,
-        counter: &str,
-        now: u64,
-    ) -> bool {
+    pub fn edit_part(&mut self, project: u64, part: u64, spec: &PartSpec, now: u64) -> bool {
         self.touch(project, now)
             .and_then(|p| p.part_mut(part))
-            .map(|p| p.edit(name, row_goal, counter))
+            .map(|p| p.edit(spec))
             .is_some()
     }
 
@@ -347,42 +374,49 @@ impl Library {
         project: u64,
         part: u64,
         now: u64,
-        f: impl FnOnce(u32) -> u32,
+        f: impl FnOnce(&mut Part),
     ) -> Option<u32> {
         self.get(project)?.part(part)?;
         let project = self.touch(project, now)?;
         project.active_part = Some(part);
         let part = project.part_mut(part)?;
-        part.row = f(part.row);
+        f(part);
         Some(part.row)
     }
 
     pub fn increment(&mut self, project: u64, part: u64, now: u64) -> Option<u32> {
-        self.count(project, part, now, |r| r.saturating_add(1))
+        self.count(project, part, now, |p| p.row = p.row.saturating_add(1))
     }
 
+    /// One row back; at row 0 of a later piece, back to the last row of the piece before.
     pub fn decrement(&mut self, project: u64, part: u64, now: u64) -> Option<u32> {
-        self.count(project, part, now, |r| r.saturating_sub(1))
+        self.count(project, part, now, |p| {
+            if p.row == 0 && p.pieces_done > 0 {
+                p.pieces_done -= 1;
+                p.row = p.row_goal.unwrap_or(0);
+            } else {
+                p.row = p.row.saturating_sub(1);
+            }
+        })
     }
 
+    /// Starts over: row 0 of the first piece.
     pub fn reset(&mut self, project: u64, part: u64, now: u64) -> Option<u32> {
-        self.count(project, part, now, |_| 0)
+        self.count(project, part, now, |p| {
+            p.row = 0;
+            p.pieces_done = 0;
+        })
     }
 
-    /// Changes the second counter of `part` and makes the part active.
-    pub fn count_second(
-        &mut self,
-        project: u64,
-        part: u64,
-        now: u64,
-        f: impl FnOnce(u32) -> u32,
-    ) -> Option<u32> {
-        self.get(project)?.part(part)?.counter.as_ref()?;
-        let project = self.touch(project, now)?;
-        project.active_part = Some(part);
-        let counter = project.part_mut(part)?.counter.as_mut()?;
-        counter.count = f(counter.count);
-        Some(counter.count)
+    /// Counts the current piece as done and starts the next one at row 0.
+    pub fn next_piece(&mut self, project: u64, part: u64, now: u64) -> Option<u32> {
+        if !self.get(project)?.part(part)?.can_start_next_piece() {
+            return None;
+        }
+        self.count(project, part, now, |p| {
+            p.pieces_done += 1;
+            p.row = 0;
+        })
     }
 
     /// Projects ordered by most recently used first.
@@ -505,8 +539,12 @@ mod tests {
     fn parts_count_separately() {
         let mut lib = Library::default();
         let id = lib.create("Hase", 1);
-        let head = lib.add_part(id, "Kopf", Some(22), "", 2).unwrap();
-        let legs = lib.add_part(id, "Beine", Some(0), "", 3).unwrap();
+        let head = lib
+            .add_part(id, &PartSpec::new("Kopf", Some(22)), 2)
+            .unwrap();
+        let legs = lib
+            .add_part(id, &PartSpec::new("Beine", Some(0)), 3)
+            .unwrap();
         assert_eq!(lib.get(id).unwrap().active_part, Some(legs));
         assert_eq!(lib.get(id).unwrap().part(legs).unwrap().row_goal, None);
 
@@ -525,33 +563,6 @@ mod tests {
         assert_eq!(lib.get(id).unwrap().active_part, Some(head));
         assert!(lib.remove_part(id, head, 11).is_some());
         assert_eq!(lib.get(id).unwrap().active_part, None);
-    }
-
-    #[test]
-    fn second_counter_counts_separately_and_survives_a_rename() {
-        let mut lib = Library::default();
-        let id = lib.create("Decke", 1);
-        let plain = lib.add_part(id, "Rand", None, " ", 2).unwrap();
-        let part = lib.add_part(id, "Mitte", None, " Rapport ", 3).unwrap();
-        assert_eq!(lib.count_second(id, plain, 4, |c| c + 1), None);
-
-        assert_eq!(lib.count_second(id, part, 5, |c| c + 1), Some(1));
-        assert_eq!(lib.count_second(id, part, 6, |c| c + 1), Some(2));
-        let project = lib.get(id).unwrap();
-        assert_eq!(project.part(part).unwrap().row, 0);
-        assert_eq!((project.active_part, project.updated), (Some(part), 6));
-
-        lib.edit_part(id, part, "Mitte", None, "Wiederholung", 7);
-        let counter = lib.get(id).unwrap().part(part).unwrap().counter.clone();
-        assert_eq!(
-            counter,
-            Some(Counter {
-                name: "Wiederholung".into(),
-                count: 2
-            })
-        );
-        lib.edit_part(id, part, "Mitte", None, "", 8);
-        assert_eq!(lib.get(id).unwrap().part(part).unwrap().counter, None);
     }
 
     #[test]
@@ -611,9 +622,13 @@ mod tests {
         let mut lib = Library::default();
         let id = lib.create("Hase", 1);
         assert_eq!(lib.get(id).unwrap().progress(), (0, 0));
-        let head = lib.add_part(id, "Kopf", Some(20), "", 2).unwrap();
-        let ears = lib.add_part(id, "Ohren", Some(10), "", 3).unwrap();
-        let free = lib.add_part(id, "Deko", None, "", 4).unwrap();
+        let head = lib
+            .add_part(id, &PartSpec::new("Kopf", Some(20)), 2)
+            .unwrap();
+        let ears = lib
+            .add_part(id, &PartSpec::new("Ohren", Some(10)), 3)
+            .unwrap();
+        let free = lib.add_part(id, &PartSpec::new("Deko", None), 4).unwrap();
         for _ in 0..5 {
             lib.increment(id, head, 5);
         }
@@ -625,10 +640,98 @@ mod tests {
     }
 
     #[test]
+    fn parts_made_several_times() {
+        let mut lib = Library::default();
+        let id = lib.create("Hase", 1);
+        let legs = PartSpec {
+            quantity: 4,
+            ..PartSpec::new("Bein", Some(3))
+        };
+        let leg = lib.add_part(id, &legs, 2).unwrap();
+        let part = |lib: &Library| lib.get(id).unwrap().part(leg).unwrap().clone();
+        assert_eq!(lib.get(id).unwrap().progress(), (0, 12));
+        assert_eq!(
+            lib.next_piece(id, leg, 3),
+            None,
+            "the goal isn't reached yet"
+        );
+
+        for _ in 0..4 {
+            lib.increment(id, leg, 4);
+        }
+        assert_eq!(
+            lib.get(id).unwrap().progress(),
+            (3, 12),
+            "extra rows don't count"
+        );
+        assert_eq!(lib.next_piece(id, leg, 5), Some(0));
+        lib.increment(id, leg, 6);
+        assert_eq!((part(&lib).pieces_done, part(&lib).row), (1, 1));
+        assert_eq!(lib.get(id).unwrap().progress(), (4, 12));
+
+        lib.decrement(id, leg, 7);
+        assert_eq!(
+            lib.decrement(id, leg, 8),
+            Some(3),
+            "back to the last row of leg 1"
+        );
+        assert_eq!(part(&lib).pieces_done, 0);
+
+        for _ in 0..3 {
+            lib.next_piece(id, leg, 9);
+            for _ in 0..3 {
+                lib.increment(id, leg, 9);
+            }
+        }
+        assert_eq!(lib.get(id).unwrap().progress(), (12, 12));
+        assert_eq!(lib.next_piece(id, leg, 10), None, "no fifth leg");
+
+        let fewer = PartSpec {
+            quantity: 2,
+            ..legs
+        };
+        lib.edit_part(id, leg, &fewer, 11);
+        assert_eq!(part(&lib).pieces_done, 1);
+        lib.reset(id, leg, 12);
+        assert_eq!((part(&lib).pieces_done, part(&lib).row), (0, 0));
+    }
+
+    #[test]
+    fn without_a_goal_any_row_finishes_a_piece() {
+        let mut lib = Library::default();
+        let id = lib.create("Hase", 1);
+        let spec = PartSpec {
+            quantity: 2,
+            ..PartSpec::new("Ohr", None)
+        };
+        let ear = lib.add_part(id, &spec, 2).unwrap();
+        assert_eq!(lib.next_piece(id, ear, 3), None);
+        lib.increment(id, ear, 4);
+        assert_eq!(lib.next_piece(id, ear, 5), Some(0));
+        assert_eq!(lib.decrement(id, ear, 6), Some(0));
+        assert_eq!(lib.get(id).unwrap().part(ear).unwrap().pieces_done, 0);
+    }
+
+    #[test]
+    fn old_parts_are_made_once() {
+        // The second counter of earlier test builds is dropped.
+        let part: Part = serde_json::from_str(
+            r#"{"id": 1, "name": "Kopf", "row": 3, "counter": {"name": "Rapport", "count": 2}}"#,
+        )
+        .unwrap();
+        assert_eq!((part.quantity, part.pieces_done), (1, 0));
+        let json = serde_json::to_string(&part).unwrap();
+        assert!(
+            !json.contains("quantity") && !json.contains("counter"),
+            "{json}"
+        );
+    }
+
+    #[test]
     fn matches_project_and_part_names() {
         let mut lib = Library::default();
         let id = lib.create("Hase Hoppel", 1);
-        lib.add_part(id, "Kopf", None, "", 2);
+        lib.add_part(id, &PartSpec::new("Kopf", None), 2);
         let project = lib.get(id).unwrap();
         assert!(project.matches(""));
         assert!(project.matches(" hoppel "));

@@ -113,8 +113,8 @@ component ProjectCard inherits Card {
             }
             Text {
                 text: !root.project.has-active ? (root.project.part-count == 0 ? @tr("No parts yet") : @tr("{n} part" | "{n} parts" % root.project.part-count))
-                    : root.project.active.goal > 0 ? @tr("{} · row {} of {}", root.project.active.name, root.project.active.row, root.project.active.goal)
-                    : @tr("{} · row {}", root.project.active.name, root.project.active.row);
+                    : root.project.active.goal > 0 ? @tr("{} · row {} of {}", root.project.active.title, root.project.active.row, root.project.active.goal)
+                    : @tr("{} · row {}", root.project.active.title, root.project.active.row);
                 overflow: elide;
                 color: Theme.text-muted;
                 font-size: Theme.font-small;

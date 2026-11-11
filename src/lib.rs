@@ -12,7 +12,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use slint::{ComponentHandle, Image, ModelRc, VecModel};
 
-use model::{Library, Pdf, Settings};
+use model::{Library, PartSpec, Pdf, Settings};
 use platform::{DocumentKind, PickResult};
 use storage::{Backup, BackupError, Storage};
 
@@ -184,11 +184,11 @@ fn connect(app: &App) {
     store.on_open_part(|id| {
         with(|c| c.open_part(id as u64));
     });
-    store.on_add_part(|name, goal, counter| {
-        with(|c| c.add_part(&name, &goal, &counter));
+    store.on_add_part(|form| {
+        with(|c| c.add_part(&form));
     });
-    store.on_edit_part(|name, goal, counter| {
-        with(|c| c.edit_part(&name, &goal, &counter));
+    store.on_edit_part(|form| {
+        with(|c| c.edit_part(&form));
     });
     store.on_delete_part(|| {
         with(Controller::delete_part);
@@ -202,14 +202,8 @@ fn connect(app: &App) {
     store.on_reset(|| {
         with(|c| c.count(Library::reset));
     });
-    store.on_increment_counter(|| {
-        with(|c| c.count_second(|n| n.saturating_add(1)));
-    });
-    store.on_decrement_counter(|| {
-        with(|c| c.count_second(|n| n.saturating_sub(1)));
-    });
-    store.on_reset_counter(|| {
-        with(|c| c.count_second(|_| 0));
+    store.on_next_piece(|| {
+        with(|c| c.count(Library::next_piece));
     });
     connect_pdf_and_settings(&store);
 }
@@ -555,30 +549,26 @@ impl Controller {
         }
     }
 
-    fn add_part(&mut self, name: &str, goal: &str, counter: &str) {
+    fn add_part(&mut self, form: &PartForm) {
         let Some(id) = self.current else { return };
-        if name.trim().is_empty() {
+        if form.name.trim().is_empty() {
             return;
         }
         // Stay on the project screen; the new part becomes the one being worked on.
-        if let Some(part) = self
-            .library
-            .add_part(id, name, parse_goal(goal), counter, now())
-        {
+        if let Some(part) = self.library.add_part(id, &part_spec(form), now()) {
             self.save();
             self.select_part(part);
         }
     }
 
-    fn edit_part(&mut self, name: &str, goal: &str, counter: &str) {
+    fn edit_part(&mut self, form: &PartForm) {
         let Some((id, part)) = self.active_part() else {
             return;
         };
-        if name.trim().is_empty() {
+        if form.name.trim().is_empty() {
             return;
         }
-        self.library
-            .edit_part(id, part, name, parse_goal(goal), counter, now());
+        self.library.edit_part(id, part, &part_spec(form), now());
         self.save();
         self.refresh();
     }
@@ -599,16 +589,6 @@ impl Controller {
             return;
         };
         if op(&mut self.library, id, part, now()).is_some() {
-            self.save();
-            self.refresh();
-        }
-    }
-
-    fn count_second(&mut self, f: impl FnOnce(u32) -> u32) {
-        let Some((id, part)) = self.active_part() else {
-            return;
-        };
-        if self.library.count_second(id, part, now(), f).is_some() {
             self.save();
             self.refresh();
         }
@@ -1139,24 +1119,33 @@ fn set_line_view(view: &mut PdfView, pdf: &Pdf) {
     view.line = line.unwrap_or(0.5);
 }
 
-fn parse_goal(goal: &str) -> Option<u32> {
-    goal.trim().parse().ok()
+fn parse_number(text: &str) -> Option<u32> {
+    text.trim().parse().ok()
+}
+
+fn part_spec(form: &PartForm) -> PartSpec<'_> {
+    PartSpec {
+        name: &form.name,
+        row_goal: parse_number(&form.rows),
+        quantity: parse_number(&form.quantity).unwrap_or(1),
+    }
 }
 
 fn part_item(part: &model::Part) -> PartItem {
+    let piece = part.pieces_done + 1;
     PartItem {
         id: part.id as i32,
         name: part.name.as_str().into(),
+        title: if part.quantity > 1 {
+            format!("{} {piece}/{}", part.name, part.quantity).into()
+        } else {
+            part.name.as_str().into()
+        },
         row: part.row as i32,
         goal: part.row_goal.unwrap_or(0) as i32,
-        has_counter: part.counter.is_some(),
-        counter_name: part
-            .counter
-            .as_ref()
-            .map(|c| c.name.as_str())
-            .unwrap_or_default()
-            .into(),
-        counter: part.counter.as_ref().map_or(0, |c| c.count) as i32,
+        quantity: part.quantity as i32,
+        piece: piece as i32,
+        can_next_piece: part.can_start_next_piece(),
     }
 }
 

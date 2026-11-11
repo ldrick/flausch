@@ -1,5 +1,5 @@
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem } from "store.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem, PartForm } from "store.slint";
 import { Dialog, DialogButtons, Field, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
@@ -7,7 +7,7 @@ import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem, PartForm }
 
 component ProjectDialog inherits Dialog {
     in property <bool> editing;
@@ -59,10 +59,15 @@ component PartDialog inherits Dialog {
         if name.text.is-empty {
             return;
         }
+        let form = {
+            name: name.text,
+            rows: goal.text,
+            quantity: quantity.text,
+        };
         if root.editing {
-            Store.edit-part(name.text, goal.text, counter.text);
+            Store.edit-part(form);
         } else {
-            Store.add-part(name.text, goal.text, counter.text);
+            Store.add-part(form);
         }
         root.done();
     }
@@ -71,7 +76,7 @@ component PartDialog inherits Dialog {
         if root.editing {
             name.text = Store.part.name;
             goal.text = Store.part.goal > 0 ? Store.part.goal : "";
-            counter.text = Store.part.counter-name;
+            quantity.text = Store.part.quantity > 1 ? Store.part.quantity : "";
         }
         name.focus-input();
     }
@@ -85,11 +90,12 @@ component PartDialog inherits Dialog {
         label: @tr("Rows (optional)");
         placeholder: @tr("Rows (optional)");
         input-type: InputType.number;
-        accepted => { counter.focus-input(); }
+        accepted => { quantity.focus-input(); }
     }
-    counter := Field {
-        label: @tr("Second counter (optional)");
-        placeholder: @tr("Second counter, e.g. Repeats");
+    quantity := Field {
+        label: @tr("How many (optional)");
+        placeholder: @tr("How many, e.g. 4 legs");
+        input-type: InputType.number;
         accepted => { root.submit(); }
     }
     DialogButtons {
@@ -404,7 +410,7 @@ export component App inherits Window {
                         border-radius: Theme.radius-small;
                         background: self.active ? Theme.accent-soft : part-touch.pressed ? Theme.surface-muted : transparent;
                         accessible-role: button;
-                        accessible-label: part.name;
+                        accessible-label: part.title;
                         accessible-checked: self.active;
                         accessible-action-default => {
                             Store.select-part(part.id);
@@ -417,7 +423,7 @@ export component App inherits Window {
                             spacing: 12px;
 
                             Text {
-                                text: part.name;
+                                text: part.title;
                                 color: Theme.text;
                                 font-size: Theme.font-body;
                                 font-weight: Store.current.has-active && part.id == Store.current.active.id ? 600 : 400;
@@ -453,7 +459,8 @@ export component App inherits Window {
 
         if Store.dialog == DialogKind.reset: Dialog {
             title: @tr("Reset counter?");
-            message: @tr("The row counter of “{}” goes back to 0.", Store.part.name);
+            message: Store.part.quantity > 1 ? @tr("The row counter of “{}” goes back to 0, starting again with the first piece.", Store.part.name)
+                : @tr("The row counter of “{}” goes back to 0.", Store.part.name);
             dismissed => { root.close-dialog(); }
 
             DialogButtons {
