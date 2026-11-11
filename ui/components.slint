@@ -165,6 +165,65 @@ export component Field inherits Rectangle {
     }
 }
 
+// Multi-line text field that scrolls with the cursor.
+export component TextArea inherits Rectangle {
+    in property <string> label;
+    in property <string> placeholder;
+    in-out property <string> text <=> input.text;
+
+    public function focus-input() {
+        input.focus();
+        Store.hide-text-handles();
+    }
+
+    height: 200px;
+    border-radius: Theme.radius-small;
+    background: Theme.surface-muted;
+    border-width: input.has-focus ? 1.5px : 0;
+    border-color: Theme.accent;
+
+    Text {
+        x: 16px;
+        y: 14px;
+        width: parent.width - 32px;
+        accessible-role: none;
+        visible: input.text == "";
+        text: root.placeholder;
+        color: Theme.text-muted;
+        font-size: Theme.font-body;
+        wrap: word-wrap;
+    }
+
+    flick := Flickable {
+        x: 16px;
+        y: 14px;
+        width: parent.width - 32px;
+        height: parent.height - 28px;
+        content-height: input.height;
+
+        input := TextInput {
+            width: flick.width;
+            height: max(flick.height, self.preferred-height);
+            single-line: false;
+            wrap: word-wrap;
+            color: Theme.text;
+            selection-background-color: Theme.accent-soft;
+            selection-foreground-color: Theme.text;
+            font-size: Theme.font-body;
+            accessible-label: root.label;
+            accessible-placeholder-text: root.placeholder;
+            // Keep the cursor line visible.
+            cursor-position-changed(position) => {
+                if position.y + flick.content-y < 0 {
+                    flick.content-y = -position.y;
+                } else if position.y + flick.content-y > flick.height - Theme.font-body * 1.5 {
+                    flick.content-y = flick.height - Theme.font-body * 1.5 - position.y;
+                }
+            }
+        }
+    }
+}
+
 export struct SegmentOption {
     label: string,
 }

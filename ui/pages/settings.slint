@@ -79,34 +79,66 @@ export component SettingsPage inherits Rectangle {
                     text: @tr("Counting");
                 }
                 Card {
-                    height: row.preferred-height;
+                    height: counting.preferred-height;
 
-                    row := HorizontalLayout {
+                    counting := VerticalLayout {
                         padding: 18px;
                         spacing: 16px;
 
-                        VerticalLayout {
-                            alignment: center;
-                            spacing: 2px;
+                        HorizontalLayout {
+                            spacing: 16px;
 
-                            Text {
-                                text: @tr("Keep screen on");
-                                color: Theme.text;
-                                font-size: Theme.font-body;
+                            VerticalLayout {
+                                alignment: center;
+                                spacing: 2px;
+
+                                Text {
+                                    text: @tr("Keep screen on");
+                                    color: Theme.text;
+                                    font-size: Theme.font-body;
+                                }
+                                Text {
+                                    text: @tr("While a project or pattern is open");
+                                    color: Theme.text-muted;
+                                    font-size: Theme.font-small;
+                                    wrap: word-wrap;
+                                }
                             }
-                            Text {
-                                text: @tr("While a project or pattern is open");
-                                color: Theme.text-muted;
-                                font-size: Theme.font-small;
-                                wrap: word-wrap;
+                            VerticalLayout {
+                                alignment: center;
+                                Switch {
+                                    label: @tr("Keep screen on");
+                                    checked: Store.keep-screen-on;
+                                    toggled => { Store.set-keep-screen-on(!Store.keep-screen-on); }
+                                }
                             }
                         }
-                        VerticalLayout {
-                            alignment: center;
-                            Switch {
-                                label: @tr("Keep screen on");
-                                checked: Store.keep-screen-on;
-                                toggled => { Store.set-keep-screen-on(!Store.keep-screen-on); }
+                        HorizontalLayout {
+                            spacing: 16px;
+
+                            VerticalLayout {
+                                alignment: center;
+                                spacing: 2px;
+
+                                Text {
+                                    text: @tr("Count with volume keys");
+                                    color: Theme.text;
+                                    font-size: Theme.font-body;
+                                }
+                                Text {
+                                    text: @tr("Volume up counts a row, volume down goes back");
+                                    color: Theme.text-muted;
+                                    font-size: Theme.font-small;
+                                    wrap: word-wrap;
+                                }
+                            }
+                            VerticalLayout {
+                                alignment: center;
+                                Switch {
+                                    label: @tr("Count with volume keys");
+                                    checked: Store.volume-keys;
+                                    toggled => { Store.set-volume-keys(!Store.volume-keys); }
+                                }
                             }
                         }
                     }

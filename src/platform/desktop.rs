@@ -28,6 +28,8 @@ pub fn set_dark_theme(_dark: bool) {}
 
 pub fn hide_text_handles() {}
 
+pub fn set_volume_keys(_on: bool) {}
+
 /// Shows a file dialog on a background thread and copies the chosen file to `dest`.
 /// `done` runs on that background thread.
 pub fn pick_document(
@@ -80,16 +82,22 @@ fn copy(source: &Path, dest: &Path, chosen: &Path) -> PickResult {
 }
 
 thread_local! {
-    // Parsing is the expensive part, so keep the last document per (render) thread.
-    static DOCUMENT: RefCell<Option<(PathBuf, Pdf)>> = const { RefCell::new(None) };
+    // Parsing is the expensive part, so keep the last document per (render) thread. The key
+    // includes size and modification time, because a file can be replaced under the same path.
+    static DOCUMENT: RefCell<Option<(DocumentKey, Pdf)>> = const { RefCell::new(None) };
 }
 
+type DocumentKey = (PathBuf, u64, Option<std::time::SystemTime>);
+
 fn with_document<T>(path: &Path, f: impl FnOnce(&Pdf) -> Result<T, String>) -> Result<T, String> {
+    let meta = std::fs::metadata(path).map_err(|e| e.to_string())?;
+    let key = (path.to_path_buf(), meta.len(), meta.modified().ok());
     DOCUMENT.with_borrow_mut(|cached| {
-        if cached.as_ref().is_none_or(|(p, _)| p != path) {
+        if cached.as_ref().is_none_or(|(k, _)| *k != key) {
+            *cached = None;
             let data = std::fs::read(path).map_err(|e| e.to_string())?;
             let pdf = Pdf::new(data).map_err(|e| format!("{e:?}"))?;
-            *cached = Some((path.to_path_buf(), pdf));
+            *cached = Some((key, pdf));
         }
         f(&cached.as_ref().unwrap().1)
     })

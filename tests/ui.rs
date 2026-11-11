@@ -105,6 +105,40 @@ fn counting_rows_survives_a_restart() {
 }
 
 #[test]
+fn status_notes_and_a_second_counter() {
+    let (app, dir) = fresh();
+    create_project(&app, "Bunny");
+    tap(&app, "Paused");
+    assert_eq!(
+        store(&app).get_current().status,
+        flausch::ProjectStatus::Paused
+    );
+
+    tap(&app, "Add notes");
+    assert_eq!(store(&app).get_dialog(), DialogKind::Notes);
+    type_into(&app, "Notes", "4 mm hook");
+    tap(&app, "Save");
+    assert!(exists(&app, "Edit notes"));
+
+    tap(&app, "Add part");
+    type_into(&app, "Name", "Head");
+    type_into(&app, "Second counter (optional)", "Repeats");
+    tap(&app, "Add");
+    tap(&app, "Head, row 0");
+    tap(&app, "Repeats plus one");
+    tap(&app, "Repeats plus one");
+    tap(&app, "Repeats minus one");
+    assert_eq!(store(&app).get_part().counter, 1);
+    tap(&app, "Reset Repeats");
+    assert_eq!(store(&app).get_part().counter, 0);
+
+    let app = launch(dir.path());
+    settle();
+    tap(&app, "Bunny (Paused)");
+    assert_eq!(store(&app).get_current().notes, "4 mm hook");
+}
+
+#[test]
 fn resetting_and_deleting_ask_first() {
     let (app, _dir) = fresh();
     create_project(&app, "Bunny");

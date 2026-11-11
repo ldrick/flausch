@@ -71,6 +71,14 @@ impl Pdf {
     }
 }
 
+/// A second counter of a part next to the row counter, e.g. for repeats.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Counter {
+    pub name: String,
+    #[serde(default)]
+    pub count: u32,
+}
+
 /// A piece of a project with its own row counter, e.g. the head of a toy.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Part {
@@ -81,6 +89,48 @@ pub struct Part {
     /// Target number of rows, if any.
     #[serde(default)]
     pub row_goal: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub counter: Option<Counter>,
+}
+
+impl Part {
+    fn new(id: u64, name: &str, row_goal: Option<u32>, counter: &str) -> Self {
+        let mut part = Self {
+            id,
+            name: clean_name(name),
+            row: 0,
+            row_goal: None,
+            counter: None,
+        };
+        part.edit(name, row_goal, counter);
+        part
+    }
+
+    /// An empty `counter` name removes the second counter; renaming it keeps its count.
+    fn edit(&mut self, name: &str, row_goal: Option<u32>, counter: &str) {
+        self.name = clean_name(name);
+        self.row_goal = row_goal.filter(|g| *g > 0);
+        let counter = clean_name(counter);
+        self.counter = if counter.is_empty() {
+            None
+        } else {
+            let count = self.counter.as_ref().map_or(0, |c| c.count);
+            Some(Counter {
+                name: counter,
+                count,
+            })
+        };
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Status {
+    Planned,
+    #[default]
+    Active,
+    Paused,
+    Finished,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -94,6 +144,10 @@ pub struct Project {
     pub active_part: Option<u64>,
     #[serde(default)]
     pub pdf: Option<Pdf>,
+    #[serde(default)]
+    pub status: Status,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub notes: String,
     /// Unix timestamps in seconds.
     pub created: u64,
     pub updated: u64,
@@ -165,12 +219,9 @@ impl Library {
                     let name = project.name.clone();
                     let id = self.next_id();
                     let project = &mut self.projects[i];
-                    project.parts.push(Part {
-                        id,
-                        name,
-                        row: row.unwrap_or(0),
-                        row_goal: row_goal.filter(|g| *g > 0),
-                    });
+                    let mut part = Part::new(id, &name, row_goal, "");
+                    part.row = row.unwrap_or(0);
+                    project.parts.push(part);
                     project.active_part = Some(id);
                 }
             }
@@ -192,6 +243,8 @@ impl Library {
             parts: Vec::new(),
             active_part: None,
             pdf: None,
+            status: Status::default(),
+            notes: String::new(),
             created: now,
             updated: now,
             legacy_row: None,
@@ -222,28 +275,35 @@ impl Library {
             .is_some()
     }
 
+    pub fn set_status(&mut self, id: u64, status: Status, now: u64) -> bool {
+        self.touch(id, now).map(|p| p.status = status).is_some()
+    }
+
+    /// Keeps line breaks, but drops whitespace at the start and end.
+    pub fn set_notes(&mut self, id: u64, notes: &str, now: u64) -> bool {
+        self.touch(id, now)
+            .map(|p| notes.trim().clone_into(&mut p.notes))
+            .is_some()
+    }
+
     pub fn remove(&mut self, id: u64) -> Option<Project> {
         let index = self.projects.iter().position(|p| p.id == id)?;
         Some(self.projects.remove(index))
     }
 
-    /// Adds a part and makes it the active one.
+    /// Adds a part and makes it the active one. A non-empty `counter` adds a second counter.
     pub fn add_part(
         &mut self,
         project: u64,
         name: &str,
         row_goal: Option<u32>,
+        counter: &str,
         now: u64,
     ) -> Option<u64> {
         self.get(project)?;
         let id = self.next_id();
         let project = self.touch(project, now)?;
-        project.parts.push(Part {
-            id,
-            name: clean_name(name),
-            row: 0,
-            row_goal: row_goal.filter(|g| *g > 0),
-        });
+        project.parts.push(Part::new(id, name, row_goal, counter));
         project.active_part = Some(id);
         Some(id)
     }
@@ -254,14 +314,12 @@ impl Library {
         part: u64,
         name: &str,
         row_goal: Option<u32>,
+        counter: &str,
         now: u64,
     ) -> bool {
         self.touch(project, now)
             .and_then(|p| p.part_mut(part))
-            .map(|p| {
-                p.name = clean_name(name);
-                p.row_goal = row_goal.filter(|g| *g > 0);
-            })
+            .map(|p| p.edit(name, row_goal, counter))
             .is_some()
     }
 
@@ -309,6 +367,22 @@ impl Library {
 
     pub fn reset(&mut self, project: u64, part: u64, now: u64) -> Option<u32> {
         self.count(project, part, now, |_| 0)
+    }
+
+    /// Changes the second counter of `part` and makes the part active.
+    pub fn count_second(
+        &mut self,
+        project: u64,
+        part: u64,
+        now: u64,
+        f: impl FnOnce(u32) -> u32,
+    ) -> Option<u32> {
+        self.get(project)?.part(part)?.counter.as_ref()?;
+        let project = self.touch(project, now)?;
+        project.active_part = Some(part);
+        let counter = project.part_mut(part)?.counter.as_mut()?;
+        counter.count = f(counter.count);
+        Some(counter.count)
     }
 
     /// Projects ordered by most recently used first.
@@ -379,6 +453,9 @@ pub struct Settings {
     pub keep_screen_on: bool,
     #[serde(default)]
     pub line_color: LineColor,
+    /// Volume up and down count rows while a counter is shown (Android).
+    #[serde(default)]
+    pub volume_keys: bool,
 }
 
 fn default_true() -> bool {
@@ -393,6 +470,7 @@ impl Default for Settings {
             appearance: Appearance::default(),
             keep_screen_on: true,
             line_color: LineColor::default(),
+            volume_keys: false,
         }
     }
 }
@@ -423,8 +501,8 @@ mod tests {
     fn parts_count_separately() {
         let mut lib = Library::default();
         let id = lib.create("Hase", 1);
-        let head = lib.add_part(id, "Kopf", Some(22), 2).unwrap();
-        let legs = lib.add_part(id, "Beine", Some(0), 3).unwrap();
+        let head = lib.add_part(id, "Kopf", Some(22), "", 2).unwrap();
+        let legs = lib.add_part(id, "Beine", Some(0), "", 3).unwrap();
         assert_eq!(lib.get(id).unwrap().active_part, Some(legs));
         assert_eq!(lib.get(id).unwrap().part(legs).unwrap().row_goal, None);
 
@@ -443,6 +521,53 @@ mod tests {
         assert_eq!(lib.get(id).unwrap().active_part, Some(head));
         assert!(lib.remove_part(id, head, 11).is_some());
         assert_eq!(lib.get(id).unwrap().active_part, None);
+    }
+
+    #[test]
+    fn second_counter_counts_separately_and_survives_a_rename() {
+        let mut lib = Library::default();
+        let id = lib.create("Decke", 1);
+        let plain = lib.add_part(id, "Rand", None, " ", 2).unwrap();
+        let part = lib.add_part(id, "Mitte", None, " Rapport ", 3).unwrap();
+        assert_eq!(lib.count_second(id, plain, 4, |c| c + 1), None);
+
+        assert_eq!(lib.count_second(id, part, 5, |c| c + 1), Some(1));
+        assert_eq!(lib.count_second(id, part, 6, |c| c + 1), Some(2));
+        let project = lib.get(id).unwrap();
+        assert_eq!(project.part(part).unwrap().row, 0);
+        assert_eq!((project.active_part, project.updated), (Some(part), 6));
+
+        lib.edit_part(id, part, "Mitte", None, "Wiederholung", 7);
+        let counter = lib.get(id).unwrap().part(part).unwrap().counter.clone();
+        assert_eq!(
+            counter,
+            Some(Counter {
+                name: "Wiederholung".into(),
+                count: 2
+            })
+        );
+        lib.edit_part(id, part, "Mitte", None, "", 8);
+        assert_eq!(lib.get(id).unwrap().part(part).unwrap().counter, None);
+    }
+
+    #[test]
+    fn status_and_notes_are_kept_and_default_for_old_data() {
+        let old = r#"{"version":2,"next_id":2,"projects":[
+            {"id":1,"name":"Schal","created":0,"updated":0}]}"#;
+        let mut lib: Library = serde_json::from_str(old).unwrap();
+        let project = lib.get(1).unwrap();
+        assert_eq!(
+            (project.status, project.notes.as_str()),
+            (Status::Active, "")
+        );
+
+        assert!(lib.set_status(1, Status::Finished, 3));
+        assert!(lib.set_notes(1, "  Nadel 4\nWolle: Merino \n", 4));
+        let json = serde_json::to_string(&lib).unwrap();
+        let lib: Library = serde_json::from_str(&json).unwrap();
+        let project = lib.get(1).unwrap();
+        assert_eq!(project.status, Status::Finished);
+        assert_eq!(project.notes, "Nadel 4\nWolle: Merino");
     }
 
     #[test]
@@ -482,9 +607,9 @@ mod tests {
         let mut lib = Library::default();
         let id = lib.create("Hase", 1);
         assert_eq!(lib.get(id).unwrap().progress(), (0, 0));
-        let head = lib.add_part(id, "Kopf", Some(20), 2).unwrap();
-        let ears = lib.add_part(id, "Ohren", Some(10), 3).unwrap();
-        let free = lib.add_part(id, "Deko", None, 4).unwrap();
+        let head = lib.add_part(id, "Kopf", Some(20), "", 2).unwrap();
+        let ears = lib.add_part(id, "Ohren", Some(10), "", 3).unwrap();
+        let free = lib.add_part(id, "Deko", None, "", 4).unwrap();
         for _ in 0..5 {
             lib.increment(id, head, 5);
         }
@@ -499,7 +624,7 @@ mod tests {
     fn matches_project_and_part_names() {
         let mut lib = Library::default();
         let id = lib.create("Hase Hoppel", 1);
-        lib.add_part(id, "Kopf", None, 2);
+        lib.add_part(id, "Kopf", None, "", 2);
         let project = lib.get(id).unwrap();
         assert!(project.matches(""));
         assert!(project.matches(" hoppel "));

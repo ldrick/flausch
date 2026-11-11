@@ -88,3 +88,15 @@ icon = "@mipmap/ic_launcher"
 # Handle these changes in place instead of recreating the NativeActivity.
 config_changes = "orientation|keyboardHidden|keyboard|screenSize|screenLayout|smallestScreenSize|uiMode|density|fontScale|locale|layoutDirection"
 
+# Open and share PDFs with Flausch. cargo-apk still adds the MAIN/LAUNCHER filter. The activity
+# started for a PDF hands it over to the running app (`platform::receive_document`).
+[[package.metadata.android.application.activity.intent_filter]]
+actions = ["android.intent.action.VIEW"]
+categories = ["android.intent.category.DEFAULT"]
+data = [{ mime_type = "application/pdf" }]
+
+[[package.metadata.android.application.activity.intent_filter]]
+actions = ["android.intent.action.SEND"]
+categories = ["android.intent.category.DEFAULT"]
+data = [{ mime_type = "application/pdf" }]
+

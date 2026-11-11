@@ -57,7 +57,7 @@ fn back() -> bool {
 fn project_with_part() -> (u64, u64) {
     ctl(|c| {
         c.create_project("Bunny");
-        c.add_part("Head", "10");
+        c.add_part("Head", "10", "");
         c.active_part().unwrap()
     })
 }
@@ -352,6 +352,124 @@ fn unreadable_backups_are_reported() {
         assert_eq!(h.store().get_dialog(), DialogKind::None);
         assert!(!h.store().get_backup_busy());
     }
+}
+
+/// Puts a PDF where another app hands it over, as `platform::receive_document` does.
+fn hand_over(h: &Harness, bytes: &[u8], title: &str) {
+    let (pdf, name) = Storage::incoming_paths(h.dir.path());
+    std::fs::write(pdf, bytes).unwrap();
+    std::fs::write(name, title).unwrap();
+    ctl(Controller::check_incoming);
+}
+
+#[test]
+fn status_notes_and_the_second_counter_are_saved() {
+    let h = Harness::new();
+    let (id, part) = project_with_part();
+    ctl(|c| {
+        c.set_status(model::Status::Paused);
+        c.set_notes("  4 mm hook\n");
+        c.edit_part("Head", "10", "Repeats");
+        c.count_second(|n| n + 1);
+        c.count_second(|n| n + 1);
+    });
+    assert_eq!(h.store().get_current().status, ProjectStatus::Paused);
+    assert_eq!(h.store().get_current().notes, "4 mm hook");
+    assert_eq!(h.store().get_part().counter, 2);
+
+    let saved = h.saved();
+    let project = saved.get(id).unwrap();
+    assert_eq!(project.status, model::Status::Paused);
+    assert_eq!(project.notes, "4 mm hook");
+    let counter = project
+        .parts
+        .iter()
+        .find(|p| p.id == part)
+        .unwrap()
+        .counter
+        .clone();
+    assert_eq!(
+        counter.map(|c| (c.name, c.count)),
+        Some(("Repeats".into(), 2))
+    );
+}
+
+#[test]
+fn volume_keys_count_only_on_the_counter_screens() {
+    let h = Harness::new();
+    let (_, part) = project_with_part();
+    ctl(|c| c.update_settings(|s| s.volume_keys = true));
+    ctl(|c| c.volume_key(true));
+    assert_eq!(
+        h.store().get_current().active.row,
+        0,
+        "the project screen ignores them"
+    );
+
+    ctl(|c| c.open_part(part));
+    ctl(|c| c.volume_key(true));
+    ctl(|c| c.volume_key(true));
+    ctl(|c| c.volume_key(false));
+    assert_eq!(h.store().get_part().row, 1);
+
+    h.store().set_dialog(DialogKind::Reset);
+    ctl(|c| c.volume_key(true));
+    assert_eq!(h.store().get_part().row, 1, "not while a dialog is open");
+    h.store().set_dialog(DialogKind::None);
+
+    ctl(|c| c.update_settings(|s| s.volume_keys = false));
+    ctl(|c| c.volume_key(true));
+    assert_eq!(h.store().get_part().row, 1);
+}
+
+#[test]
+fn a_handed_over_pdf_becomes_a_new_project() {
+    let h = Harness::new();
+    hand_over(&h, PATTERN, "Amigurumi Cat.pdf");
+    assert_eq!(h.store().get_dialog(), DialogKind::IncomingPdf);
+    assert_eq!(h.store().get_incoming_title(), "Amigurumi Cat.pdf");
+
+    ctl(Controller::incoming_to_new_project);
+    assert_eq!(h.store().get_dialog(), DialogKind::None);
+    assert_eq!(h.store().get_screen(), Screen::Project);
+    assert_eq!(h.store().get_current().name, "Amigurumi Cat");
+    let saved = h.saved();
+    let pdf = saved.projects[0].pdf.as_ref().unwrap();
+    assert_eq!(pdf.title, "Amigurumi Cat.pdf");
+    assert_eq!(std::fs::read(pdf_path(&pdf.file)).unwrap(), PATTERN);
+    assert!(ctl(|c| c.storage.incoming()).is_none());
+}
+
+#[test]
+fn a_handed_over_pdf_replaces_the_pattern_of_a_project() {
+    let h = Harness::new();
+    let (id, _) = project_with_part();
+    let old = import(id, 1, PATTERN);
+    assert!(back());
+    hand_over(&h, PATTERN, "new.pdf");
+
+    ctl(|c| c.incoming_to_project(id));
+    let saved = h.saved();
+    let pdf = saved.get(id).unwrap().pdf.as_ref().unwrap();
+    assert_eq!(pdf.title, "new.pdf");
+    assert_ne!(pdf.file, old);
+    assert!(!pdf_path(&old).exists());
+    assert_eq!(h.store().get_current().name, "Bunny");
+}
+
+#[test]
+fn a_handed_over_pdf_can_be_discarded() {
+    let h = Harness::new();
+    hand_over(&h, PATTERN, "pattern.pdf");
+    assert!(back());
+    assert_eq!(h.store().get_dialog(), DialogKind::None);
+    assert!(ctl(|c| c.storage.incoming()).is_none());
+    assert_eq!(h.saved().projects.len(), 0);
+
+    hand_over(&h, b"not a pdf", "broken.pdf");
+    assert_eq!(h.store().get_dialog(), DialogKind::None);
+    assert_eq!(h.store().get_notice(), Notice::PdfInvalid);
+    assert!(ctl(|c| c.storage.incoming()).is_none());
 }
 
 #[test]

@@ -1,6 +1,7 @@
 package io.github.ldrick.flausch;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Application;
 import android.app.Fragment;
 import android.content.ActivityNotFoundException;
@@ -18,10 +19,12 @@ import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.Window;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
@@ -36,7 +39,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 
 /**
@@ -75,6 +81,9 @@ public class FlauschHelper {
 
             @Override
             public void onActivityResumed(Activity a) {
+                if (a == mActivity) {
+                    onResumed();
+                }
             }
 
             @Override
@@ -92,6 +101,139 @@ public class FlauschHelper {
     }
 
     static native void onDocumentDone(int status, String text);
+
+    static native void onResumed();
+
+    static native void onVolumeKey(boolean up);
+
+    private volatile boolean mVolumeKeys;
+    private boolean mKeyProxy;
+
+    /**
+     * Handles a PDF opened with or shared to Flausch: copies it to {@code pdfPath} with its name in
+     * {@code titlePath}, brings the app to the front and finishes this activity. Returns false if
+     * the activity was not started for a document.
+     */
+    @SuppressWarnings("deprecation")
+    public static boolean receiveDocument(Activity activity, String pdfPath, String titlePath) {
+        Intent intent = activity.getIntent();
+        String action = intent != null ? intent.getAction() : null;
+        Uri uri;
+        if (Intent.ACTION_VIEW.equals(action)) {
+            uri = intent.getData();
+        } else if (Intent.ACTION_SEND.equals(action)) {
+            uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        } else {
+            return false;
+        }
+        if (uri != null) {
+            ContentResolver resolver = activity.getContentResolver();
+            File part = new File(pdfPath + ".part");
+            try (InputStream in = resolver.openInputStream(uri);
+                    OutputStream out = new FileOutputStream(part)) {
+                if (in == null) {
+                    throw new IOException("cannot open " + uri);
+                }
+                byte[] buffer = new byte[64 * 1024];
+                int n;
+                while ((n = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, n);
+                }
+            } catch (Exception e) {
+                Log.e("flausch", "cannot receive " + uri, e);
+                part.delete();
+            }
+            if (part.exists()) {
+                try (OutputStream out = new FileOutputStream(titlePath)) {
+                    out.write(displayName(resolver, uri).getBytes("UTF-8"));
+                } catch (Exception e) {
+                    Log.e("flausch", "cannot write the title", e);
+                }
+                if (!part.renameTo(new File(pdfPath))) {
+                    part.delete();
+                }
+            }
+        }
+        if (!showRunningApp(activity)) {
+            Intent launch = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
+            if (launch != null) {
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                activity.startActivity(launch);
+            }
+        }
+        // Rust finishes the activity when android_main returns.
+        return true;
+    }
+
+    /**
+     * Brings a running Flausch to the front. A second NativeActivity must not start, because
+     * the app runs one UI per process. Returns false if none is running.
+     */
+    private static boolean showRunningApp(Activity activity) {
+        ActivityManager manager = activity.getSystemService(ActivityManager.class);
+        boolean running = false;
+        for (ActivityManager.AppTask task : manager.getAppTasks()) {
+            try {
+                ActivityManager.RecentTaskInfo info = task.getTaskInfo();
+                if (info.taskId == activity.getTaskId()) {
+                    // The app is below this activity in the same task and shows up once it finishes.
+                    running |= info.numActivities > 1;
+                } else if (info.numActivities > 0) {
+                    task.moveToFront();
+                    running = true;
+                }
+            } catch (IllegalArgumentException e) {
+                // The task went away in the meantime.
+            }
+        }
+        return running;
+    }
+
+    /**
+     * Lets the volume keys count rows. Slint leaves them unhandled, so they reach the window
+     * callback, which is wrapped once to catch them before the system changes the volume.
+     */
+    public void setVolumeKeys(boolean on) {
+        mVolumeKeys = on;
+        if (!on) {
+            return;
+        }
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mKeyProxy) {
+                    return;
+                }
+                mKeyProxy = true;
+                final Window window = mActivity.getWindow();
+                final Window.Callback original = window.getCallback();
+                window.setCallback((Window.Callback) Proxy.newProxyInstance(
+                        Window.Callback.class.getClassLoader(),
+                        new Class<?>[] { Window.Callback.class },
+                        new InvocationHandler() {
+                            @Override
+                            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                                if (mVolumeKeys && method.getName().equals("dispatchKeyEvent")
+                                        && args[0] instanceof KeyEvent) {
+                                    KeyEvent event = (KeyEvent) args[0];
+                                    int code = event.getKeyCode();
+                                    if (code == KeyEvent.KEYCODE_VOLUME_UP || code == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                                        if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                                            onVolumeKey(code == KeyEvent.KEYCODE_VOLUME_UP);
+                                        }
+                                        return true;
+                                    }
+                                }
+                                try {
+                                    return method.invoke(original, args);
+                                } catch (InvocationTargetException e) {
+                                    throw e.getCause();
+                                }
+                            }
+                        }));
+            }
+        });
+    }
 
     /**
      * Opens the system document picker for the comma-separated {@code mimeTypes} and copies the

@@ -81,7 +81,16 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `Settings::line_color` → `Theme.line-color()`). List progress sums all parts with a goal
   (`Project::progress`); search matches project and part names (`Project::matches`). Navigation:
   list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to
-  the list).
+  the list). A project also has a `Status` (planned, in progress, paused, finished; shown as a badge in the list)
+  and free-text `notes`. A part can have a named second counter (`Part::counter`, e.g. repeats) shown on the part
+  screen and in the expanded PDF counter. With `Settings::volume_keys`, the volume keys count the active part, but
+  only on the part and PDF screens (`update_volume_keys`).
+- Opening or sharing a PDF into Flausch (VIEW/SEND intent filters in `Cargo.toml`): NativeActivity has no
+  `onNewIntent`, so every intent starts a new activity. `android_main` first calls `platform::receive_document`;
+  if the intent carries a PDF, Java copies it to `incoming.pdf` (title in `incoming.txt`), brings the running
+  instance to the front (`showRunningApp`, never a second NativeActivity) and Rust returns, which finishes the
+  trampoline. The main instance picks the file up in `check_incoming` (on start and on resume) and asks for a new
+  project or an existing one (`Storage::adopt_incoming` / `discard_incoming`).
 - `model.rs` and `storage.rs` must not depend on `slint`, so they stay unit-testable (`tempfile` in tests).
 - On-disk files are versioned (`LIBRARY_VERSION`, `SETTINGS_VERSION`). `Library::migrate` (called on load)
   upgrades old data, e.g. version 1 rows per project become one part; add a test for every migration.
@@ -104,6 +113,9 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
 
 ## UI conventions
 
+- Principles: offline and local (no account, no server, no internet access, no permissions; data stays in the app
+  directory) and usable with one hand (large touch targets, little text, nothing resets by accident). Open tasks
+  live in GitHub Issues, grouped by milestone.
 - Design: soft, light and minimalist (warm off-white background, white cards, soft pink accent, pill buttons). Use
   colors and sizes from `Theme` only, never hard-coded colors and not `Palette`. `Theme.dark` follows the
   appearance setting (system, light, dark). The color scheme isn't final, so keep it centralized in
@@ -149,6 +161,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
 - **Back is delivered twice** with targetSdk 36 (OnBackInvokedCallback and the native KeyEvent). The
   `Controller::back()` method drops a second Back within 300 ms. Dialogs are closed in Rust. An unhandled Back on
   the project list finishes the activity.
+- Slint leaves volume keys unhandled. `FlauschHelper.setVolumeKeys` wraps the window's `Window.Callback` in a
+  Proxy that consumes them while enabled and calls `onVolumeKey` on the first key down.
 - The status bar icon color follows `Theme.dark` (`Store.dark-changed` → `platform::set_dark_theme` →
   `FlauschHelper.setLightSystemBars`).
 - Pages are inset by `safe-area-insets`. Dialogs and the scrim cover the whole window. `App` copies the
@@ -197,6 +211,11 @@ Slint's Android backend has no accessibility support, so Flausch brings its own 
 - Never open a file dialog in tests (`pick_pdf`, `import_backup`, `export_backup`).
 
 ## Testing on the emulator
+
+Develop and test on the emulator. The user's phone holds real data: use it only when the user asks (to install a
+finished build or to reproduce a specific bug there). On the phone, don't change device settings, don't touch
+Flausch's data, make sure Flausch is in the foreground before sending input, and ask the user to unlock it if
+needed.
 
 ```sh
 make emulator                                   # separate terminal; AVD "flausch"

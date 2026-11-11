@@ -1,7 +1,7 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind } from "../store.slint";
 import { Icon, IconButton, TopBar } from "../components.slint";
-import { CounterButtons, RowCount } from "../counter.slint";
+import { CounterButtons, RowCount, SecondCounter } from "../counter.slint";
 
 component FloatingPill inherits Rectangle {
     height: 56px;
@@ -390,11 +390,14 @@ export component PdfPage inherits Rectangle {
         if Store.counter-expanded && Store.current.has-active: Rectangle {
             vertical-stretch: 0;
             background: Theme.surface;
-            border-top-left-radius: 28px;
-            border-top-right-radius: 28px;
-            // A border instead of a shadow sets it apart from the (usually white) page.
-            border-width: 1px;
-            border-color: Theme.border;
+
+            // Square, because the page ends straight above it; a line instead of a shadow sets it apart
+            // from the (usually white) page.
+            Rectangle {
+                y: 0;
+                height: 1px;
+                background: Theme.border;
+            }
 
             VerticalLayout {
                 padding: 12px;
@@ -454,6 +457,13 @@ export component PdfPage inherits Rectangle {
                     vertical-stretch: 0;
                     number-size: 80px;
                     inset: 0;
+                }
+
+                if Store.part.has-counter: VerticalLayout {
+                    padding-top: 8px;
+                    SecondCounter {
+                        height: 52px;
+                    }
                 }
 
                 CounterButtons {

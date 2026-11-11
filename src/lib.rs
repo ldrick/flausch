@@ -19,7 +19,13 @@ slint::include_modules!();
 
 pub fn run() -> Result<(), slint::PlatformError> {
     let app = App::new()?;
-    start(&app, platform::data_dir())?;
+    let data_dir = platform::data_dir();
+    // `flausch pattern.pdf` offers the PDF like Android's "Open with".
+    #[cfg(not(target_os = "android"))]
+    if let Some(path) = std::env::args_os().nth(1) {
+        receive_file(&data_dir, std::path::Path::new(&path));
+    }
+    start(&app, data_dir)?;
     #[cfg(target_os = "android")]
     a11y::start(&app);
     app.run()?;
@@ -58,6 +64,8 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         covers,
         save_timer: slint::Timer::default(),
         screen_on: None,
+        volume_keys: None,
+        incoming: None,
         last_back: None,
     };
     CONTROLLER.with_borrow_mut(|c| *c = Some(controller));
@@ -65,6 +73,7 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         c.apply_settings();
         c.refresh();
         c.create_missing_covers();
+        c.check_incoming();
     });
     connect(app);
     platform::set_dark_theme(app.global::<Theme>().get_dark());
@@ -77,11 +86,50 @@ pub fn stop() {
     CONTROLLER.with_borrow_mut(Option::take);
 }
 
+/// Copies `path` to where a PDF from another app waits for the user (`Storage::incoming_paths`).
+#[cfg(not(target_os = "android"))]
+fn receive_file(data_dir: &std::path::Path, path: &std::path::Path) {
+    let (pdf, title) = Storage::incoming_paths(data_dir);
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let result = std::fs::create_dir_all(data_dir)
+        .and_then(|()| std::fs::copy(path, &pdf))
+        .and_then(|_| std::fs::write(&title, name));
+    if let Err(e) = result {
+        eprintln!("flausch: cannot open {}: {e}", path.display());
+    }
+}
+
+/// A PDF from another app is waiting, e.g. after the app came back to the foreground.
+#[cfg_attr(
+    not(target_os = "android"),
+    allow(dead_code, reason = "used on Android")
+)]
+fn check_incoming() {
+    with(Controller::check_incoming);
+}
+
+/// Volume up (`true`) or down was pressed while `platform::set_volume_keys` was on.
+#[cfg_attr(
+    not(target_os = "android"),
+    allow(dead_code, reason = "used on Android")
+)]
+fn volume_key(up: bool) {
+    with(|c| c.volume_key(up));
+}
+
 #[cfg(target_os = "android")]
 // android-activity declares this as `extern "Rust"` and looks it up by name.
 #[allow(unsafe_code, clippy::no_mangle_with_rust_abi)]
 #[unsafe(no_mangle)]
 fn android_main(app: slint::android::AndroidApp) {
+    // A PDF opened with or shared to Flausch starts a second activity. It only hands the file
+    // over to the app and brings that to the front.
+    if platform::receive_document(&app) {
+        return;
+    }
     platform::init(app.clone());
     slint::android::init(app).unwrap();
     run().unwrap();
@@ -116,6 +164,12 @@ fn connect(app: &App) {
     store.on_delete_project(|| {
         with(Controller::delete_project);
     });
+    store.on_set_status(|status| {
+        with(|c| c.set_status(status.into()));
+    });
+    store.on_set_notes(|notes| {
+        with(|c| c.set_notes(&notes));
+    });
     store.on_query_changed(|| {
         with(|c| c.refresh());
     });
@@ -128,11 +182,11 @@ fn connect(app: &App) {
     store.on_open_part(|id| {
         with(|c| c.open_part(id as u64));
     });
-    store.on_add_part(|name, goal| {
-        with(|c| c.add_part(&name, &goal));
+    store.on_add_part(|name, goal, counter| {
+        with(|c| c.add_part(&name, &goal, &counter));
     });
-    store.on_edit_part(|name, goal| {
-        with(|c| c.edit_part(&name, &goal));
+    store.on_edit_part(|name, goal, counter| {
+        with(|c| c.edit_part(&name, &goal, &counter));
     });
     store.on_delete_part(|| {
         with(Controller::delete_part);
@@ -146,6 +200,19 @@ fn connect(app: &App) {
     store.on_reset(|| {
         with(|c| c.count(Library::reset));
     });
+    store.on_increment_counter(|| {
+        with(|c| c.count_second(|n| n.saturating_add(1)));
+    });
+    store.on_decrement_counter(|| {
+        with(|c| c.count_second(|n| n.saturating_sub(1)));
+    });
+    store.on_reset_counter(|| {
+        with(|c| c.count_second(|_| 0));
+    });
+    connect_pdf_and_settings(&store);
+}
+
+fn connect_pdf_and_settings(store: &Store) {
     store.on_pick_pdf(|| {
         with(Controller::pick_pdf);
     });
@@ -181,6 +248,9 @@ fn connect(app: &App) {
     store.on_set_line_color(|color| {
         with(|c| c.update_settings(|s| s.line_color = color.into()));
     });
+    store.on_set_volume_keys(|on| {
+        with(|c| c.update_settings(|s| s.volume_keys = on));
+    });
     store.on_export_backup(|| {
         with(Controller::export_backup);
     });
@@ -189,6 +259,15 @@ fn connect(app: &App) {
     });
     store.on_restore_backup(|| {
         with(Controller::restore_backup);
+    });
+    store.on_incoming_to_new_project(|| {
+        with(Controller::incoming_to_new_project);
+    });
+    store.on_incoming_to_project(|id| {
+        with(|c| c.incoming_to_project(id as u64));
+    });
+    store.on_discard_incoming(|| {
+        with(Controller::discard_incoming);
     });
 }
 
@@ -217,6 +296,9 @@ struct Controller {
     covers: pdf::Covers,
     save_timer: slint::Timer,
     screen_on: Option<bool>,
+    volume_keys: Option<bool>,
+    /// Title of the PDF from another app that the incoming dialog asks about.
+    incoming: Option<String>,
     last_back: Option<Instant>,
 }
 
@@ -224,6 +306,12 @@ fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_secs())
+}
+
+fn now_nanos() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos())
 }
 
 impl Controller {
@@ -287,6 +375,7 @@ impl Controller {
         let screen = self.screen();
         self.app().global::<Store>().set_screen(screen);
         self.update_keep_screen_on();
+        self.update_volume_keys();
     }
 
     fn navigate(&mut self, screen: Screen) {
@@ -309,6 +398,9 @@ impl Controller {
         let app = self.app();
         let store = app.global::<Store>();
         if store.get_dialog() != DialogKind::None {
+            if store.get_dialog() == DialogKind::IncomingPdf {
+                self.discard_incoming();
+            }
             store.set_dialog(DialogKind::None);
             self.last_back = Some(now);
             return true;
@@ -344,6 +436,27 @@ impl Controller {
             self.screen_on = Some(on);
             platform::keep_screen_on(on);
         }
+    }
+
+    /// The volume keys count while the part screen or the PDF view is shown.
+    fn update_volume_keys(&mut self) {
+        let on = self.settings.volume_keys && matches!(self.screen(), Screen::Part | Screen::Pdf);
+        if self.volume_keys != Some(on) {
+            self.volume_keys = Some(on);
+            platform::set_volume_keys(on);
+        }
+    }
+
+    fn volume_key(&mut self, up: bool) {
+        let open = self.app().global::<Store>().get_dialog() != DialogKind::None;
+        if self.volume_keys != Some(true) || open {
+            return;
+        }
+        self.count(if up {
+            Library::increment
+        } else {
+            Library::decrement
+        });
     }
 
     // Projects
@@ -388,6 +501,20 @@ impl Controller {
         self.refresh();
     }
 
+    fn set_status(&mut self, status: model::Status) {
+        let Some(id) = self.current else { return };
+        self.library.set_status(id, status, now());
+        self.save();
+        self.refresh();
+    }
+
+    fn set_notes(&mut self, notes: &str) {
+        let Some(id) = self.current else { return };
+        self.library.set_notes(id, notes, now());
+        self.save();
+        self.refresh();
+    }
+
     fn delete_project(&mut self) {
         let Some(id) = self.current.take() else {
             return;
@@ -426,19 +553,22 @@ impl Controller {
         }
     }
 
-    fn add_part(&mut self, name: &str, goal: &str) {
+    fn add_part(&mut self, name: &str, goal: &str, counter: &str) {
         let Some(id) = self.current else { return };
         if name.trim().is_empty() {
             return;
         }
         // Stay on the project screen; the new part becomes the one being worked on.
-        if let Some(part) = self.library.add_part(id, name, parse_goal(goal), now()) {
+        if let Some(part) = self
+            .library
+            .add_part(id, name, parse_goal(goal), counter, now())
+        {
             self.save();
             self.select_part(part);
         }
     }
 
-    fn edit_part(&mut self, name: &str, goal: &str) {
+    fn edit_part(&mut self, name: &str, goal: &str, counter: &str) {
         let Some((id, part)) = self.active_part() else {
             return;
         };
@@ -446,7 +576,7 @@ impl Controller {
             return;
         }
         self.library
-            .edit_part(id, part, name, parse_goal(goal), now());
+            .edit_part(id, part, name, parse_goal(goal), counter, now());
         self.save();
         self.refresh();
     }
@@ -472,14 +602,21 @@ impl Controller {
         }
     }
 
+    fn count_second(&mut self, f: impl FnOnce(u32) -> u32) {
+        let Some((id, part)) = self.active_part() else {
+            return;
+        };
+        if self.library.count_second(id, part, now(), f).is_some() {
+            self.save();
+            self.refresh();
+        }
+    }
+
     // PDF patterns
 
     fn pick_pdf(&mut self) {
         let Some(id) = self.current else { return };
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_or(0, |d| d.as_nanos());
-        let file = Storage::new_pdf_file(id, nanos);
+        let file = Storage::new_pdf_file(id, now_nanos());
         let dest = self.storage.pdf_path(&file);
         platform::pick_document(DocumentKind::Pdf, dest, move |result| {
             let _ = slint::invoke_from_event_loop(move || {
@@ -521,6 +658,75 @@ impl Controller {
         self.create_cover(file);
     }
 
+    /// Asks what to do with a PDF that another app opened with or shared to Flausch.
+    fn check_incoming(&mut self) {
+        if self.incoming.is_some() {
+            return;
+        }
+        let Some((path, title)) = self.storage.incoming() else {
+            return;
+        };
+        if let Err(e) = platform::page_count(&path).and_then(|n| match n {
+            0 => Err("no pages".into()),
+            n => Ok(n),
+        }) {
+            eprintln!("flausch: {title} is not a usable PDF: {e}");
+            self.storage.discard_incoming();
+            return self.notify(Notice::PdfInvalid);
+        }
+        let app = self.app();
+        let store = app.global::<Store>();
+        store.set_incoming_title(title.as_str().into());
+        store.set_dialog(DialogKind::IncomingPdf);
+        self.incoming = Some(title);
+    }
+
+    fn incoming_to_new_project(&mut self) {
+        let Some(title) = self.incoming.clone() else {
+            return;
+        };
+        let name = match title.rsplit_once('.') {
+            Some((stem, ext)) if ext.eq_ignore_ascii_case("pdf") && !stem.trim().is_empty() => stem,
+            _ => &title,
+        };
+        let id = self.library.create(name, now());
+        self.incoming_to_project(id);
+    }
+
+    /// Makes the incoming PDF the pattern of project `id`, replacing its old one, and opens it.
+    fn incoming_to_project(&mut self, id: u64) {
+        let Some(title) = self.incoming.take() else {
+            return;
+        };
+        self.app().global::<Store>().set_dialog(DialogKind::None);
+        let file = Storage::new_pdf_file(id, now_nanos());
+        if self.library.get(id).is_none() {
+            return self.storage.discard_incoming();
+        }
+        if let Err(e) = self.storage.adopt_incoming(&file) {
+            eprintln!("flausch: cannot import {title}: {e}");
+            self.storage.discard_incoming();
+            return self.notify(Notice::PdfImportFailed);
+        }
+        let project = self.library.touch(id, now()).expect("checked above");
+        if let Some(old) = project.pdf.replace(Pdf::new(file.clone(), title)) {
+            self.storage.remove_pdf(&old.file);
+        }
+        self.save();
+        self.create_cover(&file);
+        self.open_project(id);
+    }
+
+    fn discard_incoming(&mut self) {
+        self.incoming = None;
+        self.storage.discard_incoming();
+        let app = self.app();
+        let store = app.global::<Store>();
+        if store.get_dialog() == DialogKind::IncomingPdf {
+            store.set_dialog(DialogKind::None);
+        }
+    }
+
     fn remove_pdf(&mut self) {
         let Some(id) = self.current else { return };
         if let Some(old) = self.library.touch(id, now()).and_then(|p| p.pdf.take()) {
@@ -557,6 +763,8 @@ impl Controller {
         ProjectItem {
             id: project.id as i32,
             name: project.name.as_str().into(),
+            status: project.status.into(),
+            notes: project.notes.as_str().into(),
             part_count: project.parts.len() as i32,
             has_active: project.active().is_some(),
             active: project.active().map(part_item).unwrap_or_default(),
@@ -871,6 +1079,7 @@ impl Controller {
         store.set_appearance(self.settings.appearance.into());
         store.set_keep_screen_on(self.settings.keep_screen_on);
         store.set_line_color(self.settings.line_color.into());
+        store.set_volume_keys(self.settings.volume_keys);
         let language = self
             .settings
             .language
@@ -879,6 +1088,7 @@ impl Controller {
             eprintln!("flausch: cannot select language {language}: {e}");
         }
         self.update_keep_screen_on();
+        self.update_volume_keys();
     }
 }
 
@@ -916,6 +1126,36 @@ fn part_item(part: &model::Part) -> PartItem {
         name: part.name.as_str().into(),
         row: part.row as i32,
         goal: part.row_goal.unwrap_or(0) as i32,
+        has_counter: part.counter.is_some(),
+        counter_name: part
+            .counter
+            .as_ref()
+            .map(|c| c.name.as_str())
+            .unwrap_or_default()
+            .into(),
+        counter: part.counter.as_ref().map_or(0, |c| c.count) as i32,
+    }
+}
+
+impl From<model::Status> for ProjectStatus {
+    fn from(status: model::Status) -> Self {
+        match status {
+            model::Status::Planned => ProjectStatus::Planned,
+            model::Status::Active => ProjectStatus::Active,
+            model::Status::Paused => ProjectStatus::Paused,
+            model::Status::Finished => ProjectStatus::Finished,
+        }
+    }
+}
+
+impl From<ProjectStatus> for model::Status {
+    fn from(status: ProjectStatus) -> Self {
+        match status {
+            ProjectStatus::Planned => model::Status::Planned,
+            ProjectStatus::Active => model::Status::Active,
+            ProjectStatus::Paused => model::Status::Paused,
+            ProjectStatus::Finished => model::Status::Finished,
+        }
     }
 }
 

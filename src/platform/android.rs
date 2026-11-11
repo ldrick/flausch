@@ -42,8 +42,11 @@ fn app() -> AndroidApp {
         .expect("platform::init was not called")
 }
 
-/// Loads `FlauschHelper` from the embedded dex and creates an instance for the activity.
-fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>> {
+/// Runs `f` with the activity and the `FlauschHelper` class, loaded from the embedded dex.
+fn with_helper_class<T>(
+    app: &AndroidApp,
+    f: impl FnOnce(&mut Env, &JObject, &JClass) -> jni::errors::Result<T>,
+) -> jni::errors::Result<T> {
     // SAFETY: android-activity hands out a valid pointer to the process JavaVM.
     let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) };
     vm.attach_current_thread(|env| {
@@ -75,12 +78,47 @@ fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>
             )?
             .l()?;
         let class = env.cast_local::<JClass>(class)?;
+        f(env, &activity, &class)
+    })
+}
+
+/// If the activity was started to open or share a PDF, hands the file to the app (see
+/// `Storage::incoming_paths`), brings the app to the front and returns true. The activity is
+/// finished then and must not start the UI.
+pub fn receive_document(app: &AndroidApp) -> bool {
+    let Some(dir) = app.internal_data_path() else {
+        return false;
+    };
+    let (pdf, title) = crate::storage::Storage::incoming_paths(&dir);
+    with_helper_class(app, |env, activity, class| {
+        let pdf = env.new_string(pdf.to_string_lossy())?;
+        let title = env.new_string(title.to_string_lossy())?;
+        env.call_static_method(
+            class,
+            jni_str!("receiveDocument"),
+            jni_sig!("(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)Z"),
+            &[
+                JValue::Object(activity),
+                JValue::Object(&pdf),
+                JValue::Object(&title),
+            ],
+        )?
+        .z()
+    })
+    .inspect_err(|e| eprintln!("flausch: cannot check the intent: {e}"))
+    .unwrap_or(false)
+}
+
+/// Loads `FlauschHelper` from the embedded dex and creates an instance for the activity.
+fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>> {
+    with_helper_class(app, |env, activity, class| {
         // SAFETY: each function matches the signature of its static native method (`void
         // onDocumentDone(int, String)`, `void onA11yState(boolean)`, `void onA11yAction(int, int,
-        // String)`), and its second parameter is the class.
+        // String)`, `void onA11yFocus(int)`, `void onResumed()`, `void onVolumeKey(boolean)`), and
+        // its second parameter is the class.
         unsafe {
             env.register_native_methods(
-                &class,
+                class,
                 &[
                     NativeMethod::from_raw_parts(
                         jni_str!("onDocumentDone"),
@@ -102,13 +140,23 @@ fn load_helper(app: &AndroidApp) -> jni::errors::Result<Global<JObject<'static>>
                         jni_str!("(I)V"),
                         on_a11y_focus as *mut std::ffi::c_void,
                     ),
+                    NativeMethod::from_raw_parts(
+                        jni_str!("onResumed"),
+                        jni_str!("()V"),
+                        on_resumed as *mut std::ffi::c_void,
+                    ),
+                    NativeMethod::from_raw_parts(
+                        jni_str!("onVolumeKey"),
+                        jni_str!("(Z)V"),
+                        on_volume_key as *mut std::ffi::c_void,
+                    ),
                 ],
             )
         }?;
         let helper = env.new_object(
-            &class,
+            class,
             jni_sig!("(Landroid/app/Activity;)V"),
-            &[JValue::Object(&activity)],
+            &[JValue::Object(activity)],
         )?;
         env.new_global_ref(helper)
     })
@@ -168,6 +216,22 @@ pub fn set_dark_theme(dark: bool) {
     });
     if let Err(e) = result {
         eprintln!("flausch: cannot set the system bar colors: {e}");
+    }
+}
+
+/// Lets the volume keys count rows instead of changing the volume (`crate::volume_key`).
+pub fn set_volume_keys(on: bool) {
+    let result = with_helper(|env, helper| {
+        env.call_method(
+            helper,
+            jni_str!("setVolumeKeys"),
+            jni_sig!("(Z)V"),
+            &[JValue::Bool(on)],
+        )?;
+        Ok(())
+    });
+    if let Err(e) = result {
+        eprintln!("flausch: cannot change the volume keys: {e}");
     }
 }
 
@@ -382,6 +446,18 @@ extern "system" fn on_a11y_focus<'local>(
     id: jint,
 ) {
     let _ = slint::invoke_from_event_loop(move || crate::a11y::set_focus(id));
+}
+
+extern "system" fn on_resumed<'local>(_env: EnvUnowned<'local>, _class: JClass<'local>) {
+    let _ = slint::invoke_from_event_loop(crate::check_incoming);
+}
+
+extern "system" fn on_volume_key<'local>(
+    _env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    up: jboolean,
+) {
+    let _ = slint::invoke_from_event_loop(move || crate::volume_key(up));
 }
 
 pub fn page_count(path: &Path) -> Result<u32, String> {

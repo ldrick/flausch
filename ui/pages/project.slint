@@ -1,6 +1,6 @@
 import { Theme } from "../theme.slint";
-import { Store, DialogKind, PartItem } from "../store.slint";
-import { Card, Icon, IconButton, PillButton, ButtonKind, ProgressBar, TopBar } from "../components.slint";
+import { Store, DialogKind, PartItem, ProjectStatus } from "../store.slint";
+import { Card, Icon, IconButton, PillButton, ButtonKind, ProgressBar, Segmented, TopBar } from "../components.slint";
 
 export component PatternCard inherits Card {
     // Shows a button to remove the PDF from the project.
@@ -168,6 +168,20 @@ export component ProjectPage inherits Rectangle {
                 alignment: start;
 
                 SectionTitle {
+                    text: @tr("Status");
+                }
+                Segmented {
+                    options: [{ label: @tr("Planned") }, { label: @tr("In progress") }, { label: @tr("Paused") }, { label: @tr("Finished") }];
+                    selected: Store.current.status == ProjectStatus.planned ? 0 : Store.current.status == ProjectStatus.paused ? 2 : Store.current.status == ProjectStatus.finished ? 3 : 1;
+                    select(index) => {
+                        Store.set-status(index == 0 ? ProjectStatus.planned : index == 2 ? ProjectStatus.paused : index == 3 ? ProjectStatus.finished : ProjectStatus.active);
+                    }
+                }
+
+                Rectangle {
+                    height: 8px;
+                }
+                SectionTitle {
                     text: @tr("Parts");
                 }
                 if Store.parts.length == 0: Text {
@@ -203,6 +217,41 @@ export component ProjectPage inherits Rectangle {
                     clicked => { Store.pick-pdf(); }
                 }
                 if Store.current.has-pdf: PatternCard { }
+
+                Rectangle {
+                    height: 8px;
+                }
+                SectionTitle {
+                    text: @tr("Notes");
+                }
+                if Store.current.notes == "": PillButton {
+                    kind: ButtonKind.secondary;
+                    text: @tr("Add notes");
+                    icon: @image-url("../icons/edit.svg");
+                    has-icon: true;
+                    clicked => { Store.dialog = DialogKind.notes; }
+                }
+                if Store.current.notes != "": Card {
+                    height: notes.preferred-height;
+                    background: notes-touch.pressed ? Theme.surface-muted : Theme.surface;
+                    accessible-role: button;
+                    accessible-label: @tr("Edit notes");
+                    accessible-description: Store.current.notes;
+                    accessible-action-default => { Store.dialog = DialogKind.notes; }
+
+                    notes-touch := TouchArea {
+                        clicked => { Store.dialog = DialogKind.notes; }
+                    }
+                    notes := VerticalLayout {
+                        padding: 18px;
+                        Text {
+                            text: Store.current.notes;
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
             }
         }
     }

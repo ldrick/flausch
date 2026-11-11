@@ -1,13 +1,13 @@
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus } from "store.slint";
-import { Dialog, DialogButtons, Field, Keyboard, PillButton, ButtonKind } from "components.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus } from "store.slint";
+import { Dialog, DialogButtons, Field, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
 import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus }
 
 component ProjectDialog inherits Dialog {
     in property <bool> editing;
@@ -60,9 +60,9 @@ component PartDialog inherits Dialog {
             return;
         }
         if root.editing {
-            Store.edit-part(name.text, goal.text);
+            Store.edit-part(name.text, goal.text, counter.text);
         } else {
-            Store.add-part(name.text, goal.text);
+            Store.add-part(name.text, goal.text, counter.text);
         }
         root.done();
     }
@@ -71,6 +71,7 @@ component PartDialog inherits Dialog {
         if root.editing {
             name.text = Store.part.name;
             goal.text = Store.part.goal > 0 ? Store.part.goal : "";
+            counter.text = Store.part.counter-name;
         }
         name.focus-input();
     }
@@ -84,6 +85,11 @@ component PartDialog inherits Dialog {
         label: @tr("Rows (optional)");
         placeholder: @tr("Rows (optional)");
         input-type: InputType.number;
+        accepted => { counter.focus-input(); }
+    }
+    counter := Field {
+        label: @tr("Second counter (optional)");
+        placeholder: @tr("Second counter, e.g. Repeats");
         accepted => { root.submit(); }
     }
     DialogButtons {
@@ -91,6 +97,31 @@ component PartDialog inherits Dialog {
         confirm-enabled: !name.text.is-empty;
         cancel => { root.done(); }
         confirm => { root.submit(); }
+    }
+}
+
+component NotesDialog inherits Dialog {
+    callback done();
+
+    title: @tr("Notes");
+    dismissed => { root.done(); }
+
+    init => {
+        notes.text = Store.current.notes;
+        notes.focus-input();
+    }
+
+    notes := TextArea {
+        label: @tr("Notes");
+        placeholder: @tr("Yarn, hook size, changes…");
+    }
+    DialogButtons {
+        confirm-text: @tr("Save");
+        cancel => { root.done(); }
+        confirm => {
+            Store.set-notes(notes.text);
+            root.done();
+        }
     }
 }
 
@@ -230,6 +261,66 @@ export component App inherits Window {
         if Store.dialog == DialogKind.add-part || Store.dialog == DialogKind.edit-part: PartDialog {
             editing: Store.dialog == DialogKind.edit-part;
             done => { root.close-dialog(); }
+        }
+
+        if Store.dialog == DialogKind.notes: NotesDialog {
+            done => { root.close-dialog(); }
+        }
+
+        if Store.dialog == DialogKind.incoming-pdf: Dialog {
+            title: @tr("Open PDF");
+            message: Store.has-projects ? @tr("Create a new project with “{}” or add it to a project.", Store.incoming-title)
+                : @tr("Create a new project with “{}”.", Store.incoming-title);
+            dismissed => { Store.discard-incoming(); }
+
+            if Store.has-projects: Flickable {
+                height: min(targets.preferred-height, 280px);
+                content-height: targets.preferred-height;
+
+                targets := VerticalLayout {
+                    alignment: start;
+                    spacing: 4px;
+
+                    for project in Store.projects: Rectangle {
+                        height: 56px;
+                        border-radius: Theme.radius-small;
+                        background: target-touch.pressed ? Theme.surface-muted : transparent;
+                        accessible-role: button;
+                        accessible-label: project.name;
+                        accessible-description: project.has-pdf ? @tr("Replaces its pattern") : "";
+                        accessible-action-default => { Store.incoming-to-project(project.id); }
+
+                        HorizontalLayout {
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            spacing: 12px;
+
+                            Text {
+                                text: project.name;
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                                vertical-alignment: center;
+                                overflow: elide;
+                                horizontal-stretch: 1;
+                            }
+                            if project.has-pdf: Text {
+                                text: @tr("Replaces its pattern");
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                vertical-alignment: center;
+                            }
+                        }
+                        target-touch := TouchArea {
+                            clicked => { Store.incoming-to-project(project.id); }
+                        }
+                    }
+                }
+            }
+            DialogButtons {
+                confirm-text: @tr("New project");
+                cancel => { Store.discard-incoming(); }
+                confirm => { Store.incoming-to-new-project(); }
+            }
         }
 
         if Store.dialog == DialogKind.delete-part: Dialog {

@@ -1,5 +1,5 @@
 import { Theme } from "../theme.slint";
-import { Store, DialogKind, ProjectItem } from "../store.slint";
+import { Store, DialogKind, ProjectItem, ProjectStatus } from "../store.slint";
 import { Card, Field, Icon, IconButton, PillButton, ProgressBar } from "../components.slint";
 
 component ProjectCard inherits Card {
@@ -9,8 +9,12 @@ component ProjectCard inherits Card {
     height: 104px;
     background: touch.pressed ? Theme.surface-muted : Theme.surface;
     accessible-role: button;
-    accessible-label: root.project.name;
+    accessible-label: root.project.status == ProjectStatus.active ? root.project.name : @tr("{} ({})", root.project.name, root.status-text);
     accessible-action-default => { root.clicked(); }
+
+    property <string> status-text: root.project.status == ProjectStatus.planned ? @tr("Planned")
+        : root.project.status == ProjectStatus.paused ? @tr("Paused")
+        : root.project.status == ProjectStatus.finished ? @tr("Finished") : "";
 
     // Below the content, so the continue button gets its own taps.
     touch := TouchArea {
@@ -75,12 +79,37 @@ component ProjectCard inherits Card {
             alignment: center;
             spacing: 6px;
 
-            Text {
-                text: root.project.name;
-                color: Theme.text;
-                font-size: Theme.font-body + 1px;
-                font-weight: 600;
-                overflow: elide;
+            HorizontalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: root.project.name;
+                    color: Theme.text;
+                    font-size: Theme.font-body + 1px;
+                    font-weight: 600;
+                    overflow: elide;
+                }
+                if root.project.status != ProjectStatus.active: VerticalLayout {
+                    alignment: center;
+                    horizontal-stretch: 0;
+                    Rectangle {
+                        height: 22px;
+                        border-radius: self.height / 2;
+                        background: root.project.status == ProjectStatus.finished ? Theme.accent-soft : Theme.surface-muted;
+
+                        HorizontalLayout {
+                            padding-left: 8px;
+                            padding-right: 8px;
+                            Text {
+                                text: root.status-text;
+                                color: root.project.status == ProjectStatus.finished ? Theme.accent-pressed : Theme.text-muted;
+                                font-size: Theme.font-small - 1px;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
             }
             Text {
                 text: !root.project.has-active ? (root.project.part-count == 0 ? @tr("No parts yet") : @tr("{n} part" | "{n} parts" % root.project.part-count))

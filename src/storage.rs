@@ -20,6 +20,8 @@ const COVER_DIR: &str = "covers";
 const EXPORT_FILE: &str = "export.zip";
 const IMPORT_FILE: &str = "import.zip";
 const RESTORE_DIR: &str = "restore.tmp";
+const INCOMING_PDF: &str = "incoming.pdf";
+const INCOMING_TITLE: &str = "incoming.txt";
 /// Upper bound for the JSON files in a backup, against broken or malicious files.
 const MAX_JSON_SIZE: u64 = 64 * 1024 * 1024;
 
@@ -107,6 +109,40 @@ impl Storage {
     pub fn remove_pdf(&self, file: &str) {
         remove_file(&self.pdf_path(file));
         remove_file(&self.cover_path(file));
+    }
+
+    /// Where a PDF opened or shared from another app waits until the user decides where it goes,
+    /// and the file with its title. Static, because Android writes them before the app starts.
+    pub fn incoming_paths(dir: &Path) -> (PathBuf, PathBuf) {
+        (dir.join(INCOMING_PDF), dir.join(INCOMING_TITLE))
+    }
+
+    /// The path and title of a waiting PDF, see `incoming_paths`.
+    pub fn incoming(&self) -> Option<(PathBuf, String)> {
+        let (pdf, title) = Self::incoming_paths(&self.dir);
+        if !pdf.is_file() {
+            return None;
+        }
+        let title = fs::read_to_string(title).unwrap_or_default();
+        let title = match title.trim() {
+            "" => "document.pdf".to_owned(),
+            title => title.to_owned(),
+        };
+        Some((pdf, title))
+    }
+
+    /// Moves the waiting PDF into the PDF directory as `file`.
+    pub fn adopt_incoming(&self, file: &str) -> io::Result<()> {
+        let (pdf, title) = Self::incoming_paths(&self.dir);
+        fs::rename(pdf, self.pdf_path(file))?;
+        remove_file(&title);
+        Ok(())
+    }
+
+    pub fn discard_incoming(&self) {
+        let (pdf, title) = Self::incoming_paths(&self.dir);
+        remove_file(&pdf);
+        remove_file(&title);
     }
 
     /// Where a backup is written before it is copied to the place the user chose.
@@ -281,7 +317,7 @@ mod tests {
         let storage = Storage::new(dir.to_path_buf()).unwrap();
         let mut library = Library::default();
         let id = library.create("Hase", 1);
-        library.add_part(id, "Kopf", Some(22), 1).unwrap();
+        library.add_part(id, "Kopf", Some(22), "", 1).unwrap();
         library.get_mut(id).unwrap().pdf = Some(Pdf::new(file.into(), "Hase.pdf".into()));
         fs::write(storage.pdf_path(file), content).unwrap();
         storage.save_library(&library).unwrap();
@@ -404,7 +440,7 @@ mod tests {
         let storage = Storage::new(dir.path().to_path_buf()).unwrap();
         let mut library = Library::default();
         let id = library.create("Mütze", 1);
-        let part = library.add_part(id, "Krempe", Some(12), 2).unwrap();
+        let part = library.add_part(id, "Krempe", Some(12), "", 2).unwrap();
         library.increment(id, part, 3);
         storage.save_library(&library).unwrap();
         assert_eq!(storage.load_library(), library);

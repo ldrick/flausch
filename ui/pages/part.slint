@@ -1,7 +1,7 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind } from "../store.slint";
 import { Card, IconButton, TopBar } from "../components.slint";
-import { CounterButtons, RowCount } from "../counter.slint";
+import { CounterButtons, RowCount, SecondCounter } from "../counter.slint";
 import { PatternCard } from "project.slint";
 
 export component PartPage inherits Rectangle {
@@ -44,6 +44,8 @@ export component PartPage inherits Rectangle {
                     height: 100%;
                 }
             }
+
+            if Store.part.has-counter: SecondCounter { }
 
             CounterButtons { }
 

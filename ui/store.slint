@@ -4,7 +4,9 @@ export enum Screen { list, project, part, pdf, settings }
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, add-part, edit-part, delete-part, pick-part, reset, remove-pdf, restore-backup }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, reset, remove-pdf, restore-backup, incoming-pdf }
+
+export enum ProjectStatus { planned, active, paused, finished }
 
 export enum Notice {
     none,
@@ -26,11 +28,17 @@ export struct PartItem {
     row: int,
     // 0 means no goal.
     goal: int,
+    // Optional second counter, e.g. for repeats.
+    has-counter: bool,
+    counter-name: string,
+    counter: int,
 }
 
 export struct ProjectItem {
     id: int,
     name: string,
+    status: ProjectStatus,
+    notes: string,
     part-count: int,
     // The part opened last; `has-active` is false if there is none.
     has-active: bool,
@@ -97,10 +105,13 @@ export global Store {
     in property <Appearance> appearance: Appearance.system;
     in property <bool> keep-screen-on: true;
     in property <LineColor> line-color: LineColor.magenta;
+    in property <bool> volume-keys;
     // A backup is being written, chosen or restored.
     in property <bool> backup-busy;
     // Number of projects in the backup the restore dialog asks about.
     in property <int> backup-projects;
+    // File name of a PDF opened or shared from another app, waiting for a project.
+    in property <string> incoming-title;
 
     in-out property <DialogKind> dialog: DialogKind.none;
     // The PDF view shows the large counter instead of the floating one.
@@ -113,6 +124,8 @@ export global Store {
     callback create-project(string);
     callback edit-project(string);
     callback delete-project();
+    callback set-status(ProjectStatus);
+    callback set-notes(string);
 
     callback query-changed();
 
@@ -121,15 +134,19 @@ export global Store {
     callback open-part(int);
     // Opens the pattern of a project from the project list, at the saved page.
     callback continue-project(int);
-    // name, rows (optional, may be empty)
-    callback add-part(string, string);
-    callback edit-part(string, string);
+    // name, rows (optional, may be empty), name of the second counter (empty for none)
+    callback add-part(string, string, string);
+    callback edit-part(string, string, string);
     callback delete-part();
 
     // The counter callbacks act on the active part.
     callback increment();
     callback decrement();
     callback reset();
+    // The second counter of the active part.
+    callback increment-counter();
+    callback decrement-counter();
+    callback reset-counter();
 
     callback pick-pdf();
     callback remove-pdf();
@@ -146,11 +163,16 @@ export global Store {
     callback set-appearance(Appearance);
     callback set-keep-screen-on(bool);
     callback set-line-color(LineColor);
+    callback set-volume-keys(bool);
     callback export-backup();
     // Lets the user choose a backup, then opens the restore dialog.
     callback import-backup();
     // Replaces all data with the chosen backup.
     callback restore-backup();
+    // What to do with the incoming PDF: a new project, the pattern of a project, or nothing.
+    callback incoming-to-new-project();
+    callback incoming-to-project(int);
+    callback discard-incoming();
     // A text field was focused from code (not by a tap); hides Android's cursor handles.
     callback hide-text-handles();
     // The effective theme changed (setting or system), for the system bar icons.
