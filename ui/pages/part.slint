@@ -16,7 +16,10 @@ export component PartPage inherits Rectangle {
                 IconButton {
                     icon: @image-url("../icons/edit.svg");
                     label: @tr("Edit part");
-                    clicked => { Store.dialog = DialogKind.edit-part; }
+                    clicked => {
+                        Store.edited = Store.part;
+                        Store.dialog = DialogKind.edit-part;
+                    }
                 }
             }
             VerticalLayout {
@@ -24,7 +27,10 @@ export component PartPage inherits Rectangle {
                 IconButton {
                     icon: @image-url("../icons/trash.svg");
                     label: @tr("Delete part");
-                    clicked => { Store.dialog = DialogKind.delete-part; }
+                    clicked => {
+                        Store.edited = Store.part;
+                        Store.dialog = DialogKind.delete-part;
+                    }
                 }
             }
         }

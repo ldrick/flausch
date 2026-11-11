@@ -1,6 +1,6 @@
 import { Theme, Appearance, LineColor } from "theme.slint";
 import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, ChangeItem, PartForm } from "store.slint";
-import { Dialog, DialogButtons, Field, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
+import { Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
 import { PartPage } from "pages/part.slint";
@@ -65,7 +65,7 @@ component PartDialog inherits Dialog {
             quantity: quantity.text,
         };
         if root.editing {
-            Store.edit-part(form);
+            Store.edit-part(Store.edited.id, form);
         } else {
             Store.add-part(form);
         }
@@ -74,9 +74,9 @@ component PartDialog inherits Dialog {
 
     init => {
         if root.editing {
-            name.text = Store.part.name;
-            goal.text = Store.part.goal > 0 ? Store.part.goal : "";
-            quantity.text = Store.part.quantity > 1 ? Store.part.quantity : "";
+            name.text = Store.edited.name;
+            goal.text = Store.edited.goal > 0 ? Store.edited.goal : "";
+            quantity.text = Store.edited.quantity > 1 ? Store.edited.quantity : "";
         }
         name.focus-input();
     }
@@ -98,11 +98,23 @@ component PartDialog inherits Dialog {
         input-type: InputType.number;
         accepted => { root.submit(); }
     }
-    DialogButtons {
-        confirm-text: root.editing ? @tr("Save") : @tr("Add");
-        confirm-enabled: !name.text.is-empty;
-        cancel => { root.done(); }
-        confirm => { root.submit(); }
+    HorizontalLayout {
+        if root.editing: VerticalLayout {
+            alignment: end;
+            IconButton {
+                icon: @image-url("icons/trash.svg");
+                tint: Theme.danger;
+                label: @tr("Delete part");
+                clicked => { Store.dialog = DialogKind.delete-part; }
+            }
+        }
+        DialogButtons {
+            horizontal-stretch: 1;
+            confirm-text: root.editing ? @tr("Save") : @tr("Add");
+            confirm-enabled: !name.text.is-empty;
+            cancel => { root.done(); }
+            confirm => { root.submit(); }
+        }
     }
 }
 
@@ -378,7 +390,7 @@ export component App inherits Window {
 
         if Store.dialog == DialogKind.delete-part: Dialog {
             title: @tr("Delete part?");
-            message: @tr("“{}” and its row counter will be removed.", Store.part.name);
+            message: @tr("“{}” and its row counter will be removed.", Store.edited.name);
             dismissed => { root.close-dialog(); }
 
             DialogButtons {
@@ -387,7 +399,7 @@ export component App inherits Window {
                 cancel => { root.close-dialog(); }
                 confirm => {
                     root.close-dialog();
-                    Store.delete-part();
+                    Store.delete-part(Store.edited.id);
                 }
             }
         }

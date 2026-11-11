@@ -131,6 +131,46 @@ fn a_second_back_right_after_the_first_is_dropped() {
 }
 
 #[test]
+fn a_part_opens_the_pattern_if_the_project_has_one() {
+    let h = Harness::new();
+    let (id, head) = project_with_part();
+    ctl(|c| c.open_part(head));
+    assert_eq!(h.store().get_screen(), Screen::Part, "no PDF: the counter");
+    assert!(back());
+
+    import(id, 1, PATTERN);
+    ctl(|c| c.add_part(&form("Leg", "")));
+    ctl(|c| c.open_part(head));
+    assert_eq!(h.store().get_screen(), Screen::Pdf);
+    assert_eq!(h.store().get_part().name, "Head", "the PDF view counts it");
+    assert!(back());
+    assert_eq!(h.store().get_screen(), Screen::Project);
+}
+
+#[test]
+fn editing_or_deleting_a_part_keeps_the_active_one() {
+    let h = Harness::new();
+    let (_, head) = project_with_part();
+    ctl(|c| c.add_part(&form("Leg", "")));
+    let leg = ctl(|c| c.active_part().unwrap().1);
+
+    ctl(|c| c.edit_part(head, &form("Big head", "12")));
+    let parts = h.store().get_parts();
+    assert_eq!(
+        (
+            parts.row_data(0).unwrap().name.as_str(),
+            parts.row_data(0).unwrap().goal
+        ),
+        ("Big head", 12)
+    );
+    assert_eq!(h.store().get_part().name, "Leg");
+
+    ctl(|c| c.delete_part(head));
+    assert_eq!(h.store().get_parts().row_count(), 1);
+    assert_eq!(ctl(|c| c.active_part()).map(|(_, p)| p), Some(leg));
+}
+
+#[test]
 fn back_collapses_the_counter_and_ends_the_search() {
     let h = Harness::new();
     let (id, _) = project_with_part();

@@ -76,6 +76,7 @@ component PartCard inherits Card {
     in property <PartItem> part;
     in property <bool> active;
     callback clicked();
+    callback edit();
 
     height: root.part.goal > 0 ? 84px : 68px;
     background: touch.pressed ? Theme.surface-muted : Theme.surface;
@@ -123,11 +124,11 @@ component PartCard inherits Card {
         }
         VerticalLayout {
             alignment: center;
-            Icon {
-                source: @image-url("../icons/chevron-right.svg");
-                color: Theme.border;
-                width: 20px;
-                height: 20px;
+            IconButton {
+                icon: @image-url("../icons/edit.svg");
+                tint: Theme.text-muted;
+                label: @tr("Edit {}", root.part.title);
+                clicked => { root.edit(); }
             }
         }
     }
@@ -194,6 +195,10 @@ export component ProjectPage inherits Rectangle {
                     part: part;
                     active: Store.current.has-active && part.id == Store.current.active.id;
                     clicked => { Store.open-part(part.id); }
+                    edit => {
+                        Store.edited = part;
+                        Store.dialog = DialogKind.edit-part;
+                    }
                 }
                 PillButton {
                     kind: Store.parts.length == 0 ? ButtonKind.primary : ButtonKind.secondary;

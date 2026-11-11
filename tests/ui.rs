@@ -176,6 +176,28 @@ fn resetting_and_deleting_ask_first() {
 }
 
 #[test]
+fn a_part_is_edited_and_deleted_from_the_project() {
+    let (app, _dir) = fresh();
+    create_project(&app, "Bunny");
+    add_part(&app, "Head", "");
+    add_part(&app, "Leg", "");
+
+    tap(&app, "Edit Head");
+    assert_eq!(store(&app).get_screen(), Screen::Project);
+    type_into(&app, "Rows (optional)", "8");
+    tap(&app, "Save");
+    assert!(exists(&app, "Head, row 0 of 8"));
+    assert_eq!(store(&app).get_part().name, "Leg", "still counting the leg");
+
+    tap(&app, "Edit Head");
+    tap(&app, "Delete part");
+    tap(&app, "Delete");
+    assert_eq!(store(&app).get_screen(), Screen::Project);
+    assert!(!exists(&app, "Head, row 0 of 8"));
+    assert!(exists(&app, "Leg, row 0"));
+}
+
+#[test]
 fn search_finds_projects_by_part_name() {
     let (app, _dir) = fresh();
     create_project(&app, "Bunny");

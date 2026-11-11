@@ -83,8 +83,10 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `Settings::line_color` → `Theme.line-color()`). List progress sums all parts with a goal
   (`Project::progress`); search matches project and part names (`Project::matches`). Navigation:
   list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to
-  the list). A project also has a `Status` (planned, in progress, paused, finished; shown as a badge in the list)
-  and free-text `notes`. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
+  the list). Tapping a part makes it active and opens the PDF view if the project has a PDF, otherwise the part
+  screen. The pencil on a part card opens the edit dialog (with delete) for that part via `Store.edited`, without
+  changing the active part. A project also has a `Status` (planned, in progress, paused, finished; shown as a
+  badge in the list) and free-text `notes`. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
   finished pieces, "Next piece" (`Library::next_piece`) starts the next one at row 0, Previous row at row 0 goes
   back to the last row of the piece before, Reset starts over, and progress counts `goal × quantity` rows; the UI
   shows `PartItem.title` ("Leg 2/4"). There is deliberately no second counter (removed as too complicated). With `Settings::volume_keys`, the volume keys count the active part, but

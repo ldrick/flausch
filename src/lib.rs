@@ -187,11 +187,11 @@ fn connect(app: &App) {
     store.on_add_part(|form| {
         with(|c| c.add_part(&form));
     });
-    store.on_edit_part(|form| {
-        with(|c| c.edit_part(&form));
+    store.on_edit_part(|part, form| {
+        with(|c| c.edit_part(part as u64, &form));
     });
-    store.on_delete_part(|| {
-        with(Controller::delete_part);
+    store.on_delete_part(|part| {
+        with(|c| c.delete_part(part as u64));
     });
     store.on_increment(|| {
         with(|c| c.count(Library::increment));
@@ -536,7 +536,11 @@ impl Controller {
         if self.library.activate_part(id, part) {
             self.save();
             self.refresh();
-            self.navigate(Screen::Part);
+            if self.current_pdf().is_some() {
+                self.open_pdf();
+            } else {
+                self.navigate(Screen::Part);
+            }
         }
     }
 
@@ -561,10 +565,8 @@ impl Controller {
         }
     }
 
-    fn edit_part(&mut self, form: &PartForm) {
-        let Some((id, part)) = self.active_part() else {
-            return;
-        };
+    fn edit_part(&mut self, part: u64, form: &PartForm) {
+        let Some(id) = self.current else { return };
         if form.name.trim().is_empty() {
             return;
         }
@@ -573,10 +575,8 @@ impl Controller {
         self.refresh();
     }
 
-    fn delete_part(&mut self) {
-        let Some((id, part)) = self.active_part() else {
-            return;
-        };
+    fn delete_part(&mut self, part: u64) {
+        let Some(id) = self.current else { return };
         self.library.remove_part(id, part, now());
         self.save();
         self.nav = vec![Screen::List, Screen::Project];

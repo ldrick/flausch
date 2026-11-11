@@ -111,6 +111,8 @@ export global Store {
     in property <[PartItem]> parts;
     // The part shown on the part screen; same as `current.active`.
     in property <PartItem> part;
+    // The part the edit and delete dialogs act on; set before opening them.
+    in-out property <PartItem> edited;
     in property <Screen> screen: Screen.list;
     in property <PdfView> pdf: { zoom: 1, aspect: 1.414 };
     in property <Notice> notice: Notice.none;
@@ -149,12 +151,13 @@ export global Store {
 
     // Makes a part active without leaving the screen.
     callback select-part(int);
+    // Opens the PDF view counting the part, or the part screen if the project has no PDF.
     callback open-part(int);
     // Opens the pattern of a project from the project list, at the saved page.
     callback continue-project(int);
     callback add-part(PartForm);
-    callback edit-part(PartForm);
-    callback delete-part();
+    callback edit-part(int, PartForm);
+    callback delete-part(int);
 
     // The counter callbacks act on the active part.
     callback increment();
