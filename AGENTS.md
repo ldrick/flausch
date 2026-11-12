@@ -75,7 +75,7 @@ ui/
   icons/              SVG icons; logo.svg is the app logo
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
 tools/logo.py         generates ui/icons/logo.svg and the monochrome launcher icon – never edit those by hand
-tools/knit.py         renders the launcher and store icons: a ball of white yarn on bulging pink knit (needs numpy, scipy, pillow, svgpathtools)
+tools/knit.py         renders the launcher and store icons: a ball of yarn with cat ears, embroidered in white on bulging pink knit (needs numpy, scipy, pillow, svgpathtools)
 fastlane/metadata/    F-Droid store texts, icon, screenshots (en-US, de-DE)
 fdroid/               F-Droid recipe and release steps (fdroid/README.md)
 lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
@@ -149,10 +149,11 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `theme.slint`.
 - Shadows are hard drop shadows: no `drop-shadow-blur`, only `drop-shadow-offset-y: Theme.shadow-offset` (or
   `Theme.shadow-offset-small` for small elements) with `drop-shadow-color: Theme.shadow`.
-- Logo: soft pink line art of a ball of yarn with cat ears, a crochet hook behind it and the yarn end curled up
+- Logo: soft pink line art of a ball of yarn with cat ears and the yarn end curled up
   as the tail. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (only lines, so it fits any
   background). If the pink changes, update `PINK` in `tools/logo.py` and run it. The launcher and store icons are
-  different: a ball of thick white yarn embroidered on pink knitted fabric (`tools/knit.py`).
+  different: the ball with its cat ears, filled with white chain stitch and embroidered on bulging pink knitted
+  fabric (`tools/knit.py`).
 - Design window: Pixel 9a size, 412×924 logical px (1080×2424 at density 2.625). The AVD "flausch" uses the
   `pixel_9a` profile.
 - `Rectangle` already has a (deprecated) `color` property, so name custom color properties differently

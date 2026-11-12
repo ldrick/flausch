@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Renders the knitted launcher icon: a ball of yarn embroidered in thick white yarn on bulging pink stockinette.
+"""Renders the knitted launcher icon: a ball of yarn with cat ears, embroidered in thick white yarn (chain stitch)
+on bulging pink stockinette.
 
 Writes
 - android/res/drawable-nodpi/ic_launcher_knit.png: adaptive icon background (knitted fabric)
@@ -29,15 +30,17 @@ SS = 3  # supersampling
 COLUMNS = 9.5  # stitch columns across the 108dp icon
 FABRIC = np.array([0xF0, 0xB9, 0xCE]) / 255
 FABRIC_DARK = np.array([0xB2, 0x4B, 0x73]) / 255
-YARN = np.array([0xFF, 0xFF, 0xFF]) / 255
+YARN = np.array([0xFF, 0xF8, 0xF2]) / 255
 YARN_DARK = np.array([0xE6, 0xC4, 0xD3]) / 255
+CHAIN_LEN = 0.85  # length of a chain stitch link, relative to the yarn width
 YARN_WIDTH = 1.5  # in logo units (24×24 grid)
 BULGE = 0.45  # how strongly the fabric bows outwards
-# The embroidered ball of yarn: a sphere with strands along the latitudes of two tilted axes, and the logo's tail.
+# The embroidered ball of yarn: a sphere filled with rows along the latitudes of a tilted axis, framed by a ring,
+# with the logo's cat ears (filled as well) and tail.
 BALL = logo.BALL
-WRAPS = [((-0.55, -0.75, 0.35), (-56, -36, -16, 4, 24, 44)), ((0.7, -0.45, 0.55), (52, 70))]
-SCALE = 2.65  # in the 108dp icon; ball and tail stay inside the 66dp safe zone
-CENTER = (13.2, 12.5)
+AXIS = (-0.55, -0.75, 0.35)
+SCALE = 2.7  # in the 108dp icon; ears, ball and tail stay inside the 66dp safe zone
+CENTER = (13.6, 12.6)
 LIGHT = np.array([-0.45, -0.6, 0.66])
 LIGHT = LIGHT / np.linalg.norm(LIGHT)
 
@@ -139,15 +142,75 @@ def latitudes(axis, degrees):
     return " ".join(parts)
 
 
+def chain(along, across, radius, width):
+    """Height of a chain stitch along a path: a row of V loops, each two teardrop legs tilted outwards."""
+    L = width * CHAIN_LEN
+    out = np.zeros_like(along)
+    for dk in (-1, 0, 1):
+        k = np.floor(along / L) + dk
+        u = along - (k + 0.5) * L
+        seed = np.sin(k * 12.9898 + width) * 43758.5453
+        rnd = seed - np.floor(seed)
+        for side in (-1, 1):
+            ang = math.radians(35) * side
+            pv = across - side * radius * 0.45
+            a = u * math.cos(ang) + pv * math.sin(ang)
+            b = -u * math.sin(ang) + pv * math.cos(ang)
+            ra, rb = L * 0.78, radius * (0.55 + 0.06 * rnd)
+            r = (a / ra) ** 2 + (b / rb) ** 2
+            leg = np.clip(1 - r, 0, 1) ** 0.5
+            fib = 0.5 + 0.5 * np.cos(2 * math.pi * (a / (L * 0.14) + side * b / (radius * 0.28)))
+            out = np.maximum(out, leg * (0.85 + 0.15 * fib) * (0.9 + 0.1 * rnd))
+    return 0.1 + 0.9 * out
+
+
+def inside(px, py, poly):
+    """Even-odd point in polygon test."""
+    res = np.zeros(px.shape, bool)
+    x0, y0 = poly.real, poly.imag
+    x1, y1 = np.roll(x0, -1), np.roll(y0, -1)
+    for a, b, c, d in zip(x0, y0, x1, y1):
+        cross = ((b > py) != (d > py)) & (px < (c - a) * (py - b) / (d - b + 1e-12) + a)
+        res ^= cross
+    return res
+
+
+def ear_rows(spacing):
+    """Rows of stitches filling both ears, running from the base up to the tip."""
+    parts = []
+    for sub in parse_path(logo.ears()).continuous_subpaths():
+        poly = np.array([sub.point(t) for t in np.linspace(0, 1, 200)])
+        tip = poly[np.argmin(poly.imag)]
+        base = (poly[0] + poly[-1]) / 2
+        d = (tip - base) / abs(tip - base)
+        n = d * 1j
+        span = np.abs(((poly - base) * n.conjugate()).real).max()
+        for o in np.arange(-span, span + 1e-6, spacing) + (span % spacing) / 2:
+            t = np.linspace(-1, abs(tip - base) + 1, 400)
+            line = base + n * o + d * t
+            m = inside(line.real, line.imag, poly)
+            run = []
+            for q, f in zip(line, m):
+                if f:
+                    run.append(f"{q.real:.3f},{q.imag:.3f}")
+                elif run:
+                    if len(run) > 3:
+                        parts.append("M" + " L".join(run))
+                    run = []
+            if len(run) > 3:
+                parts.append("M" + " L".join(run))
+    return " ".join(parts)
+
+
 def strands():
-    """The ball's strands in drawing order (back to front), each as (path data, width in logo units)."""
+    """The stitches in drawing order (back to front), each as (path data, width in logo units)."""
     cx, cy, r = BALL
-    back, front = (latitudes(axis, degrees) for axis, degrees in WRAPS[::-1])
     return [
-        (back, YARN_WIDTH * 0.8),
-        (front, YARN_WIDTH * 0.8),
-        (logo.circle(cx, cy, r), YARN_WIDTH),
-        (logo.TAIL, YARN_WIDTH),
+        (ear_rows(YARN_WIDTH * 0.95), YARN_WIDTH * 1.1),
+        (logo.ears(), YARN_WIDTH * 1.25),
+        (latitudes(AXIS, range(-80, 81, 16)), YARN_WIDTH * 1.3),
+        (logo.circle(cx, cy, r), YARN_WIDTH * 1.25),
+        (logo.TAIL, YARN_WIDTH * 1.25),
     ]
 
 
@@ -164,11 +227,15 @@ def samples(data, step=0.01):
 
 
 def yarn(size, scale, center):
-    """The strands as white yarn: returns color, alpha and the shadow alpha."""
+    """The stitches in white yarn: returns color, alpha and the shadow alpha."""
     unit = size / 108 * scale  # pixels per logo unit
     y, x = np.mgrid[0:size, 0:size].astype(float)
-    lx = (x + 0.5 - size / 2) / unit + center[0]
-    ly = (y + 0.5 - size / 2) / unit + center[1]
+    # Follow the fabric's bulge (see knit()), so the embroidery bows with it.
+    c = size / 2
+    wx, wy = (x + 0.5 - c) / c, (y + 0.5 - c) / c
+    warp = 1 + BULGE * (wx**2 + wy**2)
+    lx = (x + 0.5 - c) * warp / unit + center[0]
+    ly = (y + 0.5 - c) * warp / unit + center[1]
     color = np.zeros((size, size, 3))
     alpha = np.zeros((size, size))
     cx, cy, r = BALL
@@ -177,7 +244,7 @@ def yarn(size, scale, center):
         radius = width / 2
         height = np.zeros((size, size))
         cover = np.zeros((size, size))
-        for i, (pts, tangent, arc) in enumerate(samples(data)):
+        for pts, tangent, arc in samples(data):
             tree = cKDTree(np.column_stack([pts.real, pts.imag]))
             box = (lx > pts.real.min() - width) & (lx < pts.real.max() + width) & \
                   (ly > pts.imag.min() - width) & (ly < pts.imag.max() + width)
@@ -190,18 +257,15 @@ def yarn(size, scale, center):
             across = tangent.real[idx] * dy - tangent.imag[idx] * dx
             along = arc[idx] + tangent.real[idx] * dx + tangent.imag[idx] * dy
             d = np.where(hit, dist, np.inf) / radius
-            tube = np.sqrt(np.clip(1 - d**2, 0, 1))
-            # Two plies twisted into each other.
-            twist = 0.5 + 0.5 * np.cos(2 * math.pi * (along / (YARN_WIDTH * 0.75) + across / radius * 0.55) + i)
-            h = tube * (0.78 + 0.22 * twist**0.7)
+            h = np.where(hit, chain(along, across, radius, width), 0) * np.clip(1.2 - d, 0, 1) ** 0.3
             a = np.clip((1 - d) * radius * unit / 1.2 + 0.25 * fuzz[box], 0, 1)
             hb = height[box]
             ab = cover[box]
             height[box] = np.where(h > hb, h, hb)
             cover[box] = np.maximum(ab, a)
         height += 0.03 * fuzz
-        layer = shade(height * width, size / 160 * scale, YARN, YARN_DARK)
-        layer *= (0.82 + 0.18 * np.clip(height, 0, 1) ** 0.5)[..., None]
+        layer = shade(height * width, size / 110 * scale, YARN, YARN_DARK)
+        layer *= (0.55 + 0.45 * np.clip(height, 0, 1) ** 0.6)[..., None]
         color = color * (1 - cover[..., None]) + layer * cover[..., None]
         alpha = alpha + cover * (1 - alpha)
     # The ball is round: its strands get darker away from the light.
@@ -209,6 +273,9 @@ def yarn(size, scale, center):
     nz = np.sqrt(np.clip(1 - bx**2 - by**2, 0, 1))
     ball = np.clip(bx * LIGHT[0] + by * LIGHT[1] + nz * LIGHT[2], 0, 1)
     color *= np.where(nz > 0, 0.9 + 0.12 * ball, 1)[..., None]
+    dome = np.dstack([wx * 0.6, wy * 0.6, np.ones_like(wx)])
+    dome /= np.linalg.norm(dome, axis=2, keepdims=True)
+    color *= ((0.8 + 0.35 * np.clip(dome @ LIGHT, 0, 1)) / (0.8 + 0.35 * LIGHT[2]))[..., None]
     shadow = ndimage.gaussian_filter(alpha, 0.9 * unit)
     shadow = ndimage.shift(shadow, (0.55 * unit, 0.2 * unit), order=1)
     return np.clip(color, 0, 1), alpha, shadow
@@ -216,7 +283,7 @@ def yarn(size, scale, center):
 
 def foreground(size, scale, center):
     color, alpha, shadow = yarn(size, scale, center)
-    shadow_alpha = 0.45 * shadow * (1 - alpha)
+    shadow_alpha = 0.6 * shadow * (1 - alpha)
     out_alpha = alpha + shadow_alpha
     rgb = color * alpha[..., None] / np.maximum(out_alpha, 1e-6)[..., None]
     return to_image(rgb, out_alpha)
