@@ -320,31 +320,54 @@ fn about_pages_show_the_app_and_the_changelog() {
     assert_eq!(store(&app).get_screen(), Screen::About);
     let description = "A crochet companion. Flausch is German for fluff.";
     assert!(find(&app, AccessibleRole::Text, description).is_some());
+    assert!(
+        find(
+            &app,
+            AccessibleRole::Text,
+            "Made with love in the Black Forest"
+        )
+        .is_some()
+    );
     go_back(&app);
     assert_eq!(store(&app).get_screen(), Screen::Settings);
 
     let text = "Longer text that has to wrap onto several lines on the page, ".repeat(3);
+    let points = |points: &[&str]| {
+        ModelRc::new(VecModel::from(
+            points
+                .iter()
+                .map(|&p| p.into())
+                .collect::<Vec<slint::SharedString>>(),
+        ))
+    };
     store(&app).set_changes(ModelRc::new(VecModel::from(vec![
         ChangeItem {
             version: "1.1.0".into(),
-            text: text.clone().into(),
+            points: points(&[&text, "Dark mode"]),
         },
         ChangeItem {
             version: "1.0.0".into(),
-            text: "First release".into(),
+            points: points(&["First release"]),
         },
     ])));
     tap(&app, "Changelog");
     assert_eq!(store(&app).get_screen(), Screen::Changelog);
-    let entry = find(
-        &app,
-        AccessibleRole::Text,
-        &format!("Version 1.1.0: {text}"),
-    )
-    .expect("the release is listed");
-    // The card must be tall enough for the wrapped text.
-    assert!(entry.size().height > 60.);
-    assert!(find(&app, AccessibleRole::Text, "Version 1.0.0: First release").is_some());
+    let point = find(&app, AccessibleRole::Text, &text).expect("the point is listed");
+    // The row must be tall enough for the wrapped text.
+    assert!(point.size().height > 40.);
+    for label in [
+        "Version 1.1.0",
+        "Dark mode",
+        "Version 1.0.0",
+        "First release",
+    ] {
+        assert!(
+            ElementHandle::find_by_accessible_label(&app, label)
+                .next()
+                .is_some(),
+            "{label} is listed"
+        );
+    }
     go_back(&app);
     assert_eq!(store(&app).get_screen(), Screen::Settings);
 }

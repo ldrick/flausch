@@ -1,1 +1,7 @@
-First release: projects with parts and row counters (also for parts made several times, e.g. 4 legs), project status and notes, PDF patterns with a reading line (also opened from other apps), counting with the volume keys, backup and restore, light/dark mode, English and German, TalkBack support.
+• Projects with parts and row counters, also for parts made several times (e.g. 4 legs)
+• Project status and notes
+• PDF patterns with a reading line, also opened from other apps
+• Counting with the volume keys
+• Backup and restore
+• Light and dark mode, English and German
+• TalkBack support

@@ -112,47 +112,47 @@ msgctxt "ListPage"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/pages/pdf.slint:108
+#: ui/pages/pdf.slint:134
 msgctxt "PdfPage"
 msgid "Zoom out"
 msgstr "Verkleinern"
 
-#: ui/pages/pdf.slint:117
+#: ui/pages/pdf.slint:143
 msgctxt "PdfPage"
 msgid "Zoom in"
 msgstr "Vergrößern"
 
-#: ui/pages/pdf.slint:172
+#: ui/pages/pdf.slint:204
 msgctxt "PdfPage"
 msgid "Page {} of {}"
 msgstr "Seite {} von {}"
 
-#: ui/pages/pdf.slint:189
+#: ui/pages/pdf.slint:234
 msgctxt "PdfPage"
 msgid "Loading…"
 msgstr "Wird geladen…"
 
-#: ui/pages/pdf.slint:262
+#: ui/pages/pdf.slint:307
 msgctxt "PdfPage"
 msgid "Previous page"
 msgstr "Vorherige Seite"
 
-#: ui/pages/pdf.slint:277
+#: ui/pages/pdf.slint:322
 msgctxt "PdfPage"
 msgid "Next page"
 msgstr "Nächste Seite"
 
-#: ui/pages/pdf.slint:329
+#: ui/pages/pdf.slint:374
 msgctxt "PdfPage"
 msgid "Previous row"
 msgstr "Vorherige Reihe"
 
-#: ui/pages/pdf.slint:368
+#: ui/pages/pdf.slint:413
 msgctxt "PdfPage"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/pages/pdf.slint:387
+#: ui/pages/pdf.slint:432
 msgctxt "PdfPage"
 msgid "Next row"
 msgstr "Nächste Reihe"
@@ -404,7 +404,7 @@ msgctxt "ListPage"
 msgid "No matching projects"
 msgstr "Keine passenden Projekte"
 
-#: ui/pages/pdf.slint:291 ui/pages/pdf.slint:299 ui/pages/pdf.slint:431
+#: ui/pages/pdf.slint:336 ui/pages/pdf.slint:344 ui/pages/pdf.slint:476
 msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
@@ -434,12 +434,12 @@ msgctxt "ProjectCard"
 msgid "Continue {}"
 msgstr "{} fortsetzen"
 
-#: ui/pages/pdf.slint:340
+#: ui/pages/pdf.slint:385
 msgctxt "PdfPage"
 msgid "Enlarge counter"
 msgstr "Zähler vergrößern"
 
-#: ui/pages/pdf.slint:466
+#: ui/pages/pdf.slint:511
 msgctxt "PdfPage"
 msgid "Shrink counter"
 msgstr "Zähler verkleinern"
@@ -474,17 +474,17 @@ msgctxt "CounterButtons"
 msgid "Reset counter"
 msgstr "Zähler zurücksetzen"
 
-#: ui/pages/pdf.slint:99
+#: ui/pages/pdf.slint:125
 msgctxt "PdfPage"
 msgid "Hide reading line"
 msgstr "Leselinie ausblenden"
 
-#: ui/pages/pdf.slint:99
+#: ui/pages/pdf.slint:125
 msgctxt "PdfPage"
 msgid "Show reading line"
 msgstr "Leselinie einblenden"
 
-#: ui/pages/pdf.slint:211
+#: ui/pages/pdf.slint:256
 msgctxt "PdfPage"
 msgid "Reading line"
 msgstr "Leselinie"
@@ -825,27 +825,22 @@ msgctxt "Store"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/about.slint:9
+#: ui/pages/about.slint:39
 msgctxt "AboutPage"
 msgid "About Flausch"
 msgstr "Über Flausch"
 
-#: ui/pages/about.slint:47
+#: ui/pages/about.slint:77
 msgctxt "AboutPage"
 msgid "A crochet companion. Flausch is German for fluff."
 msgstr "Dein Häkelbegleiter. Flausch kommt von flauschig."
 
-#: ui/pages/about.slint:70
+#: ui/pages/about.slint:101
 msgctxt "ChangelogPage"
 msgid "Changelog"
 msgstr "Versionsverlauf"
 
-#: ui/pages/about.slint:92
-msgctxt "ChangelogPage"
-msgid "Version {}: {}"
-msgstr "Version {}: {}"
-
-#: ui/pages/about.slint:95
+#: ui/pages/about.slint:124
 msgctxt "ChangelogPage"
 msgid "Version {}"
 msgstr "Version {}"
@@ -860,23 +855,12 @@ msgctxt "SettingsPage"
 msgid "Changelog"
 msgstr "Versionsverlauf"
 
-#: ui/pages/about.slint:116
+#: ui/pages/about.slint:161
 msgctxt "DonatePage"
 msgid "Donate"
 msgstr "Spenden"
 
-#: ui/pages/about.slint:144
-msgctxt "DonatePage"
-msgid ""
-"Flausch is free, without ads or tracking, and made in spare time. If it "
-"helps you with your projects, you can support its development with a "
-"donation. Thank you!"
-msgstr ""
-"Flausch ist kostenlos, ohne Werbung und Tracking, und entsteht in der "
-"Freizeit. Wenn dir die App bei deinen Projekten hilft, kannst du die "
-"Entwicklung mit einer Spende unterstützen. Danke!"
-
-#: ui/pages/about.slint:159
+#: ui/pages/about.slint:207
 msgctxt "DonatePage"
 msgid "Opens the page in your browser."
 msgstr "Öffnet die Seite in deinem Browser."
@@ -885,3 +869,29 @@ msgstr "Öffnet die Seite in deinem Browser."
 msgctxt "SettingsPage"
 msgid "Donate"
 msgstr "Spenden"
+
+#: ui/pages/about.slint:11
+msgctxt "MadeWithLove"
+msgid "Made with love in the Black Forest"
+msgstr "Mit Liebe aus dem Schwarzwald"
+
+#: ui/pages/about.slint:14
+msgctxt "MadeWithLove"
+msgid "Made with"
+msgstr "Mit"
+
+#: ui/pages/about.slint:29
+msgctxt "MadeWithLove"
+msgid "in the Black Forest"
+msgstr "aus dem Schwarzwald"
+
+#: ui/pages/about.slint:192
+msgctxt "DonatePage"
+msgid ""
+"I develop Flausch on my own, in my spare time, free and without ads or "
+"tracking. If it helps you with your projects, I would be happy if you bought"
+" me a coffee. Thank you!"
+msgstr ""
+"Ich entwickle Flausch allein in meiner Freizeit, kostenlos und ohne Werbung "
+"oder Tracking. Wenn dir die App bei deinen Projekten hilft, freue ich mich, "
+"wenn du mir einen Kaffee spendierst. Danke!"

@@ -274,7 +274,8 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
   major, `feat` → minor, `fix` → patch); the first release needs an explicit version. The PR updates `version` and
   `version_code` in `Cargo.toml`, `Cargo.lock`, the F-Droid recipe, `CHANGELOG.md` and drafts the F-Droid
   changelogs `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`.
-- In the release PR, rewrite both changelogs for users (short, max. 500 characters) and translate the German one;
+- In the release PR, rewrite both changelogs for users (short, max. 500 characters, one point per line starting with `•`; the app
+  shows them as a list) and translate the German one;
   it starts with `TODO` and `cargo test` fails until it doesn't. These texts are also the changelog in the app
   (Settings → About → Changelog, all releases up to the running build; `src/changes.rs`, embedded by `build.rs`).
 - Merging the release PR runs the `publish` job: it tags `vX.Y.Z`, creates the GitHub release with the

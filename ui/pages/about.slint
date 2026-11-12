@@ -3,6 +3,36 @@ import { Theme } from "../theme.slint";
 import { Store } from "../store.slint";
 import { ButtonKind, Card, Icon, PillButton, TopBar } from "../components.slint";
 
+// "Made with ♥ in the Black Forest", with a red heart.
+component MadeWithLove inherits HorizontalLayout {
+    alignment: center;
+    spacing: 6px;
+    accessible-role: text;
+    accessible-label: @tr("Made with love in the Black Forest");
+
+    Text {
+        text: @tr("Made with");
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        vertical-alignment: center;
+    }
+    VerticalLayout {
+        alignment: center;
+        Icon {
+            source: @image-url("../icons/heart.svg");
+            color: Theme.heart;
+            width: 18px;
+            height: 18px;
+        }
+    }
+    Text {
+        text: @tr("in the Black Forest");
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        vertical-alignment: center;
+    }
+}
+
 export component AboutPage inherits Rectangle {
     VerticalLayout {
         TopBar {
@@ -49,6 +79,7 @@ export component AboutPage inherits Rectangle {
                             font-size: Theme.font-small;
                             wrap: word-wrap;
                         }
+                        MadeWithLove { }
                         // AboutSlint follows Palette, not Theme, so give it a matching backdrop.
                         Rectangle {
                             height: 120px;
@@ -87,9 +118,7 @@ export component ChangelogPage inherits Rectangle {
 
                     entry := VerticalLayout {
                         padding: 18px;
-                        spacing: 4px;
-                        accessible-role: text;
-                        accessible-label: @tr("Version {}: {}", change.version, change.text);
+                        spacing: 6px;
 
                         Text {
                             text: @tr("Version {}", change.version);
@@ -97,11 +126,27 @@ export component ChangelogPage inherits Rectangle {
                             font-size: Theme.font-body;
                             font-weight: 600;
                         }
-                        Text {
-                            text: change.text;
-                            color: Theme.text-muted;
-                            font-size: Theme.font-small;
-                            wrap: word-wrap;
+                        for point in change.points: Rectangle {
+                            height: row.preferred-height;
+
+                            row := HorizontalLayout {
+                                spacing: 8px;
+                                accessible-role: text;
+                                accessible-label: point;
+
+                                Text {
+                                    text: "•";
+                                    color: Theme.accent;
+                                    font-size: Theme.font-small;
+                                }
+                                Text {
+                                    text: point;
+                                    color: Theme.text-muted;
+                                    font-size: Theme.font-small;
+                                    wrap: word-wrap;
+                                    horizontal-stretch: 1;
+                                }
+                            }
                         }
                     }
                 }
@@ -144,7 +189,7 @@ export component DonatePage inherits Rectangle {
                             }
                         }
                         Text {
-                            text: @tr("Flausch is free, without ads or tracking, and made in spare time. If it helps you with your projects, you can support its development with a donation. Thank you!");
+                            text: @tr("I develop Flausch on my own, in my spare time, free and without ads or tracking. If it helps you with your projects, I would be happy if you bought me a coffee. Thank you!");
                             color: Theme.text;
                             font-size: Theme.font-body;
                             wrap: word-wrap;
@@ -165,6 +210,7 @@ export component DonatePage inherits Rectangle {
                             horizontal-alignment: center;
                             wrap: word-wrap;
                         }
+                        MadeWithLove { }
                     }
                 }
             }

@@ -21,14 +21,23 @@ pub fn version_name(code: u32) -> String {
     format!("{}.{}.{}", code >> 16 & 0xff, code >> 8 & 0xff, code & 0xff)
 }
 
-/// Version name and text of every release up to this build, newest first; `language` as in
+/// Version name and points of every release up to this build, newest first; `language` as in
 /// `Language::translation`.
-pub fn list(language: &str) -> Vec<(String, String)> {
+pub fn list(language: &str) -> Vec<(String, Vec<String>)> {
     releases(CHANGES, current())
         .map(|&(code, en, de)| {
             let text = if language == "de" { de } else { en };
-            (version_name(code), text.to_owned())
+            (version_name(code), points(text))
         })
+        .collect()
+}
+
+/// The lines of a changelog without their bullets (`•`, `-` or `*`).
+fn points(text: &str) -> Vec<String> {
+    text.lines()
+        .map(|line| line.trim().trim_start_matches(['•', '-', '*']).trim())
+        .filter(|line| !line.is_empty())
+        .map(str::to_owned)
         .collect()
 }
 
@@ -41,6 +50,14 @@ fn releases(changes: &[Entry], current: u32) -> impl Iterator<Item = &Entry> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn changelog_lines_become_points() {
+        assert_eq!(
+            points("• Counting\n- Backup\n\n* Dark mode \nNotes"),
+            ["Counting", "Backup", "Dark mode", "Notes"]
+        );
+    }
 
     #[test]
     fn version_names_round_trip() {

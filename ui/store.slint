@@ -9,7 +9,7 @@ export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part,
 // One release in the changelog.
 export struct ChangeItem {
     version: string,
-    text: string,
+    points: [string],
 }
 
 export enum ProjectStatus { planned, active, paused, finished }

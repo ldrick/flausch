@@ -1097,9 +1097,14 @@ impl Controller {
         }
         let changes: Vec<ChangeItem> = changes::list(language)
             .into_iter()
-            .map(|(version, text)| ChangeItem {
+            .map(|(version, points)| ChangeItem {
                 version: version.into(),
-                text: text.into(),
+                points: ModelRc::new(VecModel::from(
+                    points
+                        .into_iter()
+                        .map(slint::SharedString::from)
+                        .collect::<Vec<_>>(),
+                )),
             })
             .collect();
         store.set_changes(ModelRc::new(VecModel::from(changes)));

@@ -1,1 +1,7 @@
-Erste Version: Projekte mit Teilen und Reihenzählern (auch für Teile, die mehrfach gehäkelt werden, z. B. 4 Beine), Projektstatus und Notizen, PDF-Anleitungen mit Leselinie (auch aus anderen Apps geöffnet), Zählen mit den Lautstärketasten, Sicherung und Wiederherstellung, hell/dunkel, Deutsch und Englisch, TalkBack-Unterstützung.
+• Projekte mit Teilen und Reihenzählern, auch für Teile, die mehrfach gehäkelt werden (z. B. 4 Beine)
+• Projektstatus und Notizen
+• PDF-Anleitungen mit Leselinie, auch aus anderen Apps geöffnet
+• Zählen mit den Lautstärketasten
+• Sicherung und Wiederherstellung
+• Hell und dunkel, Deutsch und Englisch
+• TalkBack-Unterstützung
