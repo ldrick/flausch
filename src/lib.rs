@@ -74,7 +74,6 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         c.apply_settings();
         c.refresh();
         c.create_missing_covers();
-        c.show_news();
         c.check_incoming();
     });
     connect(app);
@@ -153,6 +152,9 @@ fn connect(app: &App) {
     store.on_back(|| with(Controller::back).unwrap_or(false));
     store.on_open_settings(|| {
         with(|c| c.navigate(Screen::Settings));
+    });
+    store.on_open_page(|screen| {
+        with(|c| c.navigate(screen));
     });
     store.on_open_project(|id| {
         with(|c| c.open_project(id as u64));
@@ -1073,19 +1075,6 @@ impl Controller {
             eprintln!("flausch: cannot save settings: {e}");
         }
         self.apply_settings();
-    }
-
-    /// Shows "What's new" once after an update. A fresh install only remembers the version.
-    fn show_news(&mut self) {
-        let current = changes::current();
-        let seen = self.settings.seen_version;
-        if seen == Some(current) {
-            return;
-        }
-        if seen.is_some_and(changes::news_since) {
-            self.app().global::<Store>().set_dialog(DialogKind::Changes);
-        }
-        self.update_settings(|s| s.seen_version = Some(current));
     }
 
     fn apply_settings(&mut self) {

@@ -1,4 +1,4 @@
-//! "What's new": the F-Droid changelogs, embedded by `build.rs`.
+//! The changelog in Settings → About: the F-Droid changelogs, embedded by `build.rs`.
 
 include!(concat!(env!("OUT_DIR"), "/changes.rs"));
 
@@ -21,11 +21,10 @@ pub fn version_name(code: u32) -> String {
     format!("{}.{}.{}", code >> 16 & 0xff, code >> 8 & 0xff, code & 0xff)
 }
 
-/// Version name and text of every release after the first one up to this build, newest first;
-/// `language` as in `Language::translation`. The first release is only listed on F-Droid, since
-/// everything in it is new.
+/// Version name and text of every release up to this build, newest first; `language` as in
+/// `Language::translation`.
 pub fn list(language: &str) -> Vec<(String, String)> {
-    updates(CHANGES, current())
+    releases(CHANGES, current())
         .map(|&(code, en, de)| {
             let text = if language == "de" { de } else { en };
             (version_name(code), text.to_owned())
@@ -33,18 +32,10 @@ pub fn list(language: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-/// Whether a release after `seen` (up to this build) has news.
-pub fn news_since(seen: u32) -> bool {
-    updates(CHANGES, current()).any(|(code, ..)| *code > seen)
-}
-
 type Entry = (u32, &'static str, &'static str);
 
-fn updates(changes: &[Entry], current: u32) -> impl Iterator<Item = &Entry> {
-    let first = changes.iter().map(|(code, ..)| *code).min();
-    changes
-        .iter()
-        .filter(move |(code, ..)| *code <= current && Some(*code) != first)
+fn releases(changes: &[Entry], current: u32) -> impl Iterator<Item = &Entry> {
+    changes.iter().filter(move |(code, ..)| *code <= current)
 }
 
 #[cfg(test)]
@@ -76,21 +67,20 @@ mod tests {
     }
 
     #[test]
-    fn the_first_release_and_future_ones_are_left_out() {
+    fn future_releases_are_left_out() {
         let changes = [
             (version_code(1, 2, 0), "1.2", ""),
             (version_code(1, 1, 0), "1.1", ""),
             (version_code(1, 0, 0), "1.0", ""),
         ];
         let texts = |current| {
-            updates(&changes, current)
+            releases(&changes, current)
                 .map(|(_, en, _)| *en)
                 .collect::<Vec<_>>()
         };
-        assert_eq!(texts(version_code(1, 0, 0)), [""; 0]);
-        assert_eq!(texts(version_code(1, 1, 0)), ["1.1"]);
-        assert_eq!(texts(version_code(1, 2, 0)), ["1.2", "1.1"]);
+        assert_eq!(texts(version_code(1, 0, 0)), ["1.0"]);
+        assert_eq!(texts(version_code(1, 1, 0)), ["1.1", "1.0"]);
         assert_eq!(list("de").len(), list("en").len());
-        assert!(!news_since(current()));
+        assert_ne!(list("en"), []);
     }
 }

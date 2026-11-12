@@ -1,0 +1,111 @@
+import { AboutSlint, Palette } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { Store } from "../store.slint";
+import { Card, Icon, TopBar } from "../components.slint";
+
+export component AboutPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("About Flausch");
+            back => { Store.back(); }
+        }
+
+        Flickable {
+            vertical-stretch: 1;
+            content-height: content.preferred-height;
+
+            content := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                Card {
+                    height: about.preferred-height;
+
+                    about := VerticalLayout {
+                        padding: 18px;
+                        spacing: 8px;
+
+                        HorizontalLayout {
+                            spacing: 10px;
+                            Icon {
+                                source: @image-url("../icons/logo.svg");
+                                color: Theme.accent;
+                                width: 28px;
+                                height: 28px;
+                            }
+                            Text {
+                                text: "Flausch \{Store.version}";
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                            }
+                        }
+                        Text {
+                            text: @tr("A crochet companion. Flausch is German for fluff.");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                        // AboutSlint follows Palette, not Theme, so give it a matching backdrop.
+                        Rectangle {
+                            height: 120px;
+                            background: Palette.background;
+                            border-radius: Theme.radius-small;
+
+                            AboutSlint { }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component ChangelogPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("Changelog");
+            back => { Store.back(); }
+        }
+
+        changelog-flick := Flickable {
+            vertical-stretch: 1;
+            content-height: content.preferred-height;
+
+            content := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                // The outer layout doesn't see the wrapped height of a repeated layout, so pin it.
+                for change in Store.changes: Card {
+                    height: entry.preferred-height;
+
+                    entry := VerticalLayout {
+                        padding: 18px;
+                        spacing: 4px;
+                        accessible-role: text;
+                        accessible-label: @tr("Version {}: {}", change.version, change.text);
+
+                        Text {
+                            text: @tr("Version {}", change.version);
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            font-weight: 600;
+                        }
+                        Text {
+                            text: change.text;
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

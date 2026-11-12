@@ -1,6 +1,5 @@
-import { AboutSlint, Palette } from "std-widgets.slint";
 import { Theme, Appearance, LineColor } from "../theme.slint";
-import { Store, Language, DialogKind } from "../store.slint";
+import { Store, Language, Screen } from "../store.slint";
 import { ButtonKind, Card, Icon, PillButton, Segmented, Switch, TopBar } from "../components.slint";
 
 component SectionTitle inherits Text {
@@ -36,6 +35,58 @@ component ColorSwatch inherits Rectangle {
     }
 }
 
+// Keeps the scroll position while a sub-page is open, since the page is rebuilt on return.
+global SettingsScroll {
+    in-out property <length> y;
+}
+
+// An entry that opens a sub-page.
+component NavRow inherits Rectangle {
+    in property <string> text;
+    // Small text on the right, e.g. the version.
+    in property <string> detail;
+    callback clicked();
+
+    height: Theme.touch + 8px;
+    border-radius: Theme.radius-small;
+    background: touch.pressed ? Theme.surface-muted : transparent;
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-action-default => { root.clicked(); }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 6px;
+        spacing: 8px;
+
+        Text {
+            text: root.text;
+            color: Theme.text;
+            font-size: Theme.font-body;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        Text {
+            text: root.detail;
+            color: Theme.text-muted;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+        VerticalLayout {
+            alignment: center;
+            Icon {
+                source: @image-url("../icons/chevron-right.svg");
+                color: Theme.text-muted;
+                width: 20px;
+                height: 20px;
+            }
+        }
+    }
+}
+
 export component SettingsPage inherits Rectangle {
     VerticalLayout {
         TopBar {
@@ -46,6 +97,7 @@ export component SettingsPage inherits Rectangle {
         Flickable {
             vertical-stretch: 1;
             content-height: content.preferred-height;
+            content-y <=> SettingsScroll.y;
 
             content := VerticalLayout {
                 padding: Theme.padding;
@@ -220,43 +272,25 @@ export component SettingsPage inherits Rectangle {
                     height: about.preferred-height;
 
                     about := VerticalLayout {
-                        padding: 18px;
-                        spacing: 8px;
+                        padding: 6px;
 
-                        HorizontalLayout {
-                            spacing: 10px;
-                            Icon {
-                                source: @image-url("../icons/logo.svg");
-                                color: Theme.accent;
-                                width: 28px;
-                                height: 28px;
-                            }
-                            Text {
-                                text: "Flausch \{Store.version}";
-                                color: Theme.text;
-                                font-size: Theme.font-body;
-                                font-weight: 600;
-                                vertical-alignment: center;
-                            }
+                        NavRow {
+                            text: @tr("About Flausch");
+                            detail: Store.version;
+                            clicked => { Store.open-page(Screen.about); }
                         }
-                        Text {
-                            text: @tr("A crochet companion. Flausch is German for fluff.");
-                            color: Theme.text-muted;
-                            font-size: Theme.font-small;
-                            wrap: word-wrap;
-                        }
-                        if Store.changes.length > 0: PillButton {
-                            text: @tr("What's new");
-                            kind: ButtonKind.secondary;
-                            clicked => { Store.dialog = DialogKind.changes; }
-                        }
-                        // AboutSlint follows Palette, not Theme, so give it a matching backdrop.
                         Rectangle {
-                            height: 120px;
-                            background: Palette.background;
-                            border-radius: Theme.radius-small;
+                            height: 1px;
 
-                            AboutSlint { }
+                            Rectangle {
+                                x: 12px;
+                                width: parent.width - 24px;
+                                background: Theme.border;
+                            }
+                        }
+                        NavRow {
+                            text: @tr("Changelog");
+                            clicked => { Store.open-page(Screen.changelog); }
                         }
                     }
                 }

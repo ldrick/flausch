@@ -49,7 +49,7 @@ src/
 tests/ui.rs           UI tests: drive the app through accessibility labels; fixtures in tests/fixtures/
   model.rs            UI-independent data model (Library, Project, Pdf, Settings) – no slint
   storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes, ZIP backups – no slint
-  changes.rs          "What's new": the F-Droid changelogs embedded by build.rs, version codes
+  changes.rs          changelog (Settings → About → Changelog): the F-Droid changelogs embedded by build.rs, version codes
   a11y.rs             Android only: TalkBack bridge (walks the Slint element tree, sends virtual views to Java)
   pdf.rs              render workers: viewer pages (newest request only) and PNG covers of page 1
   platform/mod.rs     picks android.rs or desktop.rs via cfg
@@ -63,7 +63,7 @@ ui/
   theme.slint         Theme global: colors (light/dark), sizes, radii, fonts
   components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Field, Segmented, Switch…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
-  pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings
+  pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages)
   icons/              SVG icons; logo.svg is the app logo
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
 tools/logo.py         generates ui/icons/logo.svg, the launcher icon and the store icon (needs resvg) – never edit those by hand
@@ -88,7 +88,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to
   the list). Tapping a part makes it active and opens the PDF view if the project has a PDF, otherwise the part
   screen. The pencil on a part card opens the edit dialog (with delete) for that part via `Store.edited`, without
-  changing the active part. A project also has a `Status` (planned, in progress, paused, finished; shown as a
+  changing the active part. Settings → About lists sub-pages (`NavRow` → `Store.open-page(Screen)`): About
+  Flausch and Changelog; new info pages (e.g. Donate) get a `Screen` value and a row there. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::recent`: in progress, then planned and paused, then finished); with "All" and no search, finished
   projects sit in a collapsed section (`Store.finished`). Finished projects have no continue button. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
@@ -145,7 +146,7 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `VerticalLayout { alignment: center; … }`.
 - Use `content-*` instead of the deprecated `Flickable.viewport-*`.
 - Callbacks set in Slint `init` fire during `App::new()`, before the Rust handlers are connected.
-- `AboutSlint` follows `Palette`, not `Theme`. It sits on a `Palette.background` backdrop in Settings. The
+- `AboutSlint` follows `Palette`, not `Theme`. It sits on a `Palette.background` backdrop on the About page. The
   Royalty-free license requires this attribution; don't remove it.
 
 ## Translations
@@ -272,9 +273,8 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
   `version_code` in `Cargo.toml`, `Cargo.lock`, the F-Droid recipe, `CHANGELOG.md` and drafts the F-Droid
   changelogs `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`.
 - In the release PR, rewrite both changelogs for users (short, max. 500 characters) and translate the German one;
-  it starts with `TODO` and `cargo test` fails until it doesn't. These texts are also "What's new" in the app
-  (Settings → About, and once after an update; `src/changes.rs`, embedded by `build.rs`). The first release
-  is left out there, since everything in it is new; the button appears with the second release.
+  it starts with `TODO` and `cargo test` fails until it doesn't. These texts are also the changelog in the app
+  (Settings → About → Changelog, all releases up to the running build; `src/changes.rs`, embedded by `build.rs`).
 - Merging the release PR runs the `publish` job: it tags `vX.Y.Z`, creates the GitHub release with the
   `CHANGELOG.md` section and, if the `RELEASE_KEYSTORE` (base64) and `RELEASE_KEYSTORE_PASSWORD` secrets are set,
   attaches a signed APK. F-Droid picks up the tag (see `fdroid/README.md`).

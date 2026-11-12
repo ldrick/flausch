@@ -17,7 +17,7 @@ fn main() {
 }
 
 /// Writes the F-Droid changelogs (`fastlane/metadata/android/<locale>/changelogs/<version code>.txt`) to
-/// `$OUT_DIR/changes.rs` as `CHANGES: &[(version code, English, German)]`, newest first, for "What's new".
+/// `$OUT_DIR/changes.rs` as `CHANGES: &[(version code, English, German)]`, newest first, for the changelog in the app.
 fn embed_changelogs() {
     use std::fmt::Write;
 

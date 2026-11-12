@@ -1,12 +1,12 @@
 import { Appearance, LineColor } from "theme.slint";
 
-export enum Screen { list, project, part, pdf, settings }
+export enum Screen { list, project, part, pdf, settings, about, changelog }
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, reset, remove-pdf, restore-backup, incoming-pdf, changes }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, reset, remove-pdf, restore-backup, incoming-pdf }
 
-// One release in "What's new".
+// One release in the changelog.
 export struct ChangeItem {
     version: string,
     text: string,
@@ -127,7 +127,7 @@ export global Store {
     in property <Notice> notice: Notice.none;
     in property <A11yFocus> a11y-focus;
     in property <string> version;
-    // "What's new", newest release first, in the current language.
+    // The changelog, newest release first, in the current language.
     in property <[ChangeItem]> changes;
 
     in property <Language> language: Language.system;
@@ -149,6 +149,8 @@ export global Store {
     // Returns false if there is nothing to go back to.
     callback back() -> bool;
     callback open-settings();
+    // A sub-page of the settings, e.g. about or changelog.
+    callback open-page(Screen);
     callback open-project(int);
     callback create-project(string);
     callback edit-project(string);

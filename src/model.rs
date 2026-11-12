@@ -540,9 +540,6 @@ pub struct Settings {
     /// Volume up and down count rows while a counter is shown (Android).
     #[serde(default)]
     pub volume_keys: bool,
-    /// Version code of the last build whose "What's new" the user has seen.
-    #[serde(default)]
-    pub seen_version: Option<u32>,
     #[serde(default)]
     pub project_filter: StatusFilter,
 }
@@ -560,7 +557,6 @@ impl Default for Settings {
             keep_screen_on: true,
             line_color: LineColor::default(),
             volume_keys: false,
-            seen_version: None,
             project_filter: StatusFilter::default(),
         }
     }

@@ -644,42 +644,6 @@ fn a_handed_over_pdf_can_be_discarded() {
 }
 
 #[test]
-fn whats_new_shows_once_after_an_update() {
-    let h = Harness::new();
-    assert_eq!(h.store().get_dialog(), DialogKind::None);
-    let storage = Storage::new(h.dir.path().to_path_buf()).unwrap();
-    assert_eq!(
-        storage.load_settings().seen_version,
-        Some(changes::current())
-    );
-
-    let mut settings = storage.load_settings();
-    settings.seen_version = Some(changes::current() - 1);
-    storage.save_settings(&settings).unwrap();
-    let relaunch = || {
-        stop();
-        let app = App::new().unwrap();
-        start(&app, h.dir.path().to_path_buf()).unwrap();
-        app.global::<Store>().get_dialog()
-    };
-    // The first release has no news, everything in it is new.
-    let news = changes::news_since(changes::current() - 1);
-    assert_eq!(
-        relaunch(),
-        if news {
-            DialogKind::Changes
-        } else {
-            DialogKind::None
-        }
-    );
-    assert_eq!(
-        storage.load_settings().seen_version,
-        Some(changes::current())
-    );
-    assert_eq!(relaunch(), DialogKind::None);
-}
-
-#[test]
 fn fdroid_version_code_matches_version() {
     let manifest = include_str!("../Cargo.toml");
     let code: u32 = manifest

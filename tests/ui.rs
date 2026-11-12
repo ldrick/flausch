@@ -5,7 +5,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use flausch::{App, ChangeItem, DialogKind, Language, Screen, Store};
-use i_slint_backend_testing::{AccessibleRole, ElementHandle, ElementQuery};
+use i_slint_backend_testing::{AccessibleRole, ElementHandle};
 use slint::platform::{Key, WindowEvent};
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 
@@ -286,36 +286,41 @@ fn the_language_setting_is_applied_and_kept() {
 }
 
 #[test]
-fn whats_new_lists_the_releases() {
+fn about_pages_show_the_app_and_the_changelog() {
     let (app, _dir) = fresh();
+    assert_eq!(store(&app).get_dialog(), DialogKind::None);
     // The element tree only holds what is visible, and About is at the end of the settings.
     app.window().set_size(slint::LogicalSize::new(412., 2000.));
     tap(&app, "Settings");
-    // The first release has no news in the app; it is listed on F-Droid only.
-    store(&app).set_changes(ModelRc::new(VecModel::from(Vec::new())));
-    settle();
-    assert!(!exists(&app, "What's new"));
+    tap(&app, "About Flausch");
+    assert_eq!(store(&app).get_screen(), Screen::About);
+    let description = "A crochet companion. Flausch is German for fluff.";
+    assert!(find(&app, AccessibleRole::Text, description).is_some());
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::Settings);
 
-    let text = "Longer text that has to wrap onto several lines in the dialog, ".repeat(3);
-    store(&app).set_changes(ModelRc::new(VecModel::from(vec![ChangeItem {
-        version: "1.1.0".into(),
-        text: text.clone().into(),
-    }])));
-    settle();
-    tap(&app, "What's new");
-    assert_eq!(store(&app).get_dialog(), DialogKind::Changes);
+    let text = "Longer text that has to wrap onto several lines on the page, ".repeat(3);
+    store(&app).set_changes(ModelRc::new(VecModel::from(vec![
+        ChangeItem {
+            version: "1.1.0".into(),
+            text: text.clone().into(),
+        },
+        ChangeItem {
+            version: "1.0.0".into(),
+            text: "First release".into(),
+        },
+    ])));
+    tap(&app, "Changelog");
+    assert_eq!(store(&app).get_screen(), Screen::Changelog);
     let entry = find(
         &app,
         AccessibleRole::Text,
         &format!("Version 1.1.0: {text}"),
     )
     .expect("the release is listed");
-    // The dialog must be tall enough for the wrapped text.
-    let list = ElementQuery::from_root(&app)
-        .match_id("App::news-flick")
-        .find_first()
-        .unwrap();
-    assert!(list.size().height >= entry.size().height);
-    tap(&app, "OK");
-    assert_eq!(store(&app).get_dialog(), DialogKind::None);
+    // The card must be tall enough for the wrapped text.
+    assert!(entry.size().height > 60.);
+    assert!(find(&app, AccessibleRole::Text, "Version 1.0.0: First release").is_some());
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::Settings);
 }
