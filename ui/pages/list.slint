@@ -4,13 +4,26 @@ import { Card, Chips, Field, Icon, IconButton, PillButton, ProgressBar } from ".
 
 component ProjectCard inherits Card {
     in property <ProjectItem> project;
+    // Lifted while it is being dragged.
+    in property <bool> lifted;
     callback clicked();
+    // A long press starts a drag; `moved` reports the vertical movement and the pointer's window position.
+    callback drag-started();
+    callback drag-moved(length, length);
+    callback drag-ended();
+    callback move-by(int);
+
+    // The long press fired, so the release is no click.
+    property <bool> holding;
 
     height: 104px;
-    background: touch.pressed ? Theme.surface-muted : Theme.surface;
-    accessible-role: button;
+    background: touch.pressed && !root.holding ? Theme.surface-muted : Theme.surface;
+    drop-shadow-offset-y: root.lifted ? 2 * Theme.shadow-offset : Theme.shadow-offset;
+    accessible-role: list-item;
     accessible-label: root.project.status == ProjectStatus.active ? root.project.name : @tr("{} ({})", root.project.name, root.status-text);
     accessible-action-default => { root.clicked(); }
+    accessible-action-increment => { root.move-by(-1); }
+    accessible-action-decrement => { root.move-by(1); }
 
     property <string> status-text: root.project.status == ProjectStatus.planned ? @tr("Planned")
         : root.project.status == ProjectStatus.paused ? @tr("Paused")
@@ -18,7 +31,35 @@ component ProjectCard inherits Card {
 
     // Below the content, so the continue button gets its own taps.
     touch := TouchArea {
-        clicked => { root.clicked(); }
+        clicked => {
+            if !root.holding {
+                root.clicked();
+            }
+        }
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.down {
+                root.holding = false;
+            }
+        }
+        moved => {
+            if root.holding {
+                root.drag-moved(self.mouse-y - self.pressed-y, root.absolute-position.y + self.mouse-y);
+            }
+        }
+        changed pressed => {
+            if !self.pressed && root.holding {
+                root.drag-ended();
+            }
+        }
+    }
+    // Longer than the Flickable's scroll detection, so a slow scroll never turns into a drag.
+    Timer {
+        interval: 550ms;
+        running: touch.pressed && !root.holding;
+        triggered => {
+            root.holding = true;
+            root.drag-started();
+        }
     }
 
     HorizontalLayout {
@@ -177,6 +218,66 @@ component ProjectCard inherits Card {
     }
 }
 
+// Cards that can be dragged to another place in their status group.
+component ProjectList inherits VerticalLayout {
+    in property <[ProjectItem]> items;
+    // Index of the dragged card, or -1.
+    in-out property <int> dragged: -1;
+    // How far the dragged card moved, including auto-scrolling.
+    in-out property <length> offset;
+    // Window position of the pointer, for auto-scrolling.
+    out property <length> pointer-y;
+
+    property <length> step: 104px + Theme.spacing;
+
+    // Moves the dragged card, but not out of its status group.
+    public function move-dragged(by: length) {
+        root.offset = max((root.items[root.dragged].group-start - root.dragged) * root.step,
+            min((root.items[root.dragged].group-end - root.dragged) * root.step, root.offset + by));
+    }
+
+    property <int> target: root.dragged < 0 ? -1
+        : max(root.items[root.dragged].group-start, min(root.items[root.dragged].group-end, root.dragged + Math.round(root.offset / root.step)));
+
+    spacing: Theme.spacing;
+
+    for project[index] in root.items: Rectangle {
+        height: 104px;
+        z: index == root.dragged ? 1 : 0;
+
+        ProjectCard {
+            y: index == root.dragged ? root.offset
+                : root.dragged < 0 ? 0
+                : index > root.dragged && index <= root.target ? -root.step
+                : index < root.dragged && index >= root.target ? root.step : 0;
+            animate y {
+                duration: root.dragged >= 0 && index != root.dragged ? 150ms : 0ms;
+            }
+            width: parent.width;
+            project: project;
+            lifted: index == root.dragged;
+            clicked => { Store.open-project(project.id); }
+            drag-started => {
+                root.dragged = index;
+                root.offset = 0;
+            }
+            drag-moved(dy, pointer) => {
+                root.move-dragged(dy);
+                root.pointer-y = pointer;
+            }
+            drag-ended => {
+                let by = root.target - root.dragged;
+                root.dragged = -1;
+                root.offset = 0;
+                if by != 0 {
+                    Store.move-project(project.id, by);
+                }
+            }
+            move-by(by) => { Store.move-project(project.id, by); }
+        }
+    }
+}
+
 export component ListPage inherits Rectangle {
     function close-search() {
         Store.searching = false;
@@ -283,9 +384,32 @@ export component ListPage inherits Rectangle {
             }
         }
 
-        if Store.projects.length + Store.finished.length > 0: Flickable {
+        if Store.projects.length + Store.finished.length > 0: flick := Flickable {
+            property <bool> dragging: active-list.dragged >= 0 || finished-list.dragged >= 0;
+            property <length> pointer-y: active-list.dragged >= 0 ? active-list.pointer-y : finished-list.pointer-y;
+            // Scrolls while a dragged card is near the top or bottom edge (above the floating button).
+            property <length> scroll-speed: !self.dragging ? 0
+                : self.pointer-y < self.absolute-position.y + 80px ? -12px
+                : self.pointer-y > self.absolute-position.y + self.height - 160px ? 12px : 0;
+            property <length> scrolled-from;
+
             vertical-stretch: 1;
+            interactive: !self.dragging;
             content-height: list.preferred-height;
+
+            Timer {
+                interval: 16ms;
+                running: flick.scroll-speed != 0;
+                triggered => {
+                    flick.scrolled-from = flick.content-y;
+                    flick.content-y = max(min(0, flick.height - flick.content-height), min(0, flick.content-y - flick.scroll-speed));
+                    if active-list.dragged >= 0 {
+                        active-list.move-dragged(flick.scrolled-from - flick.content-y);
+                    } else {
+                        finished-list.move-dragged(flick.scrolled-from - flick.content-y);
+                    }
+                }
+            }
 
             list := VerticalLayout {
                 padding: Theme.padding;
@@ -295,9 +419,8 @@ export component ListPage inherits Rectangle {
                 spacing: Theme.spacing;
                 alignment: start;
 
-                for project in Store.projects: ProjectCard {
-                    project: project;
-                    clicked => { Store.open-project(project.id); }
+                active-list := ProjectList {
+                    items: Store.projects;
                 }
                 if Store.finished.length > 0: Rectangle {
                     height: 32px;
@@ -332,12 +455,8 @@ export component ListPage inherits Rectangle {
                         clicked => { Store.finished-open = !Store.finished-open; }
                     }
                 }
-                if Store.finished-open: VerticalLayout {
-                    spacing: Theme.spacing;
-                    for project in Store.finished: ProjectCard {
-                        project: project;
-                        clicked => { Store.open-project(project.id); }
-                    }
+                finished-list := ProjectList {
+                    items: Store.finished-open ? Store.finished : [];
                 }
             }
         }

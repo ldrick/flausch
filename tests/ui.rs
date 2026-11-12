@@ -4,7 +4,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use flausch::{App, ChangeItem, DialogKind, Language, Screen, Store};
+use flausch::{App, ChangeItem, DialogKind, Language, ProjectSort, Screen, Store};
 use i_slint_backend_testing::{AccessibleRole, ElementHandle};
 use slint::platform::{Key, WindowEvent};
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
@@ -36,12 +36,17 @@ fn find(app: &App, role: AccessibleRole, label: &str) -> Option<ElementHandle> {
     ElementHandle::find_by_accessible_label(app, label).find(|e| e.accessible_role() == Some(role))
 }
 
+/// A button or a project card.
+fn control(app: &App, label: &str) -> Option<ElementHandle> {
+    find(app, AccessibleRole::Button, label).or_else(|| find(app, AccessibleRole::ListItem, label))
+}
+
 fn exists(app: &App, label: &str) -> bool {
-    find(app, AccessibleRole::Button, label).is_some()
+    control(app, label).is_some()
 }
 
 fn tap(app: &App, label: &str) {
-    find(app, AccessibleRole::Button, label)
+    control(app, label)
         .unwrap_or_else(|| panic!("no button {label:?}"))
         .invoke_accessible_default_action();
     settle();
@@ -276,6 +281,60 @@ fn the_list_can_be_sorted_by_name() {
     let app = launch(dir.path());
     settle();
     assert_eq!(names(&app), ["bunny", "Hat"], "the order is kept");
+}
+
+#[test]
+fn projects_can_be_moved_by_hand() {
+    use slint::platform::PointerEventButton;
+    use slint::{LogicalPosition, LogicalSize};
+
+    let (app, dir) = fresh();
+    app.window().set_size(LogicalSize::new(412.0, 924.0));
+    for name in ["A", "B", "C"] {
+        create_project(&app, name);
+        go_back(&app);
+    }
+    let names = |app: &App| -> Vec<String> {
+        store(app)
+            .get_projects()
+            .iter()
+            .map(|p| p.name.to_string())
+            .collect()
+    };
+    let card = |app: &App, name: &str| find(app, AccessibleRole::ListItem, name).unwrap();
+    assert_eq!(names(&app), ["C", "B", "A"]);
+
+    // TalkBack's "Move up" action.
+    card(&app, "A").invoke_accessible_increment_action();
+    settle();
+    assert_eq!(names(&app), ["C", "A", "B"]);
+    assert_eq!(store(&app).get_project_sort(), ProjectSort::Custom);
+
+    // Hold C, then drag it down past A.
+    let c = card(&app, "C");
+    let start = c.absolute_position();
+    let size = c.size();
+    let mut position =
+        LogicalPosition::new(start.x + size.width / 3.0, start.y + size.height / 2.0);
+    let window = app.window();
+    let button = PointerEventButton::Left;
+    window.dispatch_event(WindowEvent::PointerMoved { position });
+    window.dispatch_event(WindowEvent::PointerPressed { position, button });
+    i_slint_backend_testing::mock_elapsed_time(Duration::from_millis(700));
+    for _ in 0..12 {
+        position.y += 10.0;
+        window.dispatch_event(WindowEvent::PointerMoved { position });
+        settle();
+    }
+    window.dispatch_event(WindowEvent::PointerReleased { position, button });
+    settle();
+    settle();
+    assert_eq!(names(&app), ["A", "C", "B"]);
+    assert_eq!(store(&app).get_screen(), Screen::List, "a drag is no tap");
+
+    let app = launch(dir.path());
+    settle();
+    assert_eq!(names(&app), ["A", "C", "B"], "the order is kept");
 }
 
 #[test]

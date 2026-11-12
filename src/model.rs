@@ -224,6 +224,8 @@ pub enum ProjectSort {
     Newest,
     /// Furthest along first; projects without a row goal last.
     Progress,
+    /// Arranged by hand (`Project::position`).
+    Custom,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -244,6 +246,9 @@ pub struct Project {
     /// Unix timestamps in seconds.
     pub created: u64,
     pub updated: u64,
+    /// Place in the custom order (`ProjectSort::Custom`), smallest first.
+    #[serde(default)]
+    pub position: i64,
     /// Version 1 counted rows per project. Only read for the migration.
     #[serde(default, skip_serializing, rename = "row")]
     legacy_row: Option<u32>,
@@ -336,6 +341,8 @@ impl Library {
 
     pub fn create(&mut self, name: &str, now: u64) -> u64 {
         let id = self.next_id();
+        // New projects go to the top of the custom order.
+        let position = self.projects.iter().map(|p| p.position).min().unwrap_or(1) - 1;
         self.projects.push(Project {
             id,
             name: clean_name(name),
@@ -346,6 +353,7 @@ impl Library {
             notes: String::new(),
             created: now,
             updated: now,
+            position,
             legacy_row: None,
             legacy_row_goal: None,
         });
@@ -490,6 +498,7 @@ impl Library {
                 ProjectSort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
                 ProjectSort::Newest => b.created.cmp(&a.created),
                 ProjectSort::Progress => progress_key(b).cmp(&progress_key(a)),
+                ProjectSort::Custom => a.position.cmp(&b.position),
             };
             (a.status.group().cmp(&b.status.group()))
                 .then(by)
@@ -497,6 +506,36 @@ impl Library {
                 .then(b.id.cmp(&a.id))
         });
         projects
+    }
+
+    /// Moves project `id` to the place of `target` in the custom order, starting from the order of
+    /// `from` (the current sort). Both must be in the same status group.
+    pub fn move_project(&mut self, id: u64, target: u64, from: ProjectSort) -> bool {
+        let mut order: Vec<u64> = self
+            .sorted(StatusFilter::All, from)
+            .iter()
+            .map(|p| p.id)
+            .collect();
+        let (Some(a), Some(b)) = (self.get(id), self.get(target)) else {
+            return false;
+        };
+        if id == target || a.status.group() != b.status.group() {
+            return false;
+        }
+        let Some(index) = order.iter().position(|&p| p == id) else {
+            return false;
+        };
+        let Some(to) = order.iter().position(|&p| p == target) else {
+            return false;
+        };
+        order.remove(index);
+        order.insert(to, id);
+        for project in &mut self.projects {
+            if let Some(position) = order.iter().position(|&p| p == project.id) {
+                project.position = position as i64;
+            }
+        }
+        true
     }
 }
 
@@ -752,6 +791,34 @@ mod tests {
         assert_eq!(ids(ProjectSort::Name), [bunny, hat, scarf, blanket]);
         assert_eq!(ids(ProjectSort::Newest), [scarf, hat, bunny, blanket]);
         assert_eq!(ids(ProjectSort::Progress), [bunny, hat, scarf, blanket]);
+        assert_eq!(ids(ProjectSort::Custom), [scarf, hat, bunny, blanket]);
+    }
+
+    #[test]
+    fn move_project_arranges_the_custom_order() {
+        let mut lib = Library::default();
+        let a = lib.create("A", 1);
+        let b = lib.create("B", 2);
+        let c = lib.create("C", 3);
+        let done = lib.create("Done", 4);
+        lib.set_status(done, Status::Finished, 5);
+        let ids = |lib: &Library| -> Vec<u64> {
+            lib.sorted(StatusFilter::All, ProjectSort::Custom)
+                .iter()
+                .map(|p| p.id)
+                .collect()
+        };
+        // Starts from the name order and moves A down past C.
+        assert!(lib.move_project(a, c, ProjectSort::Name));
+        assert_eq!(ids(&lib), [b, c, a, done]);
+        assert!(lib.move_project(a, b, ProjectSort::Custom));
+        assert_eq!(ids(&lib), [a, b, c, done]);
+        // Not across status groups.
+        assert!(!lib.move_project(c, done, ProjectSort::Custom));
+        assert_eq!(ids(&lib), [a, b, c, done]);
+        // New projects go to the top.
+        let d = lib.create("D", 6);
+        assert_eq!(ids(&lib), [d, a, b, c, done]);
     }
 
     #[test]

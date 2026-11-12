@@ -15,7 +15,7 @@ export struct ChangeItem {
 export enum ProjectStatus { planned, active, paused, finished }
 export enum StatusFilter { all, active, planned, paused, finished }
 // Order within each status group of the project list.
-export enum ProjectSort { recent, name, newest, progress }
+export enum ProjectSort { recent, name, newest, progress, custom }
 
 export enum Notice {
     none,
@@ -70,6 +70,9 @@ export struct ProjectItem {
     // Thumbnail of the first PDF page.
     has-cover: bool,
     cover: image,
+    // Index range of its status group in the list, where it can be dragged to.
+    group-start: int,
+    group-end: int,
 }
 
 export struct PdfView {
@@ -166,6 +169,12 @@ export global Store {
     callback query-changed();
     callback set-status-filter(StatusFilter);
     callback set-project-sort(ProjectSort);
+    // Moves a project `by` places in the shown list (within its status group) and switches to the
+    // custom order.
+    callback move-project(int /* id */, int /* by */);
+    // Labels of the TalkBack actions on project cards.
+    out property <string> move-up-label: @tr("Move up");
+    out property <string> move-down-label: @tr("Move down");
 
     // Makes a part active without leaving the screen.
     callback select-part(int);

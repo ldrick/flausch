@@ -8,74 +8,74 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ui/app.slint:62
+#: ui/app.slint:70
 msgctxt "ProjectDialog"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/app.slint:85
+#: ui/app.slint:93
 msgctxt "ProjectDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:90
+#: ui/app.slint:98
 msgctxt "ProjectDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:90
+#: ui/app.slint:98
 msgctxt "ProjectDialog"
 msgid "Create"
 msgstr "Anlegen"
 
-#: ui/app.slint:282
+#: ui/app.slint:290
 msgctxt "App"
 msgid "This file could not be opened as a PDF."
 msgstr "Diese Datei konnte nicht als PDF geöffnet werden."
 
-#: ui/app.slint:283
+#: ui/app.slint:291
 msgctxt "App"
 msgid "The page could not be displayed."
 msgstr "Die Seite konnte nicht angezeigt werden."
 
-#: ui/app.slint:291
+#: ui/app.slint:299
 msgctxt "App"
 msgid "The PDF could not be imported."
 msgstr "Das PDF konnte nicht importiert werden."
 
-#: ui/app.slint:313
+#: ui/app.slint:321
 msgctxt "App"
 msgid "Delete project?"
 msgstr "Projekt löschen?"
 
-#: ui/app.slint:314
+#: ui/app.slint:322
 msgctxt "App"
 msgid "“{}” and its pattern will be removed. This cannot be undone."
 msgstr ""
 "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
 "werden."
 
-#: ui/app.slint:318 ui/app.slint:399
+#: ui/app.slint:326 ui/app.slint:407
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
-#: ui/app.slint:479
+#: ui/app.slint:487
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-#: ui/app.slint:485
+#: ui/app.slint:493
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: ui/app.slint:495
+#: ui/app.slint:503
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-#: ui/app.slint:500
+#: ui/app.slint:508
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
@@ -90,24 +90,24 @@ msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
 
-#: ui/pages/list.slint:260
+#: ui/pages/list.slint:354
 msgctxt "ListPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ui/pages/list.slint:383
+#: ui/pages/list.slint:495
 msgctxt "ListPage"
 msgid "No projects yet"
 msgstr "Noch keine Projekte"
 
-#: ui/pages/list.slint:390
+#: ui/pages/list.slint:502
 msgctxt "ListPage"
 msgid "Create a project to count your rows and keep your pattern at hand."
 msgstr ""
 "Leg ein Projekt an, um Reihen zu zählen und deine Anleitung griffbereit zu "
 "haben."
 
-#: ui/pages/list.slint:403
+#: ui/pages/list.slint:515
 msgctxt "ListPage"
 msgid "New project"
 msgstr "Neues Projekt"
@@ -232,24 +232,24 @@ msgctxt "PartPage"
 msgid "Delete part"
 msgstr "Teil löschen"
 
-#: ui/pages/list.slint:119
+#: ui/pages/list.slint:160
 msgctxt "ProjectCard"
 msgid "No parts yet"
 msgstr "Noch keine Teile"
 
-#: ui/pages/list.slint:119
+#: ui/pages/list.slint:160
 msgctxt "ProjectCard"
 msgid "{n} part"
 msgid_plural "{n} parts"
 msgstr[0] "{n} Teil"
 msgstr[1] "{n} Teile"
 
-#: ui/pages/list.slint:120
+#: ui/pages/list.slint:161
 msgctxt "ProjectCard"
 msgid "{} · row {} of {}"
 msgstr "{} · Reihe {} von {}"
 
-#: ui/pages/list.slint:121
+#: ui/pages/list.slint:162
 msgctxt "ProjectCard"
 msgid "{} · row {}"
 msgstr "{} · Reihe {}"
@@ -313,93 +313,93 @@ msgctxt "ProjectPage"
 msgid "Add part"
 msgstr "Teil hinzufügen"
 
-#: ui/app.slint:62
+#: ui/app.slint:70
 msgctxt "ProjectDialog"
 msgid "Rename project"
 msgstr "Projekt umbenennen"
 
-#: ui/app.slint:86
+#: ui/app.slint:94
 msgctxt "ProjectDialog"
 msgid "Name, e.g. Bunny"
 msgstr "Name, z. B. Hase"
 
-#: ui/app.slint:101
+#: ui/app.slint:109
 msgctxt "PartDialog"
 msgid "Edit part"
 msgstr "Teil bearbeiten"
 
-#: ui/app.slint:101
+#: ui/app.slint:109
 msgctxt "PartDialog"
 msgid "New part"
 msgstr "Neues Teil"
 
-#: ui/app.slint:131
+#: ui/app.slint:139
 msgctxt "PartDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:132
+#: ui/app.slint:140
 msgctxt "PartDialog"
 msgid "Name, e.g. Head"
 msgstr "Name, z. B. Kopf"
 
-#: ui/app.slint:136 ui/app.slint:137
+#: ui/app.slint:144 ui/app.slint:145
 msgctxt "PartDialog"
 msgid "Rows (optional)"
 msgstr "Reihen (optional)"
 
-#: ui/app.slint:159
+#: ui/app.slint:167
 msgctxt "PartDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:159
+#: ui/app.slint:167
 msgctxt "PartDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/app.slint:394
+#: ui/app.slint:402
 msgctxt "App"
 msgid "Delete part?"
 msgstr "Teil löschen?"
 
-#: ui/app.slint:395
+#: ui/app.slint:403
 msgctxt "App"
 msgid "“{}” and its row counter will be removed."
 msgstr "„{}“ und sein Reihenzähler werden gelöscht."
 
-#: ui/app.slint:481
+#: ui/app.slint:489
 msgctxt "App"
 msgid "The row counter of “{}” goes back to 0."
 msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
 
-#: ui/app.slint:496
+#: ui/app.slint:504
 msgctxt "App"
 msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
 "Das PDF wird aus diesem Projekt entfernt. Die Reihenzähler bleiben erhalten."
 
-#: ui/pages/list.slint:136
+#: ui/pages/list.slint:177
 msgctxt "ProjectCard"
 msgid "{}%"
 msgstr "{} %"
 
-#: ui/pages/list.slint:198
+#: ui/pages/list.slint:292
 msgctxt "ListPage"
 msgid "Close search"
 msgstr "Suche schließen"
 
-#: ui/pages/list.slint:208 ui/pages/list.slint:252
+#: ui/pages/list.slint:302 ui/pages/list.slint:346
 msgctxt "ListPage"
 msgid "Search"
 msgstr "Suchen"
 
-#: ui/pages/list.slint:209
+#: ui/pages/list.slint:303
 msgctxt "ListPage"
 msgid "Search projects"
 msgstr "Projekte suchen"
 
-#: ui/pages/list.slint:351
+#: ui/pages/list.slint:463
 msgctxt "ListPage"
 msgid "No matching projects"
 msgstr "Keine passenden Projekte"
@@ -409,27 +409,27 @@ msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:410
+#: ui/app.slint:418
 msgctxt "App"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:449
+#: ui/app.slint:457
 msgctxt "App"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/app.slint:449
+#: ui/app.slint:457
 msgctxt "App"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/app.slint:467
+#: ui/app.slint:475
 msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ui/pages/list.slint:163
+#: ui/pages/list.slint:204
 msgctxt "ProjectCard"
 msgid "Continue {}"
 msgstr "{} fortsetzen"
@@ -548,27 +548,27 @@ msgctxt "SettingsPage"
 msgid "Import"
 msgstr "Importieren"
 
-#: ui/app.slint:284
+#: ui/app.slint:292
 msgctxt "App"
 msgid "Backup saved."
 msgstr "Sicherung gespeichert."
 
-#: ui/app.slint:285
+#: ui/app.slint:293
 msgctxt "App"
 msgid "The backup could not be saved."
 msgstr "Die Sicherung konnte nicht gespeichert werden."
 
-#: ui/app.slint:286
+#: ui/app.slint:294
 msgctxt "App"
 msgid "The file could not be read."
 msgstr "Die Datei konnte nicht gelesen werden."
 
-#: ui/app.slint:287
+#: ui/app.slint:295
 msgctxt "App"
 msgid "This file is not a Flausch backup."
 msgstr "Diese Datei ist keine Flausch-Sicherung."
 
-#: ui/app.slint:288
+#: ui/app.slint:296
 msgctxt "App"
 msgid ""
 "This backup is from a newer version of Flausch. Please update the app first."
@@ -576,24 +576,24 @@ msgstr ""
 "Diese Sicherung stammt aus einer neueren Flausch-Version. Bitte aktualisiere"
 " zuerst die App."
 
-#: ui/app.slint:289
+#: ui/app.slint:297
 msgctxt "App"
 msgid "Backup restored."
 msgstr "Sicherung wiederhergestellt."
 
-#: ui/app.slint:290
+#: ui/app.slint:298
 msgctxt "App"
 msgid "The backup could not be restored. Your data is unchanged."
 msgstr ""
 "Die Sicherung konnte nicht wiederhergestellt werden. Deine Daten sind "
 "unverändert."
 
-#: ui/app.slint:511
+#: ui/app.slint:519
 msgctxt "App"
 msgid "Restore backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: ui/app.slint:512
+#: ui/app.slint:520
 msgctxt "App"
 msgid ""
 "The backup contains {n} project. It replaces all projects and settings on "
@@ -608,27 +608,27 @@ msgstr[1] ""
 "Die Sicherung enthält {n} Projekte. Sie ersetzt alle Projekte und "
 "Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
 
-#: ui/app.slint:516
+#: ui/app.slint:524
 msgctxt "App"
 msgid "Restore"
 msgstr "Wiederherstellen"
 
-#: ui/pages/list.slint:12
+#: ui/pages/list.slint:23
 msgctxt "ProjectCard"
 msgid "{} ({})"
 msgstr "{} ({})"
 
-#: ui/pages/list.slint:15
+#: ui/pages/list.slint:28
 msgctxt "ProjectCard"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/pages/list.slint:16
+#: ui/pages/list.slint:29
 msgctxt "ProjectCard"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/pages/list.slint:17
+#: ui/pages/list.slint:30
 msgctxt "ProjectCard"
 msgid "Finished"
 msgstr "Fertig"
@@ -683,57 +683,57 @@ msgctxt "ProjectPage"
 msgid "Edit notes"
 msgstr "Notizen bearbeiten"
 
-#: ui/app.slint:170 ui/app.slint:179
+#: ui/app.slint:178 ui/app.slint:187
 msgctxt "NotesDialog"
 msgid "Notes"
 msgstr "Notizen"
 
-#: ui/app.slint:180
+#: ui/app.slint:188
 msgctxt "NotesDialog"
 msgid "Yarn, hook size, changes…"
 msgstr "Garn, Nadelstärke, Änderungen…"
 
-#: ui/app.slint:183
+#: ui/app.slint:191
 msgctxt "NotesDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:338
+#: ui/app.slint:346
 msgctxt "App"
 msgid "Open PDF"
 msgstr "PDF öffnen"
 
-#: ui/app.slint:339
+#: ui/app.slint:347
 msgctxt "App"
 msgid "Create a new project with “{}” or add it to a project."
 msgstr "Leg mit „{}“ ein neues Projekt an oder füge es einem Projekt hinzu."
 
-#: ui/app.slint:340
+#: ui/app.slint:348
 msgctxt "App"
 msgid "Create a new project with “{}”."
 msgstr "Leg mit „{}“ ein neues Projekt an."
 
-#: ui/app.slint:357 ui/app.slint:374
+#: ui/app.slint:365 ui/app.slint:382
 msgctxt "App"
 msgid "Replaces its pattern"
 msgstr "Ersetzt die Anleitung"
 
-#: ui/app.slint:387
+#: ui/app.slint:395
 msgctxt "App"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/app.slint:142
+#: ui/app.slint:150
 msgctxt "PartDialog"
 msgid "How many (optional)"
 msgstr "Wie oft (optional)"
 
-#: ui/app.slint:143
+#: ui/app.slint:151
 msgctxt "PartDialog"
 msgid "How many, e.g. 4 legs"
 msgstr "Wie oft, z. B. 4 Beine"
 
-#: ui/app.slint:480
+#: ui/app.slint:488
 msgctxt "App"
 msgid ""
 "The row counter of “{}” goes back to 0, starting again with the first piece."
@@ -751,76 +751,76 @@ msgctxt "PartCard"
 msgid "Edit {}"
 msgstr "{} bearbeiten"
 
-#: ui/app.slint:153
+#: ui/app.slint:161
 msgctxt "PartDialog"
 msgid "Delete part"
 msgstr "Teil löschen"
 
-#: ui/pages/list.slint:268
+#: ui/pages/list.slint:362
 msgctxt "ListPage"
 msgid "All"
 msgstr "Alle"
 
-#: ui/pages/list.slint:269
+#: ui/pages/list.slint:363
 msgctxt "ListPage"
 msgid "In progress"
 msgstr "In Arbeit"
 
-#: ui/pages/list.slint:270
+#: ui/pages/list.slint:364
 msgctxt "ListPage"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/pages/list.slint:271
+#: ui/pages/list.slint:365
 msgctxt "ListPage"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/pages/list.slint:272
+#: ui/pages/list.slint:366
 msgctxt "ListPage"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/list.slint:305
+#: ui/pages/list.slint:421
 msgctxt "ListPage"
 msgid "Hide finished projects ({})"
 msgstr "Fertige Projekte ausblenden ({})"
 
-#: ui/pages/list.slint:305
+#: ui/pages/list.slint:421
 msgctxt "ListPage"
 msgid "Show finished projects ({})"
 msgstr "Fertige Projekte einblenden ({})"
 
-#: ui/pages/list.slint:313
+#: ui/pages/list.slint:429
 msgctxt "ListPage"
 msgid "Finished ({})"
 msgstr "Fertig ({})"
 
-#: ui/pages/list.slint:351
+#: ui/pages/list.slint:463
 msgctxt "ListPage"
 msgid "No projects with this status"
 msgstr "Keine Projekte mit diesem Status"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:116
+#: ui/store.slint:119
 msgctxt "Store"
 msgid "Planned"
 msgstr "Geplant"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:116
+#: ui/store.slint:119
 msgctxt "Store"
 msgid "In progress"
 msgstr "In Arbeit"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:116
+#: ui/store.slint:119
 msgctxt "Store"
 msgid "Paused"
 msgstr "Pausiert"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:116
+#: ui/store.slint:119
 msgctxt "Store"
 msgid "Finished"
 msgstr "Fertig"
@@ -896,7 +896,7 @@ msgstr ""
 "oder Tracking. Wenn dir die App bei deinen Projekten hilft, freue ich mich, "
 "wenn du mir einen Kaffee spendierst. Danke!"
 
-#: ui/pages/list.slint:244
+#: ui/pages/list.slint:338
 msgctxt "ListPage"
 msgid "Sort"
 msgstr "Sortieren"
@@ -925,3 +925,24 @@ msgstr "Neueste"
 msgctxt "SortDialog"
 msgid "Progress"
 msgstr "Fortschritt"
+
+#: ui/app.slint:27
+msgctxt "SortDialog"
+msgid "Custom"
+msgstr "Eigene"
+
+#: ui/app.slint:57
+msgctxt "SortDialog"
+msgid "Hold a project to move it."
+msgstr "Halte ein Projekt gedrückt, um es zu verschieben."
+
+#. Labels of the TalkBack actions on project cards.
+#: ui/store.slint:176
+msgctxt "Store"
+msgid "Move up"
+msgstr "Nach oben verschieben"
+
+#: ui/store.slint:177
+msgctxt "Store"
+msgid "Move down"
+msgstr "Nach unten verschieben"

@@ -356,6 +356,10 @@ public class FlauschHelper {
     private static final int KIND_SLIDER = 5;
     private static final int KIND_IMAGE = 6;
     private static final int KIND_RADIO = 7;
+    private static final int KIND_ITEM = 8;
+    // Custom actions of KIND_ITEM, mirrored in src/a11y.rs.
+    private static final int ACTION_MOVE_UP = 0x0ff00001;
+    private static final int ACTION_MOVE_DOWN = 0x0ff00002;
     private static final int FLAG_ENABLED = 1;
     private static final int FLAG_CHECKABLE = 2;
     private static final int FLAG_CHECKED = 4;
@@ -570,6 +574,7 @@ public class FlauschHelper {
     private static String className(int kind) {
         switch (kind) {
             case KIND_BUTTON:
+            case KIND_ITEM:
                 return "android.widget.Button";
             case KIND_SWITCH:
                 return "android.widget.Switch";
@@ -655,6 +660,18 @@ public class FlauschHelper {
                 case KIND_IMAGE:
                     info.setContentDescription(label);
                     break;
+                case KIND_ITEM: {
+                    info.setText(label);
+                    info.setClickable(true);
+                    info.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK);
+                    // The value holds the translated labels of the move actions.
+                    String[] moves = value.split("\n", -1);
+                    if (moves.length == 2) {
+                        info.addAction(new AccessibilityNodeInfo.AccessibilityAction(ACTION_MOVE_UP, moves[0]));
+                        info.addAction(new AccessibilityNodeInfo.AccessibilityAction(ACTION_MOVE_DOWN, moves[1]));
+                    }
+                    break;
+                }
                 default:
                     info.setText(label);
                     info.setClickable(true);
@@ -693,6 +710,8 @@ public class FlauschHelper {
                     return true;
                 case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD:
                 case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD:
+                case ACTION_MOVE_UP:
+                case ACTION_MOVE_DOWN:
                     onA11yAction(id, action, null);
                     return true;
                 case AccessibilityNodeInfo.ACTION_SET_TEXT: {

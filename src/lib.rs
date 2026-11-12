@@ -181,6 +181,9 @@ fn connect(app: &App) {
     store.on_set_project_sort(|sort| {
         with(|c| c.set_project_sort(sort.into()));
     });
+    store.on_move_project(|id, by| {
+        with(|c| c.move_project(id as u64, by));
+    });
     store.on_query_changed(|| {
         with(|c| c.refresh());
     });
@@ -345,7 +348,8 @@ impl Controller {
         }
     }
 
-    fn refresh(&self) {
+    /// The projects in the list: filtered, searched and sorted.
+    fn shown(&self) -> Vec<&model::Project> {
         let app = self.app();
         let store = app.global::<Store>();
         let query = store.get_query();
@@ -359,18 +363,43 @@ impl Controller {
             };
             names.row_data(index).unwrap_or_default()
         };
+        self.library
+            .sorted(self.settings.project_filter, self.settings.project_sort)
+            .into_iter()
+            .filter(|p| p.matches(&query, &status_name(p.status)))
+            .collect()
+    }
+
+    fn project_items(&self, projects: &[&model::Project]) -> Vec<ProjectItem> {
+        let group = |i: usize| projects[i].status.group();
+        (0..projects.len())
+            .map(|i| {
+                let start = (0..i).rev().take_while(|&j| group(j) == group(i)).last();
+                let end = (i + 1..projects.len())
+                    .take_while(|&j| group(j) == group(i))
+                    .last();
+                ProjectItem {
+                    group_start: start.unwrap_or(i) as i32,
+                    group_end: end.unwrap_or(i) as i32,
+                    ..self.project_item(projects[i])
+                }
+            })
+            .collect()
+    }
+
+    fn refresh(&self) {
+        let app = self.app();
+        let store = app.global::<Store>();
+        let query = store.get_query();
         let filter = self.settings.project_filter;
         // While searching, finished projects show up right in the list.
         let collapse = filter == model::StatusFilter::All && query.trim().is_empty();
-        let (finished, items): (Vec<ProjectItem>, Vec<ProjectItem>) = self
-            .library
-            .sorted(filter, self.settings.project_sort)
+        let (finished, shown): (Vec<_>, Vec<_>) = self
+            .shown()
             .into_iter()
-            .filter(|p| p.matches(&query, &status_name(p.status)))
-            .map(|p| self.project_item(p))
-            .partition(|p| collapse && p.status == ProjectStatus::Finished);
-        store.set_projects(ModelRc::new(VecModel::from(items)));
-        store.set_finished(ModelRc::new(VecModel::from(finished)));
+            .partition(|p| collapse && p.status == model::Status::Finished);
+        store.set_projects(ModelRc::new(VecModel::from(self.project_items(&shown))));
+        store.set_finished(ModelRc::new(VecModel::from(self.project_items(&finished))));
         store.set_has_projects(!self.library.projects.is_empty());
         if let Some(project) = self.current.and_then(|id| self.library.get(id)) {
             store.set_current(self.project_item(project));
@@ -528,6 +557,36 @@ impl Controller {
     fn set_project_sort(&mut self, sort: model::ProjectSort) {
         self.update_settings(|s| s.project_sort = sort);
         self.refresh();
+    }
+
+    /// Moves a project `by` places in the shown list, but not out of its status group.
+    fn move_project(&mut self, id: u64, by: i32) {
+        let shown: Vec<_> = self
+            .shown()
+            .iter()
+            .map(|p| (p.id, p.status.group()))
+            .collect();
+        let Some(index) = shown.iter().position(|&(p, _)| p == id) else {
+            return;
+        };
+        let group = shown[index].1;
+        let start = shown.iter().position(|&(_, g)| g == group).unwrap_or(index);
+        let end = shown
+            .iter()
+            .rposition(|&(_, g)| g == group)
+            .unwrap_or(index);
+        let to = index.saturating_add_signed(by as isize).clamp(start, end);
+        if to == index {
+            return;
+        }
+        if self
+            .library
+            .move_project(id, shown[to].0, self.settings.project_sort)
+        {
+            self.update_settings(|s| s.project_sort = model::ProjectSort::Custom);
+            self.save_later();
+            self.refresh();
+        }
     }
 
     fn set_status(&mut self, status: model::Status) {
@@ -794,6 +853,8 @@ impl Controller {
                 .into(),
             has_cover: cover.is_some(),
             cover: cover.unwrap_or_default(),
+            group_start: 0,
+            group_end: 0,
         }
     }
 
@@ -1229,6 +1290,7 @@ impl From<model::ProjectSort> for ProjectSort {
             model::ProjectSort::Name => ProjectSort::Name,
             model::ProjectSort::Newest => ProjectSort::Newest,
             model::ProjectSort::Progress => ProjectSort::Progress,
+            model::ProjectSort::Custom => ProjectSort::Custom,
         }
     }
 }
@@ -1240,6 +1302,7 @@ impl From<ProjectSort> for model::ProjectSort {
             ProjectSort::Name => model::ProjectSort::Name,
             ProjectSort::Newest => model::ProjectSort::Newest,
             ProjectSort::Progress => model::ProjectSort::Progress,
+            ProjectSort::Custom => model::ProjectSort::Custom,
         }
     }
 }

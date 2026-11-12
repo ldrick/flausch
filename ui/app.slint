@@ -24,6 +24,7 @@ component SortDialog inherits Dialog {
             { sort: ProjectSort.name, label: @tr("Name") },
             { sort: ProjectSort.newest, label: @tr("Newest") },
             { sort: ProjectSort.progress, label: @tr("Progress") },
+            { sort: ProjectSort.custom, label: @tr("Custom") },
         ]: row := Rectangle {
             property <bool> selected: option.sort == Store.project-sort;
             height: 56px;
@@ -51,6 +52,13 @@ component SortDialog inherits Dialog {
                     root.done();
                 }
             }
+        }
+        Text {
+            text: @tr("Hold a project to move it.");
+            color: Theme.text-muted;
+            font-size: Theme.font-small;
+            wrap: word-wrap;
+            horizontal-alignment: center;
         }
     }
 }

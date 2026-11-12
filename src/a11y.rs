@@ -30,6 +30,8 @@ const KIND_EDIT: i32 = 4;
 const KIND_SLIDER: i32 = 5;
 const KIND_IMAGE: i32 = 6;
 const KIND_RADIO: i32 = 7;
+/// A button that can be moved up and down (project cards); `value` holds the action labels.
+const KIND_ITEM: i32 = 8;
 
 // Node flags, mirrored in FlauschHelper.
 const FLAG_ENABLED: i32 = 1;
@@ -41,6 +43,9 @@ const ACTION_CLICK: i32 = 0x10;
 const ACTION_SCROLL_FORWARD: i32 = 0x1000;
 const ACTION_SCROLL_BACKWARD: i32 = 0x2000;
 const ACTION_SET_TEXT: i32 = 0x0020_0000;
+// Custom actions, mirrored in FlauschHelper.
+const ACTION_MOVE_UP: i32 = 0x0ff0_0001;
+const ACTION_MOVE_DOWN: i32 = 0x0ff0_0002;
 
 /// One virtual view. `rect` is x, y, width, height in physical window pixels.
 #[derive(Clone, PartialEq, Debug)]
@@ -166,8 +171,8 @@ pub fn perform(id: i32, action: i32, text: String) {
     match action {
         ACTION_CLICK if kind == KIND_EDIT => tap(&app, &element),
         ACTION_CLICK => element.invoke_accessible_default_action(),
-        ACTION_SCROLL_FORWARD => element.invoke_accessible_increment_action(),
-        ACTION_SCROLL_BACKWARD => element.invoke_accessible_decrement_action(),
+        ACTION_SCROLL_FORWARD | ACTION_MOVE_UP => element.invoke_accessible_increment_action(),
+        ACTION_SCROLL_BACKWARD | ACTION_MOVE_DOWN => element.invoke_accessible_decrement_action(),
         ACTION_SET_TEXT => element.set_accessible_value(text),
         _ => return,
     }
@@ -201,6 +206,12 @@ struct Candidate {
 
 fn snapshot(app: &App) -> (Vec<Node>, HashMap<i32, (ElementHandle, i32)>, String) {
     let scale = app.window().scale_factor();
+    let store = app.global::<Store>();
+    let moves = format!(
+        "{}\n{}",
+        store.get_move_up_label(),
+        store.get_move_down_label()
+    );
     let size = app.window().size();
     let window = [0, 0, size.width as i32, size.height as i32];
     let mut candidates = Vec::new();
@@ -226,7 +237,7 @@ fn snapshot(app: &App) -> (Vec<Node>, HashMap<i32, (ElementHandle, i32)>, String
             dialog = Some(rect);
         }
         let label = element.accessible_label().unwrap_or_default().to_string();
-        let value = element.accessible_value().unwrap_or_default().to_string();
+        let mut value = element.accessible_value().unwrap_or_default().to_string();
         if label.is_empty() && value.is_empty() {
             return ControlFlow::Continue(());
         }
@@ -241,6 +252,9 @@ fn snapshot(app: &App) -> (Vec<Node>, HashMap<i32, (ElementHandle, i32)>, String
         };
         if rect[2] <= 0 || rect[3] <= 0 {
             return ControlFlow::Continue(());
+        }
+        if kind == KIND_ITEM {
+            value.clone_from(&moves);
         }
         let checked = element.accessible_checked();
         let mut flags = 0;
@@ -332,10 +346,8 @@ fn nodes(candidates: Vec<Candidate>) -> (Vec<Node>, HashMap<i32, (ElementHandle,
 fn kind(role: AccessibleRole) -> Option<i32> {
     Some(match role {
         AccessibleRole::Text => KIND_TEXT,
-        AccessibleRole::Button
-        | AccessibleRole::ListItem
-        | AccessibleRole::Tab
-        | AccessibleRole::Combobox => KIND_BUTTON,
+        AccessibleRole::ListItem => KIND_ITEM,
+        AccessibleRole::Button | AccessibleRole::Tab | AccessibleRole::Combobox => KIND_BUTTON,
         AccessibleRole::Switch => KIND_SWITCH,
         AccessibleRole::Checkbox => KIND_CHECKBOX,
         AccessibleRole::RadioButton => KIND_RADIO,
