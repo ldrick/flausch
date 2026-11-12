@@ -178,6 +178,9 @@ fn connect(app: &App) {
     store.on_set_status_filter(|filter| {
         with(|c| c.set_status_filter(filter.into()));
     });
+    store.on_set_project_sort(|sort| {
+        with(|c| c.set_project_sort(sort.into()));
+    });
     store.on_query_changed(|| {
         with(|c| c.refresh());
     });
@@ -361,7 +364,7 @@ impl Controller {
         let collapse = filter == model::StatusFilter::All && query.trim().is_empty();
         let (finished, items): (Vec<ProjectItem>, Vec<ProjectItem>) = self
             .library
-            .recent(filter)
+            .sorted(filter, self.settings.project_sort)
             .into_iter()
             .filter(|p| p.matches(&query, &status_name(p.status)))
             .map(|p| self.project_item(p))
@@ -519,6 +522,11 @@ impl Controller {
 
     fn set_status_filter(&mut self, filter: model::StatusFilter) {
         self.update_settings(|s| s.project_filter = filter);
+        self.refresh();
+    }
+
+    fn set_project_sort(&mut self, sort: model::ProjectSort) {
+        self.update_settings(|s| s.project_sort = sort);
         self.refresh();
     }
 
@@ -1088,6 +1096,7 @@ impl Controller {
         store.set_line_color(self.settings.line_color.into());
         store.set_volume_keys(self.settings.volume_keys);
         store.set_status_filter(self.settings.project_filter.into());
+        store.set_project_sort(self.settings.project_sort.into());
         let language = self
             .settings
             .language
@@ -1209,6 +1218,28 @@ impl From<StatusFilter> for model::StatusFilter {
             StatusFilter::Planned => model::StatusFilter::Planned,
             StatusFilter::Paused => model::StatusFilter::Paused,
             StatusFilter::Finished => model::StatusFilter::Finished,
+        }
+    }
+}
+
+impl From<model::ProjectSort> for ProjectSort {
+    fn from(sort: model::ProjectSort) -> Self {
+        match sort {
+            model::ProjectSort::Recent => ProjectSort::Recent,
+            model::ProjectSort::Name => ProjectSort::Name,
+            model::ProjectSort::Newest => ProjectSort::Newest,
+            model::ProjectSort::Progress => ProjectSort::Progress,
+        }
+    }
+}
+
+impl From<ProjectSort> for model::ProjectSort {
+    fn from(sort: ProjectSort) -> Self {
+        match sort {
+            ProjectSort::Recent => model::ProjectSort::Recent,
+            ProjectSort::Name => model::ProjectSort::Name,
+            ProjectSort::Newest => model::ProjectSort::Newest,
+            ProjectSort::Progress => model::ProjectSort::Progress,
         }
     }
 }

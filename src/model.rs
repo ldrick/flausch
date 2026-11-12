@@ -1,5 +1,6 @@
 //! UI-independent data model. Must not depend on `slint`.
 
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
@@ -208,6 +209,21 @@ impl StatusFilter {
             StatusFilter::Finished => status == Status::Finished,
         }
     }
+}
+
+/// Order of the projects within each status group of the list.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProjectSort {
+    /// Most recently used first.
+    #[default]
+    Recent,
+    /// A to Z.
+    Name,
+    /// Most recently created first.
+    Newest,
+    /// Furthest along first; projects without a row goal last.
+    Progress,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -460,21 +476,34 @@ impl Library {
         })
     }
 
-    /// Projects the filter allows, grouped by status (`Status::group`) and most recently used
-    /// first within a group.
-    pub fn recent(&self, filter: StatusFilter) -> Vec<&Project> {
+    /// Projects the filter allows, grouped by status (`Status::group`) and sorted within a group;
+    /// ties go to the most recently used.
+    pub fn sorted(&self, filter: StatusFilter, sort: ProjectSort) -> Vec<&Project> {
         let mut projects: Vec<_> = self
             .projects
             .iter()
             .filter(|p| filter.allows(p.status))
             .collect();
         projects.sort_by(|a, b| {
+            let by = match sort {
+                ProjectSort::Recent => Ordering::Equal,
+                ProjectSort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                ProjectSort::Newest => b.created.cmp(&a.created),
+                ProjectSort::Progress => progress_key(b).cmp(&progress_key(a)),
+            };
             (a.status.group().cmp(&b.status.group()))
+                .then(by)
                 .then(b.updated.cmp(&a.updated))
                 .then(b.id.cmp(&a.id))
         });
         projects
     }
+}
+
+/// Progress in per mille, or `None` (sorted last) without any row goal.
+fn progress_key(project: &Project) -> Option<u64> {
+    let (done, total) = project.progress();
+    (total > 0).then(|| u64::from(done) * 1000 / u64::from(total))
 }
 
 fn clean_name(name: &str) -> String {
@@ -542,6 +571,8 @@ pub struct Settings {
     pub volume_keys: bool,
     #[serde(default)]
     pub project_filter: StatusFilter,
+    #[serde(default)]
+    pub project_sort: ProjectSort,
 }
 
 fn default_true() -> bool {
@@ -558,6 +589,7 @@ impl Default for Settings {
             line_color: LineColor::default(),
             volume_keys: false,
             project_filter: StatusFilter::default(),
+            project_sort: ProjectSort::default(),
         }
     }
 }
@@ -661,9 +693,9 @@ mod tests {
         let mut lib = Library::default();
         let a = lib.create("A", 1);
         let b = lib.create("B", 2);
-        assert_eq!(lib.recent(StatusFilter::All)[0].id, b);
+        assert_eq!(lib.sorted(StatusFilter::All, ProjectSort::Recent)[0].id, b);
         lib.rename(a, "A2", 3);
-        assert_eq!(lib.recent(StatusFilter::All)[0].id, a);
+        assert_eq!(lib.sorted(StatusFilter::All, ProjectSort::Recent)[0].id, a);
     }
 
     #[test]
@@ -677,7 +709,12 @@ mod tests {
         lib.set_status(done, Status::Finished, 10);
         lib.set_status(planned, Status::Planned, 6);
         lib.set_status(paused, Status::Paused, 7);
-        let ids = |filter| -> Vec<u64> { lib.recent(filter).iter().map(|p| p.id).collect() };
+        let ids = |filter| -> Vec<u64> {
+            lib.sorted(filter, ProjectSort::Recent)
+                .iter()
+                .map(|p| p.id)
+                .collect()
+        };
         assert_eq!(
             ids(StatusFilter::All),
             [newest, active, paused, planned, done]
@@ -686,6 +723,35 @@ mod tests {
         assert_eq!(ids(StatusFilter::Planned), [planned]);
         assert_eq!(ids(StatusFilter::Paused), [paused]);
         assert_eq!(ids(StatusFilter::Finished), [done]);
+    }
+
+    #[test]
+    fn sorted_orders_within_status_groups() {
+        let mut lib = Library::default();
+        let bunny = lib.create("bunny", 1);
+        let hat = lib.create("Hat", 2);
+        let scarf = lib.create("Scarf", 3);
+        let blanket = lib.create("Blanket", 4);
+        lib.add_part(bunny, &PartSpec::new("Head", Some(10)), 5);
+        lib.add_part(hat, &PartSpec::new("Hat", Some(10)), 6);
+        lib.add_part(scarf, &PartSpec::new("Scarf", None), 7);
+        let head = lib.get(bunny).unwrap().parts[0].id;
+        let crown = lib.get(hat).unwrap().parts[0].id;
+        for _ in 0..3 {
+            lib.increment(bunny, head, 8);
+        }
+        lib.increment(hat, crown, 9);
+        lib.set_status(blanket, Status::Finished, 10);
+        let ids = |sort| -> Vec<u64> {
+            lib.sorted(StatusFilter::All, sort)
+                .iter()
+                .map(|p| p.id)
+                .collect()
+        };
+        assert_eq!(ids(ProjectSort::Recent), [hat, bunny, scarf, blanket]);
+        assert_eq!(ids(ProjectSort::Name), [bunny, hat, scarf, blanket]);
+        assert_eq!(ids(ProjectSort::Newest), [scarf, hat, bunny, blanket]);
+        assert_eq!(ids(ProjectSort::Progress), [bunny, hat, scarf, blanket]);
     }
 
     #[test]

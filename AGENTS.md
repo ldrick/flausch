@@ -93,7 +93,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `Store.open-url` → `platform::open_url`; the same links are in `.github/FUNDING.yml` and the F-Droid recipe).
   New info pages get a `Screen` value and a row there. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
-  (`Library::recent`: in progress, then planned and paused, then finished); with "All" and no search, finished
+  (`Library::sorted`: in progress, then planned and paused, then finished; within a group by
+  `Settings::project_sort`: last used, name, newest or progress, chosen in the sort dialog); with "All" and no search, finished
   projects sit in a collapsed section (`Store.finished`). Finished projects have no continue button. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
   finished pieces, "Next piece" (`Library::next_piece`) starts the next one at row 0, Previous row at row 0 goes
   back to the last row of the piece before, Reset starts over, and progress counts `goal × quantity` rows; the UI

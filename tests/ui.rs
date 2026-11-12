@@ -252,6 +252,33 @@ fn the_list_filters_and_groups_by_status() {
 }
 
 #[test]
+fn the_list_can_be_sorted_by_name() {
+    let (app, dir) = fresh();
+    create_project(&app, "bunny");
+    go_back(&app);
+    create_project(&app, "Hat");
+    go_back(&app);
+    let names = |app: &App| -> Vec<String> {
+        store(app)
+            .get_projects()
+            .iter()
+            .map(|p| p.name.to_string())
+            .collect()
+    };
+    assert_eq!(names(&app), ["Hat", "bunny"]);
+
+    tap(&app, "Sort");
+    assert_eq!(store(&app).get_dialog(), DialogKind::Sort);
+    tap(&app, "Name");
+    assert_eq!(store(&app).get_dialog(), DialogKind::None);
+    assert_eq!(names(&app), ["bunny", "Hat"]);
+
+    let app = launch(dir.path());
+    settle();
+    assert_eq!(names(&app), ["bunny", "Hat"], "the order is kept");
+}
+
+#[test]
 fn escape_closes_the_dialog_first() {
     let (app, _dir) = fresh();
     create_project(&app, "Bunny");

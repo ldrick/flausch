@@ -240,6 +240,14 @@ export component ListPage inherits Rectangle {
             if Store.has-projects: VerticalLayout {
                 alignment: center;
                 IconButton {
+                    icon: @image-url("../icons/sort.svg");
+                    label: @tr("Sort");
+                    clicked => { Store.dialog = DialogKind.sort; }
+                }
+            }
+            if Store.has-projects: VerticalLayout {
+                alignment: center;
+                IconButton {
                     icon: @image-url("../icons/search.svg");
                     label: @tr("Search");
                     clicked => { Store.searching = true; }

@@ -4,7 +4,7 @@ export enum Screen { list, project, part, pdf, settings, about, changelog, donat
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, reset, remove-pdf, restore-backup, incoming-pdf }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf }
 
 // One release in the changelog.
 export struct ChangeItem {
@@ -14,6 +14,8 @@ export struct ChangeItem {
 
 export enum ProjectStatus { planned, active, paused, finished }
 export enum StatusFilter { all, active, planned, paused, finished }
+// Order within each status group of the project list.
+export enum ProjectSort { recent, name, newest, progress }
 
 export enum Notice {
     none,
@@ -109,6 +111,7 @@ export global Store {
     // The collapsed section with the finished projects is open.
     in-out property <bool> finished-open;
     in property <StatusFilter> status-filter: StatusFilter.all;
+    in property <ProjectSort> project-sort: ProjectSort.recent;
     // For the search, in ProjectStatus order.
     out property <[string]> status-names: [@tr("Planned"), @tr("In progress"), @tr("Paused"), @tr("Finished")];
     // Whether there are any projects at all, regardless of `query`.
@@ -162,6 +165,7 @@ export global Store {
 
     callback query-changed();
     callback set-status-filter(StatusFilter);
+    callback set-project-sort(ProjectSort);
 
     // Makes a part active without leaving the screen.
     callback select-part(int);

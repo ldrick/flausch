@@ -1,5 +1,5 @@
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ChangeItem, PartForm } from "store.slint";
+import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm } from "store.slint";
 import { Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { ProjectPage } from "pages/project.slint";
@@ -8,7 +8,52 @@ import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 import { AboutPage, ChangelogPage, DonatePage } from "pages/about.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ChangeItem, PartForm }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm }
+
+component SortDialog inherits Dialog {
+    callback done();
+
+    title: @tr("Sort by");
+    dismissed => { root.done(); }
+
+    VerticalLayout {
+        spacing: 4px;
+
+        for option in [
+            { sort: ProjectSort.recent, label: @tr("Last used") },
+            { sort: ProjectSort.name, label: @tr("Name") },
+            { sort: ProjectSort.newest, label: @tr("Newest") },
+            { sort: ProjectSort.progress, label: @tr("Progress") },
+        ]: row := Rectangle {
+            property <bool> selected: option.sort == Store.project-sort;
+            height: 56px;
+            border-radius: Theme.radius-small;
+            background: self.selected ? Theme.accent-soft : touch.pressed ? Theme.surface-muted : transparent;
+            accessible-role: button;
+            accessible-label: option.label;
+            accessible-checked: self.selected;
+            accessible-action-default => { touch.clicked(); }
+
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                Text {
+                    text: option.label;
+                    color: Theme.text;
+                    font-size: Theme.font-body;
+                    font-weight: row.selected ? 600 : 400;
+                    vertical-alignment: center;
+                }
+            }
+            touch := TouchArea {
+                clicked => {
+                    Store.set-project-sort(option.sort);
+                    root.done();
+                }
+            }
+        }
+    }
+}
 
 component ProjectDialog inherits Dialog {
     in property <bool> editing;
@@ -424,6 +469,10 @@ export component App inherits Window {
                     clicked => { root.close-dialog(); }
                 }
             }
+        }
+
+        if Store.dialog == DialogKind.sort: SortDialog {
+            done => { root.close-dialog(); }
         }
 
         if Store.dialog == DialogKind.reset: Dialog {
