@@ -56,7 +56,7 @@ tests/ui.rs           UI tests: drive the app through accessibility labels; fixt
   platform/android.rs JNI: loads the dex built from android/java, picker, PdfRenderer, keep-screen-on, bar colors
   platform/desktop.rs dirs + rfd file dialog + hayro rendering; most other functions are no-ops
 android/java/.../FlauschHelper.java   Java helper (compiled by build.rs with javac + d8, embedded as classes.dex)
-android/res/          launcher icon (pink logo on light pink, also the monochrome themed icon)
+android/res/          launcher icon (knitted PNG layers; the monochrome themed icon is the line logo)
 ui/
   app.slint           root window App: page switch, dialogs, notice, Back key, safe-area insets
   store.slint         Store global = the Rust↔UI contract (state properties, enums, structs, callbacks)
@@ -66,7 +66,8 @@ ui/
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages)
   icons/              SVG icons; logo.svg is the app logo
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
-tools/logo.py         generates ui/icons/logo.svg, the launcher icon and the store icon (needs resvg) – never edit those by hand
+tools/logo.py         generates ui/icons/logo.svg and the monochrome launcher icon – never edit those by hand
+tools/knit.py         renders the launcher and store icons: a ball of white yarn on bulging pink knit (needs numpy, scipy, pillow, svgpathtools)
 fastlane/metadata/    F-Droid store texts, icon, screenshots (en-US, de-DE)
 fdroid/               F-Droid recipe and release steps (fdroid/README.md)
 lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
@@ -142,8 +143,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `Theme.shadow-offset-small` for small elements) with `drop-shadow-color: Theme.shadow`.
 - Logo: soft pink line art of a ball of yarn with cat ears, a crochet hook behind it and the yarn end curled up
   as the tail. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (only lines, so it fits any
-  background). If the pink changes, update `PINK` in `tools/logo.py`, run
-  it, and update `ic_launcher_background` (light pink, `Theme.accent-soft`) in `android/res/values/colors.xml`.
+  background). If the pink changes, update `PINK` in `tools/logo.py` and run it. The launcher and store icons are
+  different: a ball of thick white yarn embroidered on pink knitted fabric (`tools/knit.py`).
 - Design window: Pixel 9a size, 412×924 logical px (1080×2424 at density 2.625). The AVD "flausch" uses the
   `pixel_9a` profile.
 - `Rectangle` already has a (deprecated) `color` property, so name custom color properties differently
@@ -152,8 +153,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `VerticalLayout { alignment: center; … }`.
 - Use `content-*` instead of the deprecated `Flickable.viewport-*`.
 - Callbacks set in Slint `init` fire during `App::new()`, before the Rust handlers are connected.
-- `AboutSlint` follows `Palette`, not `Theme`. It sits on a `Palette.background` backdrop on the About page. The
-  Royalty-free license requires this attribution; don't remove it.
+- `AboutSlint` follows `Palette`, not `Theme`, so `App` sets `Palette.color-scheme` from the appearance setting
+  (remembering the system scheme). The Royalty-free license requires this attribution; don't remove it.
 
 ## Translations
 

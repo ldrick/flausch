@@ -10,18 +10,18 @@ export global Theme {
     in-out property <Appearance> appearance: Appearance.system;
     out property <bool> dark: appearance == Appearance.system ? Palette.color-scheme == ColorScheme.dark : appearance == Appearance.dark;
 
-    out property <color> background: dark ? #1b1618 : #f8f3f4;
+    out property <color> background: dark ? #1b1618 : #f3eef2;
     out property <color> surface: dark ? #251f22 : #ffffff;
-    out property <color> surface-muted: dark ? #312a2d : #f3eaed;
-    out property <color> border: dark ? #3d3438 : #eadfe3;
+    out property <color> surface-muted: dark ? #312a2d : #f8f3f6;
+    out property <color> border: dark ? #3d3438 : #e9dde4;
     out property <color> text: dark ? #eee4e8 : #3b3034;
     out property <color> text-muted: dark ? #a6969c : #9c8c92;
-    out property <color> accent: dark ? #f2a7bc : #e3879f;
-    out property <color> accent-pressed: dark ? #e292a9 : #d27390;
-    out property <color> accent-soft: dark ? #44262f : #fbe7ed;
+    out property <color> accent: dark ? #f0b9ce : #df7fa5;
+    out property <color> accent-pressed: dark ? #df7fa5 : #b24b73;
+    out property <color> accent-soft: dark ? #4a2638 : #f0b9ce;
     // Frame around the element TalkBack has focused; has to stand out on every surface.
     out property <color> a11y-focus: dark ? #ffd54f : #1a5fd0;
-    out property <color> on-accent: dark ? #33121c : #ffffff;
+    out property <color> on-accent: dark ? #3a1427 : #ffffff;
     // Text selection. On Android Slint also draws the text cursor in this color, so it needs contrast.
     out property <color> selection: accent;
     // The heart in "Made with love in the Black Forest".

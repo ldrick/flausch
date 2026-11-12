@@ -4,20 +4,16 @@ and the loose yarn end curled up as the cat's tail.
 
 Single source for:
 - ui/icons/logo.svg: in the app (colorized with Theme.accent) and in the README
-- android/res/drawable/ic_launcher_foreground.xml: launcher icon and monochrome themed icon
-- fastlane/metadata/android/en-US/images/icon.png: 512 px store icon, a larger launcher icon
-  (needs resvg: cargo install resvg)
+- android/res/drawable/ic_launcher_foreground.xml: monochrome themed launcher icon
+The colored launcher icon and the store icon (a knitted ball of yarn) come from tools/knit.py.
 
 Run from anywhere after changing the geometry: python3 tools/logo.py
 """
 
 import math
-import subprocess
-import tempfile
 from pathlib import Path
 
-PINK = "#E3879F"  # Theme.accent (light)
-PINK_SOFT = "#FBE7ED"  # Theme.accent-soft (light), ic_launcher_background
+PINK = "#DF7FA5"  # Theme.accent (light)
 LINE = 1.2  # stroke width of every line
 # Logo geometry on a 24×24 grid.
 BALL = (11.5, 12.2, 6.6)  # cx, cy, r
@@ -31,7 +27,7 @@ HOOK_GRIP = (0.16, 0.32, 2.2)  # thumb rest: start and end as a fraction of the 
 # Placement in the 108dp adaptive icon; the content stays inside the 66dp safe zone.
 SCALE = 2.3
 CENTER = (12.1, 12.4)
-STORE_ZOOM = 1.4  # the store icon has no safe zone, so the logo can be larger
+STORE_ZOOM = 1.4  # the store icon has no safe zone, so the ball can be larger (tools/knit.py)
 
 
 def num(v):
@@ -139,24 +135,7 @@ def vector():
 """
 
 
-def store_icon():
-    """The launcher icon as a full-bleed 512 px square (stores apply their own mask)."""
-    size = 108 / SCALE / STORE_ZOOM
-    x, y = CENTER[0] - size / 2, CENTER[1] - size / 2
-    box = f"{num(x)} {num(y)} {num(size)} {num(size)}"
-    body = svg().split("\n", 1)[1]
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="{box}">
-  <rect x="{num(x)}" y="{num(y)}" width="{num(size)}" height="{num(size)}" fill="{PINK_SOFT.lower()}"/>
-{body}"""
-
-
 if __name__ == "__main__":
     root = Path(__file__).resolve().parent.parent
     (root / "ui/icons/logo.svg").write_text(svg())
     (root / "android/res/drawable/ic_launcher_foreground.xml").write_text(vector())
-    icon = root / "fastlane/metadata/android/en-US/images/icon.png"
-    icon.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", suffix=".svg") as f:
-        f.write(store_icon())
-        f.flush()
-        subprocess.run(["resvg", "-w", "512", "-h", "512", f.name, str(icon)], check=True)

@@ -1,4 +1,4 @@
-import { AboutSlint, Palette } from "std-widgets.slint";
+import { AboutSlint } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
 import { Store } from "../store.slint";
 import { ButtonKind, Card, Icon, PillButton, TopBar } from "../components.slint";
@@ -80,10 +80,9 @@ export component AboutPage inherits Rectangle {
                             wrap: word-wrap;
                         }
                         MadeWithLove { }
-                        // AboutSlint follows Palette, not Theme, so give it a matching backdrop.
                         Rectangle {
                             height: 120px;
-                            background: Palette.background;
+                            background: Theme.surface-muted;
                             border-radius: Theme.radius-small;
 
                             AboutSlint { }

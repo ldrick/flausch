@@ -1,3 +1,4 @@
+import { Palette } from "std-widgets.slint";
 import { Theme, Appearance, LineColor } from "theme.slint";
 import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm } from "store.slint";
 import { Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
@@ -208,6 +209,8 @@ export component App inherits Window {
     property <Appearance> appearance: Store.appearance;
     property <bool> dark: Theme.dark;
     property <bool> back-handled;
+    property <bool> palette-forced;
+    property <ColorScheme> system-scheme;
     property <bool> searching: Store.searching;
     property <length> keyboard-height: self.virtual-keyboard-size.height > 0 ? max(0, self.height - self.virtual-keyboard-position.y) : 0;
     changed keyboard-height => {
@@ -232,6 +235,13 @@ export component App inherits Window {
     }
     changed appearance => {
         Theme.appearance = self.appearance;
+        // Widgets from std-widgets (AboutSlint) follow Palette, so it follows the appearance setting, too. Remember
+        // the system scheme before overriding it the first time, so "System" can go back to it.
+        if !self.palette-forced {
+            self.system-scheme = Palette.color-scheme;
+            self.palette-forced = true;
+        }
+        Palette.color-scheme = self.appearance == Appearance.light ? ColorScheme.light : self.appearance == Appearance.dark ? ColorScheme.dark : self.system-scheme;
     }
     changed dark => {
         Store.dark-changed(self.dark);

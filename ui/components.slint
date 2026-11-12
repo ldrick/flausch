@@ -298,9 +298,9 @@ export component Chips inherits Flickable {
         spacing: 8px;
         for option[index] in root.options: Rectangle {
             border-radius: self.height / 2;
-            background: index == root.selected ? Theme.accent-soft : Theme.surface;
+            background: index == root.selected ? Theme.accent : Theme.surface;
             border-width: 1px;
-            border-color: index == root.selected ? Theme.accent-soft : Theme.border;
+            border-color: index == root.selected ? Theme.accent : Theme.border;
             accessible-role: button;
             accessible-label: option.label;
             accessible-checked: index == root.selected;
@@ -312,7 +312,7 @@ export component Chips inherits Flickable {
                 padding-right: 14px;
                 Text {
                     text: option.label;
-                    color: index == root.selected ? Theme.accent-pressed : Theme.text-muted;
+                    color: index == root.selected ? Theme.on-accent : Theme.text-muted;
                     font-size: Theme.font-small + 1px;
                     font-weight: index == root.selected ? 600 : 400;
                     vertical-alignment: center;
