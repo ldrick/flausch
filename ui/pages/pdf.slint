@@ -29,6 +29,24 @@ export component PdfPage inherits Rectangle {
     property <length> page-height: flick.width * root.zoom * Store.pdf.aspect;
     // Top of the page within the visible area.
     property <length> page-top: page.y + flick.content-y;
+    // Horizontal offset of the page while it slides out after a swipe and the next one slides in.
+    property <length> slide;
+    property <bool> slide-animated;
+    animate slide {
+        duration: root.slide-animated ? 180ms : 0ms;
+        easing: ease-out;
+    }
+    // Direction of the page turn waiting for its image: 1 next, -1 previous, 0 none.
+    property <int> turning;
+
+    // Moves the page to `from` at once, then animates it to `to`.
+    function slide-page(from: length, to: length) {
+        root.slide-animated = false;
+        root.slide = from;
+        root.slide-animated = true;
+        root.slide = to;
+    }
+
     // Offset of the reading line while it is being dragged.
     property <length> line-drag;
 
@@ -78,6 +96,14 @@ export component PdfPage inherits Rectangle {
         report();
     }
     // Restore the saved scroll position once the first page has been rendered.
+    // The next page slides in once its image is there, or when rendering failed.
+    property <bool> loading: Store.pdf.loading;
+    changed loading => {
+        if !root.loading && root.turning != 0 {
+            root.slide-page(root.turning * flick.width, 0);
+            root.turning = 0;
+        }
+    }
     changed serial => {
         if !root.restored {
             root.restored = true;
@@ -145,9 +171,15 @@ export component PdfPage inherits Rectangle {
                         let dx = self.current-position.x - self.pressed-position.x;
                         let dy = self.current-position.y - self.pressed-position.y;
                         if abs(dx) > 60px && abs(dx) > abs(dy) {
-                            root.go-to-page(Store.pdf.page + (dx < 0 ? 1 : -1));
+                            let direction = dx < 0 ? 1 : -1;
+                            root.go-to-page(Store.pdf.page + direction);
+                            root.turning = direction;
+                            root.slide-page(dx, -direction * flick.width);
+                        } else {
+                            root.slide-page(dx, 0);
                         }
                     }
+                    cancelled => { root.slide-page(0, 0); }
 
                     flick := Flickable {
                         content-width: self.width * root.zoom;
@@ -157,7 +189,7 @@ export component PdfPage inherits Rectangle {
 
                         page := Rectangle {
                             // Follows the finger while swiping.
-                            x: swipe.swiping ? swipe.current-position.x - swipe.pressed-position.x : 0;
+                            x: swipe.swiping ? swipe.current-position.x - swipe.pressed-position.x : root.slide;
                             y: max(0, (flick.height - 96px - root.page-height) / 2);
                             width: flick.content-width;
                             height: root.page-height;
@@ -171,12 +203,25 @@ export component PdfPage inherits Rectangle {
                                 accessible-role: image;
                                 accessible-label: @tr("Page {} of {}", Store.pdf.page + 1, Store.pdf.page-count);
                             }
+                            // Double tap zooms. Detected by hand, since the swipe handler delays the
+                            // events and `double-clicked` then never fires.
                             TouchArea {
-                                double-clicked => {
-                                    if root.zoom > 1.01 {
-                                        root.zoom-to(1, 0, 0);
+                                property <duration> last-tap: -1s;
+                                property <length> last-x;
+                                property <length> last-y;
+                                clicked => {
+                                    let now = animation-tick();
+                                    if now - self.last-tap < 400ms && abs(self.mouse-x - self.last-x) < 40px && abs(self.mouse-y - self.last-y) < 40px {
+                                        self.last-tap = -1s;
+                                        if root.zoom > 1.01 {
+                                            root.zoom-to(1, 0, 0);
+                                        } else {
+                                            root.zoom-to(2.5, self.mouse-x + flick.content-x, self.mouse-y + parent.y + flick.content-y);
+                                        }
                                     } else {
-                                        root.zoom-to(2.5, self.mouse-x + flick.content-x, self.mouse-y + parent.y + flick.content-y);
+                                        self.last-tap = now;
+                                        self.last-x = self.mouse-x;
+                                        self.last-y = self.mouse-y;
                                     }
                                 }
                             }
