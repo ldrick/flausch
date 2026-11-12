@@ -286,6 +286,30 @@ fn the_language_setting_is_applied_and_kept() {
 }
 
 #[test]
+fn donating_opens_the_page_in_the_browser() {
+    let (app, _dir) = fresh();
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
+    tap(&app, "Settings");
+    tap(&app, "Donate");
+    assert_eq!(store(&app).get_screen(), Screen::Donate);
+    // Don't start a browser in the test.
+    let opened = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let log = opened.clone();
+    store(&app).on_open_url(move |url| log.borrow_mut().push(url.to_string()));
+    tap(&app, "GitHub Sponsors");
+    tap(&app, "Liberapay");
+    assert_eq!(
+        *opened.borrow(),
+        [
+            "https://github.com/sponsors/ldrick",
+            "https://liberapay.com/ldrick"
+        ]
+    );
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::Settings);
+}
+
+#[test]
 fn about_pages_show_the_app_and_the_changelog() {
     let (app, _dir) = fresh();
     assert_eq!(store(&app).get_dialog(), DialogKind::None);

@@ -30,6 +30,18 @@ pub fn hide_text_handles() {}
 
 pub fn set_volume_keys(_on: bool) {}
 
+/// Opens a web page in the browser.
+pub fn open_url(url: &str) {
+    let opener = if cfg!(target_os = "macos") {
+        "open"
+    } else {
+        "xdg-open"
+    };
+    if let Err(e) = std::process::Command::new(opener).arg(url).spawn() {
+        eprintln!("flausch: cannot open {url}: {e}");
+    }
+}
+
 /// Shows a file dialog on a background thread and copies the chosen file to `dest`.
 /// `done` runs on that background thread.
 pub fn pick_document(

@@ -305,6 +305,20 @@ public class FlauschHelper {
      * Must be called after the field was focused: the runnable then runs after Slint passed the
      * current text to its input view.
      */
+    /** Opens a web page in the browser. */
+    public void openUrl(final String url) {
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mActivity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                } catch (ActivityNotFoundException e) {
+                    Log.w("flausch", "no app opens " + url, e);
+                }
+            }
+        });
+    }
+
     public void hideTextHandles() {
         mActivity.runOnUiThread(new Runnable() {
             @Override

@@ -235,6 +235,23 @@ pub fn set_volume_keys(on: bool) {
     }
 }
 
+/// Opens a web page in the browser.
+pub fn open_url(url: &str) {
+    let result = with_helper(|env, helper| {
+        let url = env.new_string(url)?;
+        env.call_method(
+            helper,
+            jni_str!("openUrl"),
+            jni_sig!("(Ljava/lang/String;)V"),
+            &[JValue::Object(&url)],
+        )?;
+        Ok(())
+    });
+    if let Err(e) = result {
+        eprintln!("flausch: cannot open {url}: {e}");
+    }
+}
+
 /// Hides the text cursor handles that Slint shows after a text field was focused from code.
 pub fn hide_text_handles() {
     let result = with_helper(|env, helper| {

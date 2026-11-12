@@ -156,6 +156,7 @@ fn connect(app: &App) {
     store.on_open_page(|screen| {
         with(|c| c.navigate(screen));
     });
+    store.on_open_url(|url| platform::open_url(&url));
     store.on_open_project(|id| {
         with(|c| c.open_project(id as u64));
     });

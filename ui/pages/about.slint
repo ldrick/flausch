@@ -1,7 +1,7 @@
 import { AboutSlint, Palette } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
 import { Store } from "../store.slint";
-import { Card, Icon, TopBar } from "../components.slint";
+import { ButtonKind, Card, Icon, PillButton, TopBar } from "../components.slint";
 
 export component AboutPage inherits Rectangle {
     VerticalLayout {
@@ -101,6 +101,68 @@ export component ChangelogPage inherits Rectangle {
                             text: change.text;
                             color: Theme.text-muted;
                             font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component DonatePage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("Donate");
+            back => { Store.back(); }
+        }
+
+        Flickable {
+            vertical-stretch: 1;
+            content-height: content.preferred-height;
+
+            content := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                Card {
+                    height: donate.preferred-height;
+
+                    donate := VerticalLayout {
+                        padding: 18px;
+                        spacing: 14px;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            Icon {
+                                source: @image-url("../icons/logo.svg");
+                                color: Theme.accent;
+                                width: 56px;
+                                height: 56px;
+                            }
+                        }
+                        Text {
+                            text: @tr("Flausch is free, without ads or tracking, and made in spare time. If it helps you with your projects, you can support its development with a donation. Thank you!");
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            wrap: word-wrap;
+                        }
+                        PillButton {
+                            text: "GitHub Sponsors";
+                            clicked => { Store.open-url("https://github.com/sponsors/ldrick"); }
+                        }
+                        PillButton {
+                            text: "Liberapay";
+                            kind: ButtonKind.secondary;
+                            clicked => { Store.open-url("https://liberapay.com/ldrick"); }
+                        }
+                        Text {
+                            text: @tr("Opens the page in your browser.");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            horizontal-alignment: center;
                             wrap: word-wrap;
                         }
                     }

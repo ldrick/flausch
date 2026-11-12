@@ -1,6 +1,6 @@
 import { Appearance, LineColor } from "theme.slint";
 
-export enum Screen { list, project, part, pdf, settings, about, changelog }
+export enum Screen { list, project, part, pdf, settings, about, changelog, donate }
 
 export enum Language { system, de, en }
 
@@ -151,6 +151,8 @@ export global Store {
     callback open-settings();
     // A sub-page of the settings, e.g. about or changelog.
     callback open-page(Screen);
+    // Opens a web page in the browser.
+    callback open-url(string);
     callback open-project(int);
     callback create-project(string);
     callback edit-project(string);

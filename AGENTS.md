@@ -89,7 +89,9 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   the list). Tapping a part makes it active and opens the PDF view if the project has a PDF, otherwise the part
   screen. The pencil on a part card opens the edit dialog (with delete) for that part via `Store.edited`, without
   changing the active part. Settings → About lists sub-pages (`NavRow` → `Store.open-page(Screen)`): About
-  Flausch and Changelog; new info pages (e.g. Donate) get a `Screen` value and a row there. A project also has a `Status` (planned, in progress, paused, finished; shown as a
+  Flausch, Changelog and Donate (GitHub Sponsors and Liberapay, opened in the browser through
+  `Store.open-url` → `platform::open_url`; the same links are in `.github/FUNDING.yml` and the F-Droid recipe).
+  New info pages get a `Screen` value and a row there. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::recent`: in progress, then planned and paused, then finished); with "All" and no search, finished
   projects sit in a collapsed section (`Store.finished`). Finished projects have no continue button. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts

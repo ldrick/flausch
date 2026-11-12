@@ -6,7 +6,7 @@ import { ProjectPage } from "pages/project.slint";
 import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
-import { AboutPage, ChangelogPage } from "pages/about.slint";
+import { AboutPage, ChangelogPage, DonatePage } from "pages/about.slint";
 
 export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ChangeItem, PartForm }
 
@@ -221,6 +221,7 @@ export component App inherits Window {
             if Store.screen == Screen.settings: SettingsPage { }
             if Store.screen == Screen.about: AboutPage { }
             if Store.screen == Screen.changelog: ChangelogPage { }
+            if Store.screen == Screen.donate: DonatePage { }
 
             if Store.notice != Notice.none: Rectangle {
                 x: (parent.width - self.width) / 2;

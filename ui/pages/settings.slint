@@ -87,6 +87,16 @@ component NavRow inherits Rectangle {
     }
 }
 
+component Divider inherits Rectangle {
+    height: 1px;
+
+    Rectangle {
+        x: 12px;
+        width: parent.width - 24px;
+        background: Theme.border;
+    }
+}
+
 export component SettingsPage inherits Rectangle {
     VerticalLayout {
         TopBar {
@@ -279,18 +289,15 @@ export component SettingsPage inherits Rectangle {
                             detail: Store.version;
                             clicked => { Store.open-page(Screen.about); }
                         }
-                        Rectangle {
-                            height: 1px;
-
-                            Rectangle {
-                                x: 12px;
-                                width: parent.width - 24px;
-                                background: Theme.border;
-                            }
-                        }
+                        Divider { }
                         NavRow {
                             text: @tr("Changelog");
                             clicked => { Store.open-page(Screen.changelog); }
+                        }
+                        Divider { }
+                        NavRow {
+                            text: @tr("Donate");
+                            clicked => { Store.open-page(Screen.donate); }
                         }
                     }
                 }
