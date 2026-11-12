@@ -3,6 +3,8 @@
 <p><b>Projekte und Teile</b></p>
 <ul>
 <li>Teile ein Projekt in Teile auf (z. B. Kopf, Ohren, Körper), jedes mit eigenem Reihenzähler und optionalem Ziel</li>
+<li>Mehrfach gehäkelte Teile (z. B. 4 Beine) zählen jedes Stück</li>
+<li>Projektstatus (geplant, in Arbeit, pausiert, fertig) und Notizen</li>
 <li>Die Projektliste zeigt das Cover der Anleitung, das aktuelle Teil und den Gesamtfortschritt</li>
 <li>Suche nach Projekt- und Teilnamen, mit einem Tipp dort weitermachen, wo du aufgehört hast</li>
 </ul>
@@ -12,12 +14,12 @@
 <li>PDF-Anleitungen importieren; sie werden in die App kopiert und auf dem Gerät angezeigt</li>
 <li>Reihen direkt in der Anleitung zählen, dort das Teil wechseln oder den Zähler vergrößern</li>
 <li>Eine verschiebbare Leselinie markiert deine Reihe – sie merkt sich ihre Position auf jeder Seite, Farbe wählbar</li>
-<li>Zoom, Seite und Scrollposition werden pro Projekt gespeichert</li>
+<li>Mit Wischen blättern; Zoom, Seite und Scrollposition werden pro Projekt gespeichert</li>
 </ul>
 
 <p><b>Fürs Häkeln gemacht</b></p>
 <ul>
-<li>Große Tasten für die Bedienung mit einer Hand, der Bildschirm bleibt beim Arbeiten an</li>
+<li>Große Tasten für die Bedienung mit einer Hand, Zählen mit den Lautstärketasten, der Bildschirm bleibt beim Arbeiten an</li>
 <li>Alle Daten als ZIP-Datei sichern und wiederherstellen, z. B. beim Handywechsel</li>
 <li>Hell und dunkel, Deutsch und Englisch, funktioniert mit TalkBack</li>
 </ul>
