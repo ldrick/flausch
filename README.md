@@ -5,13 +5,6 @@
 Row counter and pattern viewer for crocheting – simple, offline, free. *Flausch* is German for fluff (from
 *flauschig*, fluffy).
 
-<p>
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="180" alt="Project list">
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="180" alt="Project with parts">
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="180" alt="Pattern with row counter">
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="180" alt="Row counter">
-</p>
-
 ## Features
 
 **Projects and parts**
