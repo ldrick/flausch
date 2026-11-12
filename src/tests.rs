@@ -658,3 +658,39 @@ fn fdroid_version_code_matches_version() {
         "update version_code in Cargo.toml"
     );
 }
+
+#[test]
+fn android_sdk_versions_match() {
+    let sdk = include_str!("../android/sdk.env");
+    let get = |key: &str| {
+        sdk.lines()
+            .find_map(|line| line.strip_prefix(key)?.strip_prefix('='))
+            .unwrap_or_else(|| panic!("{key} in android/sdk.env"))
+    };
+    let platform = get("ANDROID_PLATFORM");
+    let build_tools = get("ANDROID_BUILD_TOOLS_VERSION");
+    let ndk = get("ANDROID_NDK_VERSION");
+    let manifest = include_str!("../Cargo.toml");
+    let target_sdk = manifest
+        .lines()
+        .find_map(|line| line.strip_prefix("target_sdk_version = "))
+        .expect("target_sdk_version in Cargo.toml");
+    assert_eq!(
+        platform
+            .strip_prefix("android-")
+            .map(|p| p.split('.').next()),
+        Some(Some(target_sdk)),
+        "target_sdk_version in Cargo.toml must match ANDROID_PLATFORM"
+    );
+    let recipe = include_str!("../fdroid/io.github.ldrick.flausch.yml");
+    for expected in [
+        format!("\"platforms;{platform}\" \"build-tools;{build_tools}\""),
+        format!("ANDROID_PLATFORM={platform} ANDROID_BUILD_TOOLS_VERSION={build_tools}"),
+        format!("ndk: {ndk}"),
+    ] {
+        assert!(
+            recipe.contains(&expected),
+            "the F-Droid recipe needs {expected} (android/sdk.env)"
+        );
+    }
+}

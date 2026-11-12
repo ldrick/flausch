@@ -93,8 +93,7 @@ fn receive_file(data_dir: &std::path::Path, path: &std::path::Path) {
     let (pdf, title) = Storage::incoming_paths(data_dir);
     let name = path
         .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_default();
+        .map_or_default(|n| n.to_string_lossy().into_owned());
     let result = std::fs::create_dir_all(data_dir)
         .and_then(|()| std::fs::copy(path, &pdf))
         .and_then(|_| std::fs::write(&title, name));
@@ -405,7 +404,7 @@ impl Controller {
             store.set_current(self.project_item(project));
             let parts: Vec<PartItem> = project.parts.iter().map(part_item).collect();
             store.set_parts(ModelRc::new(VecModel::from(parts)));
-            store.set_part(project.active().map(part_item).unwrap_or_default());
+            store.set_part(project.active().map_or_default(part_item));
         }
     }
 
@@ -841,15 +840,14 @@ impl Controller {
             notes: project.notes.as_str().into(),
             part_count: project.parts.len() as i32,
             has_active: project.active().is_some(),
-            active: project.active().map(part_item).unwrap_or_default(),
+            active: project.active().map_or_default(part_item),
             rows_done: done as i32,
             rows_total: total as i32,
             has_pdf: project.pdf.is_some(),
             pdf_title: project
                 .pdf
                 .as_ref()
-                .map(|p| p.title.as_str())
-                .unwrap_or_default()
+                .map_or_default(|p| p.title.as_str())
                 .into(),
             has_cover: cover.is_some(),
             cover: cover.unwrap_or_default(),

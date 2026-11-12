@@ -92,14 +92,17 @@ jobs:
       - name: Android SDK, NDK and JDK
         if: env.KEYSTORE != ''
         run: |
+          . android/sdk.env
+          grep -v '^#' android/sdk.env >> "$GITHUB_ENV"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;$ANDROID_PLATFORM" \
+            "build-tools;$ANDROID_BUILD_TOOLS_VERSION" "ndk;$ANDROID_NDK_VERSION"
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION" >> "$GITHUB_ENV"
           echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
       - uses: taiki-e/install-action@v2
         if: env.KEYSTORE != ''
         with:
-          tool: cargo-apk
+          tool: cargo-apk@0.10.0
       - name: Build and attach the signed APK
         if: env.KEYSTORE != ''
         env:

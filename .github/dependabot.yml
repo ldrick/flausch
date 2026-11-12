@@ -18,3 +18,7 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+  - package-ecosystem: rust-toolchain
+    directory: /
+    schedule:
+      interval: weekly

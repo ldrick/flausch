@@ -85,8 +85,7 @@ pub fn save_document(
 fn copy(source: &Path, dest: &Path, chosen: &Path) -> PickResult {
     let title = chosen
         .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_default();
+        .map_or_default(|n| n.to_string_lossy().into_owned());
     match std::fs::copy(source, dest) {
         Ok(_) => PickResult::Picked { title },
         Err(e) => PickResult::Failed(e.to_string()),

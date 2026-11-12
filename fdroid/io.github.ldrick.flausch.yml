@@ -25,7 +25,7 @@ Builds:
       - rustup@1.29.3
     prebuild: sdkmanager "platforms;android-36" "build-tools;36.0.0"
     build:
-      - export RUSTUP_TOOLCHAIN=1.99.1
+      - export RUSTUP_TOOLCHAIN=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)
       - $$rustup$$/rustup-init.sh -y --profile minimal --default-toolchain $RUSTUP_TOOLCHAIN
         --target aarch64-linux-android --target x86_64-linux-android
       - source $HOME/.cargo/env
@@ -37,7 +37,7 @@ Builds:
         android -alias flausch -dname CN=flausch -keyalg RSA -validity 10000
       - CARGO_APK_RELEASE_KEYSTORE=$HOME/throwaway.jks CARGO_APK_RELEASE_KEYSTORE_PASSWORD=android
         cargo apk build --lib --release
-    ndk: r28c
+    ndk: 28.2.13676358
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags

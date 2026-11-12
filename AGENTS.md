@@ -35,8 +35,16 @@ anything Android-specific (`src/platform/android.rs`, the Java helper, `build.rs
 Lints are configured in `Cargo.toml` (`[lints]`): `clippy::pedantic` is on, numeric cast lints are off (Slint uses
 `i32`/`f32`). `unsafe` is denied except in `platform/android.rs` (JNI), where every block needs a `// SAFETY:`
 comment. Prefer fixing a lint over `#[allow]`; if you must allow one, keep it local and say why.
-CI (`.github/workflows/ci.yml`) runs fmt, clippy, tests, cargo-deny, Android clippy and a debug APK build.
-The toolchain (stable, rustfmt, clippy, Android targets) is set in `rust-toolchain.toml`.
+CI runs fmt, clippy, tests and cargo-deny (`.github/workflows/ci.yml`), plus Android clippy and a debug APK
+(`android.yml`; in pull requests only when Android-specific files change).
+Versions are pinned, nothing floats:
+- Rust (with rustfmt, clippy, Android targets) in `rust-toolchain.toml`; Dependabot opens a PR for each new
+  release, and new clippy lints get fixed there.
+- Android platform, build tools and NDK in `android/sdk.env`, read by the Makefile, CI and the release build.
+  `target_sdk_version` in `Cargo.toml` and the F-Droid recipe repeat them; `cargo test` checks that they match.
+  Dependabot doesn't know the SDK, so `android-sdk.yml` opens an issue once a month when newer stable versions
+  exist. Raise the platform and `target_sdk_version` together.
+- cargo-apk 0.10.0 in CI and in the F-Droid recipe.
 
 ## Architecture
 
@@ -267,8 +275,12 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
 `main` isn't protected yet (private repo), so these rules are a convention; follow them anyway.
 
 - Don't commit unless asked. Never push to `main` directly: every change goes through a pull request.
-- One branch per issue, named `<type>/<issue>-<short-name>` (e.g. `feat/16-project-status`). The PR body says
-  `Closes #<issue>`.
+- One PR per topic. Small follow-ups (review feedback, a related fix) go into the open PR, not a new one.
+- Features and bugs get an issue, and their branch is named `<type>/<issue>-<short-name>` (e.g.
+  `feat/16-project-status`) with `Closes #<issue>` in the PR body. Small chores need no issue (`<type>/<short-name>`).
+- Don't wait for CI: `make check` and `make test` run the same checks locally. Push, answer the user and keep
+  working; look at the CI result before a merge or at the next step, and only report it when it is red.
+- Run long tasks (APK builds, icon renders, CI) in the background, so the user can ask questions meanwhile.
 - PR titles follow [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `docs:`,
   `chore:`, `refactor:`, `test:`, `ci:`), written in English and user-facing for `feat`/`fix`, because they end up
   in the changelog. PRs are squash merged, so the PR title becomes the commit message.

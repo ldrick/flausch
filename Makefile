@@ -1,11 +1,14 @@
 # Build and run Flausch. Paths can be overridden: make apk ANDROID_HOME=… JAVA_HOME=…
+# The SDK versions CI and F-Droid use, so build.rs doesn't pick whatever is newest.
+include android/sdk.env
 ANDROID_HOME     ?= $(HOME)/Android/Sdk
-ANDROID_NDK_ROOT ?= $(lastword $(sort $(wildcard $(ANDROID_HOME)/ndk/*)))
+# The pinned NDK if it is installed, otherwise the newest one.
+ANDROID_NDK_ROOT ?= $(or $(wildcard $(ANDROID_HOME)/ndk/$(ANDROID_NDK_VERSION)),$(lastword $(sort $(wildcard $(ANDROID_HOME)/ndk/*))))
 JAVA_HOME        ?= $(HOME)/.local/opt/jdk-21
 TARGET           ?= aarch64-linux-android
 AVD              ?= flausch
 
-export ANDROID_HOME ANDROID_NDK_ROOT JAVA_HOME
+export ANDROID_HOME ANDROID_NDK_ROOT JAVA_HOME ANDROID_PLATFORM ANDROID_BUILD_TOOLS_VERSION
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 .PHONY: run test check check-android deny ci apk apk-release install emulator clean
