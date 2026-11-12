@@ -80,7 +80,9 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   counts it (switchable there, and expandable to a large counter: `Store.counter-expanded`, Back collapses it),
   and the project list shows it. Adding a part makes it active but stays on the project screen. The PDF view has a
   movable reading line (`Pdf::lines`: fraction of the page height per page, `show_line` per PDF; its color is
-  `Settings::line_color` → `Theme.line-color()`). List progress sums all parts with a goal
+  `Settings::line_color` → `Theme.line-color()`). At zoom 1, swiping left or right turns the page
+  (`SwipeGestureHandler` around the page's `Flickable`); zoomed in, a drag moves the view. List progress sums all
+  parts with a goal
   (`Project::progress`); search matches project and part names and the localized status name
   (`Project::matches`, names from `Store.status-names`). Navigation:
   list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to

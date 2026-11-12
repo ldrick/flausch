@@ -309,6 +309,57 @@ fn only_the_newest_render_is_shown() {
 }
 
 #[test]
+fn swiping_turns_the_page() {
+    use slint::LogicalPosition;
+    use slint::platform::{PointerEventButton, WindowEvent};
+
+    let h = Harness::new();
+    let (id, _) = project_with_part();
+    import(id, 1, PATTERN);
+    h.app.window().set_size(slint::LogicalSize::new(412., 924.));
+    ctl(Controller::open_pdf);
+    let serial = ctl(|c| c.pdf.serial);
+    ctl(|c| c.pdf_rendered(rendered(serial, 0, Ok(()))));
+
+    let drag = |from: (f32, f32), to: (f32, f32)| {
+        let window = h.app.window();
+        let at = |(x, y): (f32, f32)| LogicalPosition::new(x, y);
+        let button = PointerEventButton::Left;
+        window.dispatch_event(WindowEvent::PointerPressed {
+            position: at(from),
+            button,
+        });
+        for step in 1..=10 {
+            let t = step as f32 / 10.;
+            let position = at((from.0 + (to.0 - from.0) * t, from.1 + (to.1 - from.1) * t));
+            i_slint_backend_testing::mock_elapsed_time(Duration::from_millis(16));
+            window.dispatch_event(WindowEvent::PointerMoved { position });
+        }
+        window.dispatch_event(WindowEvent::PointerReleased {
+            position: at(to),
+            button,
+        });
+        i_slint_backend_testing::mock_elapsed_time(Duration::from_millis(500));
+    };
+    let page = || h.store().get_pdf().page;
+
+    drag((300., 400.), (100., 410.));
+    assert_eq!(page(), 1, "swipe left: next page");
+    drag((300., 400.), (100., 410.));
+    assert_eq!(page(), 1, "there is no third page");
+    drag((300., 400.), (280., 600.));
+    assert_eq!(page(), 1, "a vertical drag keeps the page");
+    drag((100., 400.), (300., 390.));
+    assert_eq!(page(), 0, "swipe right: previous page");
+
+    let mut view = h.store().get_pdf();
+    view.zoom = 2.0;
+    h.store().set_pdf(view);
+    drag((300., 400.), (100., 410.));
+    assert_eq!(page(), 0, "zoomed in, a drag moves the view instead");
+}
+
+#[test]
 fn a_page_that_no_longer_exists_shows_the_last_one() {
     let h = Harness::new();
     let (id, _) = project_with_part();

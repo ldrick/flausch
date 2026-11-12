@@ -136,33 +136,48 @@ export component PdfPage inherits Rectangle {
                 }
                 ended => { root.report(); }
 
-                flick := Flickable {
-                    content-width: self.width * root.zoom;
-                    // Extra room at the bottom so the floating controls never cover the page end.
-                    content-height: max(self.height, root.page-height + 96px);
-                    flicked => { root.report(); }
-
-                    page := Rectangle {
-                        x: 0;
-                        y: max(0, (flick.height - 96px - root.page-height) / 2);
-                        width: flick.content-width;
-                        height: root.page-height;
-                        background: #ffffff;
-
-                        Image {
-                            width: parent.width;
-                            height: parent.height;
-                            source: Store.pdf.image;
-                            image-fit: fill;
-                            accessible-role: image;
-                            accessible-label: @tr("Page {} of {}", Store.pdf.page + 1, Store.pdf.page-count);
+                // At zoom 1 the page fits the width, so a horizontal swipe turns the page.
+                swipe := SwipeGestureHandler {
+                    enabled: root.zoom < 1.01 && Store.pdf.page-count > 1;
+                    handle-swipe-left: Store.pdf.page + 1 < Store.pdf.page-count;
+                    handle-swipe-right: Store.pdf.page > 0;
+                    swiped => {
+                        let dx = self.current-position.x - self.pressed-position.x;
+                        let dy = self.current-position.y - self.pressed-position.y;
+                        if abs(dx) > 60px && abs(dx) > abs(dy) {
+                            root.go-to-page(Store.pdf.page + (dx < 0 ? 1 : -1));
                         }
-                        TouchArea {
-                            double-clicked => {
-                                if root.zoom > 1.01 {
-                                    root.zoom-to(1, 0, 0);
-                                } else {
-                                    root.zoom-to(2.5, self.mouse-x + flick.content-x, self.mouse-y + parent.y + flick.content-y);
+                    }
+
+                    flick := Flickable {
+                        content-width: self.width * root.zoom;
+                        // Extra room at the bottom so the floating controls never cover the page end.
+                        content-height: max(self.height, root.page-height + 96px);
+                        flicked => { root.report(); }
+
+                        page := Rectangle {
+                            // Follows the finger while swiping.
+                            x: swipe.swiping ? swipe.current-position.x - swipe.pressed-position.x : 0;
+                            y: max(0, (flick.height - 96px - root.page-height) / 2);
+                            width: flick.content-width;
+                            height: root.page-height;
+                            background: #ffffff;
+
+                            Image {
+                                width: parent.width;
+                                height: parent.height;
+                                source: Store.pdf.image;
+                                image-fit: fill;
+                                accessible-role: image;
+                                accessible-label: @tr("Page {} of {}", Store.pdf.page + 1, Store.pdf.page-count);
+                            }
+                            TouchArea {
+                                double-clicked => {
+                                    if root.zoom > 1.01 {
+                                        root.zoom-to(1, 0, 0);
+                                    } else {
+                                        root.zoom-to(2.5, self.mouse-x + flick.content-x, self.mouse-y + parent.y + flick.content-y);
+                                    }
                                 }
                             }
                         }
