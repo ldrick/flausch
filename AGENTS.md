@@ -22,9 +22,9 @@ make check               # cargo fmt --check && cargo clippy --all-targets -- -D
 make check-android       # clippy for the Android code (cargo clippy --lib --target $TARGET)
 make deny                # cargo deny check: advisories, licenses, sources (deny.toml; needs cargo-deny)
 make ci                  # check + check-android + test + deny
-make apk                 # debug APK -> target/debug/apk/flausch.apk (TARGET defaults to aarch64-linux-android)
+make apk                 # debug app "Flausch Dev" -> target/debug/apk/flausch-dev.apk (TARGET defaults to aarch64-linux-android)
 make apk-release         # release APK (lto + strip; needs CARGO_APK_RELEASE_KEYSTORE(_PASSWORD))
-make install             # cargo apk run: build, install, launch (then streams logcat until stopped)
+make install             # cargo apk run: build, install, launch Flausch Dev (then streams logcat until stopped)
 make emulator            # start the AVD "flausch"; then build with TARGET=x86_64-linux-android
 ```
 
@@ -64,6 +64,7 @@ tests/ui.rs           UI tests: drive the app through accessibility labels; fixt
   platform/android.rs JNI: loads the dex built from android/java, picker, PdfRenderer, keep-screen-on, bar colors
   platform/desktop.rs dirs + rfd file dialog + hayro rendering; most other functions are no-ops
 android/java/.../FlauschHelper.java   Java helper (compiled by build.rs with javac + d8, embedded as classes.dex)
+android/dev/           "Flausch Dev": wrapper crate for debug APKs (own package id, label, icon with a "dev" badge)
 android/res/          launcher icon (knitted PNG layers; the monochrome themed icon is the vector wordmark)
 ui/
   app.slint           root window App: page switch, dialogs, notice, Back key, safe-area insets
@@ -139,6 +140,11 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   (`1<<24 | major<<16 | minor<<8 | patch`); `[package.metadata.fdroid] version_code` mirrors it for F-Droid's
   update check, and a test keeps both in sync. A release needs a changelog per version code in
   `fastlane/metadata/android/*/changelogs/` (see `fdroid/README.md`).
+- Debug APKs (`make apk`, `make install`, the CI artifact) are a separate app, **Flausch Dev**: the workspace member
+  `android/dev` only links the library and has its own metadata (package `io.github.ldrick.flausch.debug`, label,
+  `android/dev/res` with symlinks to `android/res` plus the "dev" badge from `tools/logo.py`). So it installs next to
+  the F-Droid release (other signature) with its own data. Change Android metadata in both `Cargo.toml` files; a test
+  checks that they match. Release builds and F-Droid build the root package as before.
 
 ## UI conventions
 
@@ -249,8 +255,8 @@ needed.
 ```sh
 make emulator                                   # separate terminal; AVD "flausch"
 make apk TARGET=x86_64-linux-android
-adb install -r target/debug/apk/flausch.apk
-adb shell am start -n io.github.ldrick.flausch/android.app.NativeActivity
+adb install -r target/debug/apk/flausch-dev.apk
+adb shell am start -n io.github.ldrick.flausch.debug/android.app.NativeActivity
 adb exec-out screencap -p > /tmp/screen.png     # 1080×2424 physical pixels
 adb shell input tap X Y                         # physical pixels (logical px × 2.625 at density 420)
 ```

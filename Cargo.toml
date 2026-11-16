@@ -7,6 +7,10 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/ldrick/flausch"
 publish = false
 
+# android/dev builds the debug APK as a separate app, "Flausch Dev".
+[workspace]
+members = ["android/dev"]
+
 [lib]
 crate-type = ["lib", "cdylib"]
 

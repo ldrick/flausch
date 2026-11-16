@@ -31,14 +31,14 @@ deny:           ## Advisories, licenses and sources of dependencies (needs cargo
 
 ci: check check-android test deny  ## Everything CI runs, except the APK build
 
-apk:            ## Build a debug APK (target/debug/apk/flausch.apk)
-	cargo apk build --lib --target $(TARGET)
+apk:            ## Build the debug app "Flausch Dev" (target/debug/apk/flausch-dev.apk)
+	cargo apk build -p flausch-dev --lib --target $(TARGET)
 
-apk-release:    ## Build a release APK
+apk-release:    ## Build the release APK of Flausch (target/release/apk/flausch.apk)
 	cargo apk build --lib --release --target $(TARGET)
 
-install:        ## Build, install and start on a connected device/emulator
-	cargo apk run --lib --target $(TARGET)
+install:        ## Build, install and start "Flausch Dev" on a connected device/emulator
+	cargo apk run -p flausch-dev --lib --target $(TARGET)
 
 emulator:       ## Start the Android emulator (then: make install TARGET=x86_64-linux-android)
 	$(ANDROID_HOME)/emulator/emulator -avd $(AVD)

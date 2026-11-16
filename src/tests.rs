@@ -694,3 +694,27 @@ fn android_sdk_versions_match() {
         );
     }
 }
+
+#[test]
+fn dev_app_matches_android_metadata() {
+    // android/dev only differs in the package, label and resources; everything else must stay in sync.
+    let metadata = |manifest: &str| -> Vec<String> {
+        let start = manifest.find("[package.metadata.android]").unwrap();
+        manifest[start..]
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && !line.starts_with('#'))
+            .filter(|line| {
+                !["package =", "label =", "resources ="]
+                    .iter()
+                    .any(|key| line.starts_with(key))
+            })
+            .map(str::to_owned)
+            .collect()
+    };
+    assert_eq!(
+        metadata(include_str!("../android/dev/Cargo.toml")),
+        metadata(include_str!("../Cargo.toml")),
+        "update [package.metadata.android] in android/dev/Cargo.toml"
+    );
+}

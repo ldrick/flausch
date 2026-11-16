@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foreground of Flausch Dev: the lettering with the "dev" badge. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_launcher_text" />
+    <item android:drawable="@drawable/ic_launcher_badge" />
+</layer-list>

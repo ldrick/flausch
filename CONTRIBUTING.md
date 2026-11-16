@@ -24,11 +24,14 @@ make run                 # desktop window
 make test                # unit, controller and UI tests (headless)
 make check               # rustfmt + clippy
 make ci                  # everything CI checks: also Android clippy, cargo-deny (cargo install cargo-deny)
-make apk                 # target/debug/apk/flausch.apk (arm64)
+make apk                 # debug app "Flausch Dev": target/debug/apk/flausch-dev.apk (arm64)
 make apk-release         # release APK (needs a keystore, see below)
-make install             # build, install and start on a connected device
+make install             # build, install and start Flausch Dev on a connected device
 make emulator            # start the AVD "flausch"; then: make install TARGET=x86_64-linux-android
 ```
+
+Debug builds are a separate app, **Flausch Dev** (`io.github.ldrick.flausch.debug`, built from `android/dev`, with a
+"dev" badge on the icon). It installs next to the release from F-Droid and keeps its own data.
 
 On Linux the desktop build loads fontconfig at runtime (`fontique/fontconfig-dlopen`), so no `-dev` packages are
 needed.

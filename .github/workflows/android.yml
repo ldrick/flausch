@@ -48,9 +48,9 @@ jobs:
         with:
           tool: cargo-apk@0.10.0
       - run: cargo clippy --lib --locked --target aarch64-linux-android -- -D warnings
-      - run: cargo apk build --lib --target aarch64-linux-android
+      - run: cargo apk build -p flausch-dev --lib --target aarch64-linux-android
       - uses: actions/upload-artifact@v7
         with:
-          name: flausch-debug-apk
-          path: target/debug/apk/flausch.apk
+          name: flausch-dev-apk
+          path: target/debug/apk/flausch-dev.apk
           if-no-files-found: error
