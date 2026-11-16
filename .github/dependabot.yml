@@ -4,6 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Same minimum age as .cargo/config.toml (registry.global-min-publish-age).
+    cooldown:
+      default-days: 3
     ignore:
       # Only enables a feature on Slint's copy, so it must stay on the version Slint uses (see Cargo.toml).
       - dependency-name: fontique
@@ -15,6 +18,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 3
     groups:
       actions:
         patterns: ["*"]
