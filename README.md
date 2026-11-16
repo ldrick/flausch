@@ -1,4 +1,4 @@
-<img src="ui/icons/logo.svg" width="72" alt="">
+<img src="logo/flausch.svg" width="200" alt="">
 
 # Flausch
 

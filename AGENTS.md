@@ -64,7 +64,7 @@ tests/ui.rs           UI tests: drive the app through accessibility labels; fixt
   platform/android.rs JNI: loads the dex built from android/java, picker, PdfRenderer, keep-screen-on, bar colors
   platform/desktop.rs dirs + rfd file dialog + hayro rendering; most other functions are no-ops
 android/java/.../FlauschHelper.java   Java helper (compiled by build.rs with javac + d8, embedded as classes.dex)
-android/res/          launcher icon (knitted PNG layers; the monochrome themed icon is the line logo)
+android/res/          launcher icon (knitted PNG layers; the monochrome themed icon is the vector wordmark)
 ui/
   app.slint           root window App: page switch, dialogs, notice, Back key, safe-area insets
   store.slint         Store global = the Rust↔UI contract (state properties, enums, structs, callbacks)
@@ -72,10 +72,12 @@ ui/
   components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Field, Segmented, Switch…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages)
-  icons/              SVG icons; logo.svg is the app logo
+  icons/              SVG icons
+  fonts/              Montez (Apache 2.0) for the wordmark "Flausch"
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
-tools/logo.py         generates ui/icons/logo.svg and the monochrome launcher icon – never edit those by hand
-tools/knit.py         renders the launcher and store icons: a ball of yarn with cat ears, embroidered in white on bulging pink knit (needs numpy, scipy, pillow, svgpathtools)
+tools/logo.py         generates logo/flausch.svg (README) and the monochrome launcher icon from the Montez outlines – never edit those by hand (needs fonttools)
+tools/knit.py         renders the launcher and store icons: "Flausch" embroidered in white on bulging pink knit (needs numpy, scipy, pillow)
+logo/                 the wordmark SVG; logo/cat/ keeps the old cat logo (ball of yarn with cat ears) and its generators
 fastlane/metadata/    F-Droid store texts, icon, screenshots (en-US, de-DE)
 fdroid/               F-Droid recipe and release steps (fdroid/README.md)
 lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
@@ -149,11 +151,10 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `theme.slint`.
 - Shadows are hard drop shadows: no `drop-shadow-blur`, only `drop-shadow-offset-y: Theme.shadow-offset` (or
   `Theme.shadow-offset-small` for small elements) with `drop-shadow-color: Theme.shadow`.
-- Logo: soft pink line art of a ball of yarn with cat ears and the yarn end curled up
-  as the tail. In Slint use `Icon { source: logo.svg; color: Theme.accent; }` (only lines, so it fits any
-  background). If the pink changes, update `PINK` in `tools/logo.py` and run it. The launcher and store icons are
-  different: the ball with its cat ears, filled with white chain stitch and embroidered on bulging pink knitted
-  fabric (`tools/knit.py`).
+- Logo: the wordmark "Flausch" in Montez, no picture. In Slint use a `Text` with `font-family: Theme.font-logo`
+  and `color: Theme.accent` (`Theme.on-accent` on accent backgrounds); `theme.slint` imports the font. The About
+  page credits the font (Apache 2.0). If the pink changes, update `PINK` in `tools/logo.py` and run it. The
+  launcher and store icons embroider the wordmark in white yarn on bulging pink knitted fabric (`tools/knit.py`).
 - Design window: Pixel 9a size, 412×924 logical px (1080×2424 at density 2.625). The AVD "flausch" uses the
   `pixel_9a` profile.
 - `Rectangle` already has a (deprecated) `color` property, so name custom color properties differently

@@ -59,15 +59,16 @@ export component AboutPage inherits Rectangle {
 
                         HorizontalLayout {
                             spacing: 10px;
-                            Icon {
-                                source: @image-url("../icons/logo.svg");
+                            Text {
+                                text: "Flausch";
                                 color: Theme.accent;
-                                width: 28px;
-                                height: 28px;
+                                font-family: Theme.font-logo;
+                                font-size: 40px;
+                                vertical-alignment: center;
                             }
                             Text {
-                                text: "Flausch \{Store.version}";
-                                color: Theme.text;
+                                text: Store.version;
+                                color: Theme.text-muted;
                                 font-size: Theme.font-body;
                                 font-weight: 600;
                                 vertical-alignment: center;
@@ -80,6 +81,13 @@ export component AboutPage inherits Rectangle {
                             wrap: word-wrap;
                         }
                         MadeWithLove { }
+                        Text {
+                            text: @tr("Logo font: Montez by Astigmatic, Apache License 2.0");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            horizontal-alignment: center;
+                            wrap: word-wrap;
+                        }
                         Rectangle {
                             height: 120px;
                             background: Theme.surface-muted;
@@ -178,14 +186,12 @@ export component DonatePage inherits Rectangle {
                         padding: 18px;
                         spacing: 14px;
 
-                        HorizontalLayout {
-                            alignment: center;
-                            Icon {
-                                source: @image-url("../icons/logo.svg");
-                                color: Theme.accent;
-                                width: 56px;
-                                height: 56px;
-                            }
+                        Text {
+                            text: "Flausch";
+                            color: Theme.accent;
+                            font-family: Theme.font-logo;
+                            font-size: 56px;
+                            horizontal-alignment: center;
                         }
                         Text {
                             text: @tr("I develop Flausch on my own, in my spare time, free and without ads or tracking. If it helps you with your projects, I would be happy if you bought me a coffee. Thank you!");

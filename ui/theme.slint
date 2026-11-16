@@ -1,4 +1,5 @@
 import { Palette } from "std-widgets.slint";
+import "fonts/Montez-Regular.ttf";
 
 export enum Appearance { system, light, dark }
 
@@ -45,6 +46,8 @@ export global Theme {
     out property <length> font-title: 22px;
     out property <length> font-headline: 30px;
     out property <length> font-counter: 112px;
+    // The wordmark "Flausch" is set in Montez (ui/fonts, Apache 2.0); the icons come from tools/logo.py.
+    out property <string> font-logo: "Montez";
 
     out property <duration> animation: 180ms;
 

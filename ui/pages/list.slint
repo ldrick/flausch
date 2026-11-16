@@ -107,11 +107,11 @@ component ProjectCard inherits Card {
                     font-size: 20px;
                     font-weight: 700;
                 }
-                if !root.project.has-active: Icon {
-                    source: @image-url("../icons/logo.svg");
+                if !root.project.has-active: Text {
+                    text: "F";
                     color: Theme.on-accent;
-                    width: 28px;
-                    height: 28px;
+                    font-family: Theme.font-logo;
+                    font-size: 34px;
                 }
             }
         }
@@ -321,20 +321,11 @@ export component ListPage inherits Rectangle {
             padding-right: 8px;
             spacing: 10px;
 
-            VerticalLayout {
-                alignment: center;
-                Icon {
-                    source: @image-url("../icons/logo.svg");
-                    color: Theme.accent;
-                    width: 34px;
-                    height: 34px;
-                }
-            }
             Text {
                 text: "Flausch";
-                color: Theme.text;
-                font-size: Theme.font-headline;
-                font-weight: 700;
+                color: Theme.accent;
+                font-family: Theme.font-logo;
+                font-size: 44px;
                 vertical-alignment: center;
                 horizontal-stretch: 1;
             }
@@ -482,21 +473,12 @@ export component ListPage inherits Rectangle {
             padding-bottom: 120px;
             spacing: 16px;
 
-            Rectangle {
-                height: 112px;
-                Rectangle {
-                    width: 112px;
-                    height: 112px;
-                    border-radius: self.height / 2;
-                    background: Theme.accent;
-
-                    Icon {
-                        source: @image-url("../icons/logo.svg");
-                        color: Theme.on-accent;
-                        width: 56px;
-                        height: 56px;
-                    }
-                }
+            Text {
+                text: "Flausch";
+                color: Theme.accent;
+                font-family: Theme.font-logo;
+                font-size: 72px;
+                horizontal-alignment: center;
             }
             Text {
                 text: @tr("No projects yet");
