@@ -143,7 +143,7 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   (`1<<24 | major<<16 | minor<<8 | patch`); `[package.metadata.fdroid] version_code` mirrors it for F-Droid's
   update check, and a test keeps both in sync. A release needs a changelog per version code in
   `fastlane/metadata/android/*/changelogs/` (see `fdroid/README.md`).
-- Debug APKs (`make apk`, `make install`, the CI artifact) are a separate app, **Flausch Dev**: the workspace member
+- Debug APKs (`make apk`, `make install`, the CI build) are a separate app, **Flausch Dev**: the workspace member
   `android/dev` only links the library and has its own metadata (package `io.github.ldrick.flausch.debug`, label,
   `android/dev/res` with symlinks to `android/res` plus the "dev" badge from `tools/logo.py`). So it installs next to
   the F-Droid release (other signature) with its own data. Change Android metadata in both `Cargo.toml` files; a test
