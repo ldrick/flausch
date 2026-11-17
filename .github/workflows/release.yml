@@ -1,13 +1,14 @@
 name: Release
 
-# Run "Prepare release" by hand (Actions → Release → Run workflow) to open the release PR. Merging that PR
-# ("chore: release vX.Y.Z") tags the version, creates the GitHub release and attaches the signed APK.
+# Every push to main updates the release PR "chore: release vX.Y.Z" on the branch release/next (or opens it once
+# there is a feat or fix to release). Changelogs edited in the PR are kept when main moves on. Merging the PR tags
+# the version, creates the GitHub release and attaches the signed APK. Run the workflow by hand to pick a version.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version (empty = next version from the commits since the last tag)
+        description: Version (empty = next version from the commits since the last tag, 1.0.0 for the first)
         required: false
   push:
     branches: [main]
@@ -21,8 +22,9 @@ concurrency:
 
 jobs:
   prepare:
-    name: Open the release PR
-    if: github.event_name == 'workflow_dispatch'
+    name: Update the release PR
+    if: >-
+      github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore: release v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -30,34 +32,48 @@ jobs:
       actions: write
     env:
       GH_TOKEN: ${{ github.token }}
+      BRANCH: release/next
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
       - name: Bump the version and write the changelogs
         id: release
         env:
           REQUESTED: ${{ inputs.version }}
-        run: echo "version=$(python3 tools/release.py prepare $REQUESTED)" >> "$GITHUB_OUTPUT"
-      - name: Open the pull request
+        run: |
+          keep=()
+          # Only an open PR has edits to keep; the branch of a merged or closed one is stale.
+          if [ "$(gh pr list --head "$BRANCH" --state open --json number --jq length)" != 0 ]; then
+            git fetch origin "$BRANCH"
+            keep=(--keep FETCH_HEAD)
+          fi
+          version="$(python3 tools/release.py prepare $REQUESTED "${keep[@]}")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Open or update the pull request
+        if: steps.release.outputs.version != ''
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
-          branch="release/v$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$branch"
+          git switch -C "$BRANCH"
           git add -A
           git commit -m "chore: release v$VERSION"
-          git push --force origin "$branch"
+          git push --force origin "$BRANCH"
+          title="chore: release v$VERSION"
           body="$(printf '%s\n\n%s\n\n%s' \
-            "Release v$VERSION. Before merging, edit the user-facing texts in \`fastlane/metadata/android/{en-US,de-DE}/changelogs/\` (max. 500 characters; the German one starts with TODO until it is translated) and, if needed, \`CHANGELOG.md\`." \
+            "Release v$VERSION. Every push to main updates this PR. Before merging, edit the user-facing texts in \`fastlane/metadata/android/{en-US,de-DE}/changelogs/\` (max. 500 characters; the German one starts with TODO until it is translated). Your edits are kept, and later features and fixes are appended to them; other edits, e.g. in \`CHANGELOG.md\`, are overwritten." \
             "Merging tags \`v$VERSION\`, creates the GitHub release and attaches the APK." \
             "$(python3 tools/release.py notes "$VERSION")")"
-          gh pr create --base main --head "$branch" --title "chore: release v$VERSION" --body "$body" \
-            || gh pr edit "$branch" --body "$body"
-          # Pull requests opened with GITHUB_TOKEN don't trigger workflows, so start CI by hand.
-          gh workflow run ci.yml --ref "$branch"
+          if [ "$(gh pr list --head "$BRANCH" --state open --json number --jq length)" = 0 ]; then
+            gh pr create --base main --head "$BRANCH" --title "$title" --body "$body"
+          else
+            gh pr edit "$BRANCH" --title "$title" --body "$body"
+          fi
+          # Pushes with GITHUB_TOKEN don't trigger workflows, so start CI by hand.
+          gh workflow run ci.yml --ref "$BRANCH"
 
   publish:
     name: Tag, release and APK

@@ -8,7 +8,7 @@ F-Droid builds Flausch from source and signs it with its own key. Store texts, i
 
 Releases go through a release PR (see "Workflow" in `AGENTS.md`):
 
-1. Run the Release workflow (`gh workflow run release.yml`, for the first release `-f version=1.0.0`). It bumps
+1. Every push to `main` updates the release PR (Release workflow; the first release is 1.0.0). It bumps
    `version` and `version_code` (`1 << 24 | major << 16 | minor << 8 | patch`, which cargo-apk uses; `cargo test`
    checks it), updates this recipe and `CHANGELOG.md`, drafts
    `fastlane/metadata/android/{en-US,de-DE}/changelogs/<version_code>.txt` and opens the PR.

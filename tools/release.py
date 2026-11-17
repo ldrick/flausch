@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Prepares a release and prints release notes (see "Workflow" in AGENTS.md).
 
-    tools/release.py prepare [VERSION]   bump the version, update CHANGELOG.md, the F-Droid recipe and draft
-                                         the F-Droid changelogs; VERSION defaults to the next one from the
-                                         Conventional Commits since the last tag
-    tools/release.py notes VERSION       print the CHANGELOG.md section of VERSION
+    tools/release.py prepare [VERSION] [--keep REF]
+        bump the version, update CHANGELOG.md, the F-Droid recipe and draft the F-Droid changelogs. VERSION
+        defaults to the next one from the Conventional Commits since the last tag (1.0.0 if nothing is tagged).
+        REF is the previous release branch: F-Droid changelogs edited there are kept, and commits added to
+        main since then are appended to them.
+    tools/release.py notes VERSION
+        print the CHANGELOG.md section of VERSION
 
-`prepare` prints the new version. The German F-Droid changelog starts with TODO until someone translates it;
-`cargo test` fails until then.
+`prepare` prints the new version, or nothing if there is nothing to release. The German F-Droid changelog starts
+with TODO until someone translates it; `cargo test` fails until then.
 """
 
 import datetime
@@ -23,6 +26,8 @@ CHANGELOG = ROOT / "CHANGELOG.md"
 RECIPE = ROOT / "fdroid" / "io.github.ldrick.flausch.yml"
 FASTLANE = ROOT / "fastlane" / "metadata" / "android"
 REPO = "https://github.com/ldrick/flausch"
+FIRST_VERSION = "1.0.0"
+TODO = "TODO: translate"
 
 CHANGELOG_HEADER = """# Changelog
 
@@ -38,6 +43,12 @@ def git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=ROOT, check=True, capture_output=True, text=True).stdout
 
 
+def show(ref: str, path: pathlib.Path) -> str | None:
+    result = subprocess.run(["git", "show", f"{ref}:{path.relative_to(ROOT).as_posix()}"], cwd=ROOT,
+                            capture_output=True, text=True)
+    return result.stdout if result.returncode == 0 else None
+
+
 def parse_version(version: str) -> tuple[int, int, int]:
     match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", version)
     if not match:
@@ -50,8 +61,9 @@ def version_code(version: str) -> int:
     return 1 << 24 | major << 16 | minor << 8 | patch
 
 
-def cargo_version() -> str:
-    match = re.search(r'^\[package\]\nname = "flausch"\nversion = "([^"]+)"', CARGO_TOML.read_text(), re.M)
+def cargo_version(text: str | None = None) -> str:
+    text = CARGO_TOML.read_text() if text is None else text
+    match = re.search(r'^\[package\]\nname = "flausch"\nversion = "([^"]+)"', text, re.M)
     if not match:
         sys.exit("cannot find the version in Cargo.toml")
     return match.group(1)
@@ -62,13 +74,13 @@ def last_tag() -> str | None:
     return tags[0] if tags else None
 
 
-def commits_since(tag: str | None) -> list[dict]:
-    log = git("log", "--format=%s%x1f%b%x1e", f"{tag}..HEAD" if tag else "HEAD")
+def commits_since(tag: str | None, end: str = "HEAD") -> list[dict]:
+    log = git("log", "--format=%s%x1f%b%x1e", f"{tag}..{end}" if tag else end)
     commits = []
     for entry in filter(None, (e.strip() for e in log.split("\x1e"))):
         subject, _, body = entry.partition("\x1f")
         match = COMMIT.match(subject)
-        if not match:
+        if not match or match["text"].startswith("release v"):
             continue
         commits.append(
             {
@@ -110,6 +122,14 @@ def replace(path: pathlib.Path, pattern: str, value: str, count: int = 1) -> Non
     path.write_text(text)
 
 
+def draft(commits: list[dict]) -> str:
+    return "\n".join(f"• {plain_text(c)}" for c in commits if c["type"] in ("feat", "fix"))
+
+
+def changelog_path(locale: str, version: str) -> pathlib.Path:
+    return FASTLANE / locale / "changelogs" / f"{version_code(version)}.txt"
+
+
 def update_files(version: str, commits: list[dict], first: bool) -> None:
     code = str(version_code(version))
     old_code = str(version_code(cargo_version()))
@@ -133,8 +153,8 @@ def update_files(version: str, commits: list[dict], first: bool) -> None:
     old = CHANGELOG.read_text().removeprefix(CHANGELOG_HEADER) if CHANGELOG.exists() else ""
     CHANGELOG.write_text(CHANGELOG_HEADER + "\n" + "\n".join(section) + "\n" + ("\n" + old.lstrip() if old.strip() else ""))
 
-    draft = "\n".join(f"• {plain_text(c)}" for c in commits if c["type"] in ("feat", "fix")) or "Small improvements."
-    for locale, text in (("en-US", draft), ("de-DE", "TODO: translate\n" + draft)):
+    text = draft(commits) or "Small improvements."
+    for locale, text in (("en-US", text), ("de-DE", f"{TODO}\n{text}")):
         path = FASTLANE / locale / "changelogs" / f"{code}.txt"
         unreleased = path.with_name(f"{old_code}.txt")
         if first and unreleased.exists() and unreleased != path:
@@ -144,18 +164,45 @@ def update_files(version: str, commits: list[dict], first: bool) -> None:
             path.write_text(text + "\n")
 
 
-def prepare(requested: str | None) -> None:
+def keep_edits(keep: str, tag: str | None, version: str) -> None:
+    """Keeps the F-Droid changelogs that someone edited on the previous release branch `keep`."""
+    base = git("merge-base", keep, "HEAD").strip()
+    kept_version = cargo_version(show(keep, CARGO_TOML) or "")
+    base_version = cargo_version(show(base, CARGO_TOML) or "")
+    new = draft(commits_since(base))
+    for locale in ("en-US", "de-DE"):
+        kept = show(keep, changelog_path(locale, kept_version))
+        if kept is None:
+            continue
+        # What `prepare` wrote on the release branch, so anything else was edited by hand.
+        written = show(base, changelog_path(locale, kept_version))
+        if written is None and tag is None:
+            written = show(base, changelog_path(locale, base_version))
+        if written is None:
+            written = draft(commits_since(tag, base)) or "Small improvements."
+            written = (f"{TODO}\n" if locale == "de-DE" else "") + written + "\n"
+        if kept == written:
+            continue
+        text = kept.rstrip("\n")
+        if new:
+            text += "\n" + new
+            if locale == "de-DE" and not text.startswith("TODO"):
+                text = f"{TODO}\n{text}"
+        changelog_path(locale, version).write_text(text + "\n")
+
+
+def prepare(requested: str | None, keep: str | None) -> None:
     tag = last_tag()
-    commits = [c for c in commits_since(tag) if not c["text"].startswith("release v")]
-    if tag is None and requested is None:
-        sys.exit("nothing is tagged yet: give the version of the first release, e.g. 1.0.0")
+    commits = commits_since(tag)
     current = tag.removeprefix("v") if tag else cargo_version()
-    version = requested or next_version(current, commits)
+    version = requested or (next_version(current, commits) if tag else FIRST_VERSION)
     if version is None:
-        sys.exit(f"nothing to release since {tag}: no feat or fix commits")
+        return
     if tag and parse_version(version) <= parse_version(current):
         sys.exit(f"{version} is not newer than {current}")
     update_files(version, commits, first=tag is None)
+    if keep:
+        keep_edits(keep, tag, version)
     print(version)
 
 
@@ -168,12 +215,20 @@ def notes(version: str) -> None:
 
 
 def main() -> None:
-    match sys.argv[1:]:
+    args = sys.argv[1:]
+    keep = None
+    if "--keep" in args:
+        i = args.index("--keep")
+        if i + 1 == len(args):
+            sys.exit(__doc__)
+        keep = args[i + 1]
+        del args[i : i + 2]
+    match args:
         case ["prepare"]:
-            prepare(None)
+            prepare(None, keep)
         case ["prepare", version]:
-            prepare(version)
-        case ["notes", version]:
+            prepare(version, keep)
+        case ["notes", version] if keep is None:
             notes(version)
         case _:
             sys.exit(__doc__)

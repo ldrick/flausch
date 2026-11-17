@@ -296,16 +296,21 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
   `chore:`, `refactor:`, `test:`, `ci:`), written in English and user-facing for `feat`/`fix`, because they end up
   in the changelog. PRs are squash merged, so the PR title becomes the commit message.
 - CI must pass before a merge. Merge only when the user says so.
-- Versions are bumped only in a release PR, never in feature PRs. Run the **Release** workflow by hand (Actions →
-  Release → Run workflow, or `gh workflow run release.yml [-f version=X.Y.Z]`). It runs `tools/release.py prepare`
-  and opens the PR `chore: release vX.Y.Z`. The next version follows the commits since the last tag (breaking →
-  major, `feat` → minor, `fix` → patch); the first release needs an explicit version. The PR updates `version` and
-  `version_code` in `Cargo.toml`, `Cargo.lock`, the F-Droid recipe, `CHANGELOG.md` and drafts the F-Droid
-  changelogs `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`.
+- Versions are bumped only in the release PR, never in feature PRs. The **Release** workflow keeps it up to date:
+  every push to `main` runs `tools/release.py prepare` on top of `main` and force-pushes the PR
+  `chore: release vX.Y.Z` (branch `release/next`), opening it once there is a `feat` or `fix` since the last tag.
+  The next version follows those commits (breaking → major, `feat` → minor, `fix` → patch); the first release is
+  1.0.0. To pick a version, run the workflow by hand (`gh workflow run release.yml -f version=X.Y.Z`). The PR
+  updates `version` and `version_code` in `Cargo.toml`, `Cargo.lock`, the F-Droid recipe, `CHANGELOG.md` and
+  drafts the F-Droid changelogs `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`.
 - In the release PR, rewrite both changelogs for users (short, max. 500 characters, one point per line starting with `•`; the app
-  shows them as a list) and translate the German one;
-  it starts with `TODO` and `cargo test` fails until it doesn't. These texts are also the changelog in the app
+  shows them as a list) and translate the German one. Edits to these two files survive later pushes to `main`
+  (`prepare --keep`): new features and fixes are appended, and the German one gets `TODO` again. Other edits in the
+  PR are overwritten. The German changelog
+  starts with `TODO` and `cargo test` fails until it doesn't. These texts are also the changelog in the app
   (Settings → About → Changelog, all releases up to the running build; `src/changes.rs`, embedded by `build.rs`).
 - Merging the release PR runs the `publish` job: it tags `vX.Y.Z`, creates the GitHub release with the
   `CHANGELOG.md` section and, if the `RELEASE_KEYSTORE` (base64) and `RELEASE_KEYSTORE_PASSWORD` secrets are set,
   attaches a signed APK. F-Droid picks up the tag (see `fdroid/README.md`).
+- When the user asks for a release, follow the `release` skill (`.github/skills/release/SKILL.md`, linked in
+  `.claude/skills`): write the changelogs in the release PR, wait for CI, merge after the user agrees.
