@@ -323,8 +323,10 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
   PR are overwritten. The German changelog
   starts with `TODO` and `cargo test` fails until it doesn't. These texts are also the changelog in the app
   (Settings → About → Changelog, all releases up to the running build; `src/changes.rs`, embedded by `build.rs`).
-- Merging the release PR runs the `publish` job: it tags `vX.Y.Z`, creates the GitHub release with the
-  `CHANGELOG.md` section and, if the `RELEASE_KEYSTORE` (base64) and `RELEASE_KEYSTORE_PASSWORD` secrets are set,
-  attaches a signed APK. F-Droid picks up the tag (see `fdroid/README.md`).
+- Merging the release PR runs the `publish` job: it creates a draft release with the `CHANGELOG.md` section, builds
+  and attaches the signed APK (secrets `RELEASE_KEYSTORE`, base64, and `RELEASE_KEYSTORE_PASSWORD`) and then
+  publishes it, which creates the tag `vX.Y.Z`. Releases are immutable once published, so nothing can be added or
+  swapped later. If the build fails, the release stays a draft: fix it and run
+  `gh workflow run release.yml -f attach=X.Y.Z`. F-Droid picks up the tag (see `fdroid/README.md`).
 - When the user asks for a release, follow the `release` skill (`.github/skills/release/SKILL.md`, linked in
   `.claude/skills`): write the changelogs in the release PR, wait for CI, merge after the user agrees.
