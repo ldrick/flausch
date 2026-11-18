@@ -19,7 +19,7 @@ Builds:
     commit: v1.0.0
     sudo:
       - apt-get update
-      - apt-get install -y openjdk-21-jdk-headless
+      - apt-get install -y build-essential openjdk-21-jdk-headless
     output: target/release/apk/flausch.apk
     srclibs:
       - rustup@1.29.3
@@ -35,9 +35,10 @@ Builds:
       - cargo fetch --locked
       - keytool -genkeypair -keystore $HOME/throwaway.jks -storepass android -keypass
         android -alias flausch -dname CN=flausch -keyalg RSA -validity 10000
+      - export RUSTFLAGS="--remap-path-prefix=$PWD=/build --remap-path-prefix=$HOME/.cargo=/cargo"
       - CARGO_APK_RELEASE_KEYSTORE=$HOME/throwaway.jks CARGO_APK_RELEASE_KEYSTORE_PASSWORD=android
         cargo apk build --lib --release --target aarch64-linux-android
-    ndk: 28.2.13676358
+    ndk: 30.0.16248370
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags

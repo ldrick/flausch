@@ -45,6 +45,8 @@ Versions are pinned, nothing floats:
   Dependabot doesn't know the SDK, so `android-sdk.yml` opens an issue once a month when newer stable versions
   exist. Raise the platform and `target_sdk_version` together.
 - cargo-apk 0.10.0 in CI and in the F-Droid recipe.
+- Release APKs are reproducible, so F-Droid can ship our signature: the F-Droid recipe, `release.yml` and
+  `make apk-release` build with the same `--remap-path-prefix` flags; change them together (`fdroid/README.md`).
 - New crate versions must be at least 3 days old: `registry.global-min-publish-age` in `.cargo/config.toml` (applies
   to `cargo update`/`cargo add`; versions in `Cargo.lock` stay) and the same `cooldown` in `.github/dependabot.yml`.
   For an urgent fix: `CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE=0 cargo update -p <crate>`.

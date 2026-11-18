@@ -46,9 +46,9 @@ import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 
 /**
- * Java side of Flausch's Android integration. It is compiled to a dex file by build.rs and loaded
- * at runtime with an InMemoryDexClassLoader, because cargo-apk packages no Java code. Native
- * methods are registered from Rust (src/platform/android.rs).
+ * Java side of Flausch's Android integration. It is compiled to a dex file by build.rs, embedded
+ * in the native library and loaded from memory at runtime (src/platform/android.rs), because
+ * cargo-apk packages no Java code. Native methods are registered from Rust.
  */
 public class FlauschHelper {
     static final int STATUS_OK = 0;

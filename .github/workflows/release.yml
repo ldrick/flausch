@@ -125,7 +125,9 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
-          CARGO_APK_RELEASE_KEYSTORE="$RUNNER_TEMP/release.jks" \
+          # Same paths as the F-Droid recipe, so F-Droid's build matches this APK and ships our signature.
+          RUSTFLAGS="--remap-path-prefix=$PWD=/build --remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/cargo" \
+            CARGO_APK_RELEASE_KEYSTORE="$RUNNER_TEMP/release.jks" \
             CARGO_APK_RELEASE_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" \
             cargo apk build --lib --locked --release --target aarch64-linux-android
           cp target/release/apk/flausch.apk "flausch-$VERSION.apk"
