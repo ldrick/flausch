@@ -3,6 +3,10 @@
 All notable changes to Flausch. The format follows [Keep a Changelog](https://keepachangelog.com), versions
 follow [Semantic Versioning](https://semver.org). This file is written by `tools/release.py`.
 
+## [1.0.1](https://github.com/ldrick/flausch/releases/tag/v1.0.1) - 2026-11-18
+
+Maintenance release.
+
 ## [1.0.0](https://github.com/ldrick/flausch/releases/tag/v1.0.0) - 2026-11-18
 
 ### Features

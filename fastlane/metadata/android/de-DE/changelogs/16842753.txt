@@ -1,0 +1,1 @@
+• Signierte APK auf GitHub: Installationen aus F-Droid und von GitHub lassen sich gegenseitig aktualisieren
