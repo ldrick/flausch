@@ -5,8 +5,7 @@ Flausch is an Android crochet app (projects made of parts with their own row cou
 development and checks happen with `cargo run`. APKs are built with `cargo-apk`. Only Android is a release target;
 there is no iOS.
 
-This file is the single source of truth for coding agents. `CLAUDE.md` and `.github/copilot-instructions.md`
-point here.
+This file is the single source of truth for coding agents. Copilot reads it directly; `CLAUDE.md` points here.
 
 ## Commands
 
