@@ -73,7 +73,7 @@ ui/
   app.slint           root window App: page switch, dialogs, notice, Back key, safe-area insets
   store.slint         Store global = the Rust↔UI contract (state properties, enums, structs, callbacks)
   theme.slint         Theme global: colors (light/dark), sizes, radii, fonts
-  components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Field, Segmented, Switch…)
+  components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Sheet, Field, Segmented, Switch…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages)
   icons/              SVG icons
@@ -92,8 +92,12 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   in Slint minimal.
 - Domain: a `Project` has a name, any number of `Part`s (e.g. head, legs) and an optional PDF. Each part has its
   own row counter and an optional row goal. `active_part` is the part opened last; the counter in the PDF view
-  counts it (switchable there, and expandable to a large counter: `Store.counter-expanded`, Back collapses it),
-  and the project list shows it. Adding a part makes it active but stays on the project screen. The PDF view has a
+  counts it (switchable there, and expandable to a large counter: `Store.counter-expanded`, Back collapses it;
+  below the page in portrait, beside it in landscape),
+  and the project list shows it. Adding a part makes it active but stays on the project screen. The "New project" form also sets status, parts,
+  notes and the PDF (picked into `pdfs/0-….pdf` and kept in `Controller::new_pdf`, the parts in `Controller::new_parts`
+  until Create; Back or cancel drops both). A part typed in but not added yet is added on Create; the first part is
+  active. The PDF view has a
   movable reading line (`Pdf::lines`: fraction of the page height per page, `show_line` per PDF; its color is
   `Settings::line_color` → `Theme.line-color()`). At zoom 1, swiping left or right turns the page
   (`SwipeGestureHandler` around the page's `Flickable`); zoomed in, a drag moves the view. List progress sums all
@@ -154,6 +158,9 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
 - Principles: offline and local (no account, no server, no internet access, no permissions; data stays in the app
   directory) and usable with one hand (large touch targets, little text, nothing resets by accident). Open tasks
   live in GitHub Issues, grouped by milestone.
+- No new modals: on a phone they collide with the keyboard and landscape. New screens and forms are full-screen
+  pages (`Sheet` for input) or inline controls. The few existing `Dialog`s for short questions (delete?, reset,
+  sort, pick part) are legacy; don't add new ones.
 - Design: soft, light and minimalist (warm off-white background, white cards, soft pink accent, pill buttons). Use
   colors and sizes from `Theme` only, never hard-coded colors and not `Palette`. `Theme.dark` follows the
   appearance setting (system, light, dark). The color scheme isn't final, so keep it centralized in
@@ -203,8 +210,13 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   Proxy that consumes them while enabled and calls `onVolumeKey` on the first key down.
 - The status bar icon color follows `Theme.dark` (`Store.dark-changed` → `platform::set_dark_theme` →
   `FlauschHelper.setLightSystemBars`).
-- Pages are inset by `safe-area-insets`. Dialogs and the scrim cover the whole window. `App` copies the
-  on-screen keyboard height into the `Keyboard` global, and `Dialog` moves up so the keyboard never covers it.
+- Text input (new project, rename, part, notes) happens on full-screen `Sheet`s (top bar with Back and a small
+  confirm pill), not in dialogs: a dialog doesn't fit above the keyboard in landscape. `Dialog` remains only for the
+  existing short questions (see UI conventions). Pages and sheets are inset by `safe-area-insets`; dialogs and the scrim cover the whole
+  window. `App` copies the on-screen keyboard height into the `Keyboard` global, and a sheet's fields scroll above
+  the keyboard (Slint keeps the focused field in view).
+- `Field.focus-input()` puts the cursor at the end instead of selecting everything: Gboard's Enter replaces a
+  selection, which erased the name when jumping to the next field.
 - Slint shows Android's cursor handles whenever the last touch was a tap, also when a dialog focuses a field from
   code. `Field.focus-input()` therefore calls `Store.hide-text-handles()` → `FlauschHelper.hideTextHandles`, which
   sends the unchanged text through Slint's `SlintAndroidJavaHelper.updateText` (reflection). Tapping or selecting
@@ -227,8 +239,8 @@ Slint's Android backend has no accessibility support, so Flausch brings its own 
 - Android can't draw the focus frame over the native surface, so Java reports focus (`onA11yFocus`) and
   `App` draws it from `Store.a11y-focus` in `Theme.a11y-focus`.
 - What the UI needs: `accessible-role` and `accessible-label` on every control (Text and Image nodes are folded
-  into the label of the smallest control that contains them). Dialog cards carry `accessible-id: "dialog"` so
-  only the dialog is exposed while it is open. Notices use `accessible-live-region` and are announced.
+  into the label of the smallest control that contains them). Dialog cards and sheets carry
+  `accessible-id: "dialog"` so only the dialog is exposed while it is open. Notices use `accessible-live-region` and are announced.
 - Testing: `adb shell input` bypasses touch exploration. On the emulator, real touches go through the console:
   `adb emu event mouse X Y 0 1` (down) / `… 0 0` (up); hold ~1 s to explore, two quick taps to double tap.
   `uiautomator dump` shows the nodes (it pauses TalkBack, which is why the bridge checks
@@ -244,7 +256,8 @@ Slint's Android backend has no accessibility support, so Flausch brings its own 
 - `tests/ui.rs` is black-box: `flausch::start`/`stop`, then `ElementHandle::find_by_accessible_label` and
   `invoke_accessible_default_action`/`set_accessible_value`, the same labels TalkBack uses. New UI features
   should get a flow there; they need an `accessible-label` anyway. Call `settle()` after changes so `changed`
-  handlers run and `if` elements appear. Two Back presses within 300 ms count as one, so `go_back` waits.
+  handlers run and `if` elements appear. Elements scrolled out of view are
+  not found; enlarge the window (`app.window().set_size`) for long forms. Two Back presses within 300 ms count as one, so `go_back` waits.
 - The element tree API needs Slint debug info, so `build.rs` always enables it.
 - Never open a file dialog in tests (`pick_pdf`, `import_backup`, `export_backup`).
 

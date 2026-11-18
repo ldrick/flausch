@@ -1,9 +1,9 @@
 import { Palette } from "std-widgets.slint";
 import { Theme, Appearance, LineColor } from "theme.slint";
 import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm } from "store.slint";
-import { Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, TextArea } from "components.slint";
+import { Card, Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, Segmented, Sheet, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
-import { ProjectPage } from "pages/project.slint";
+import { PatternCard, ProjectPage, SectionTitle } from "pages/project.slint";
 import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
@@ -64,12 +64,78 @@ component SortDialog inherits Dialog {
     }
 }
 
-component ProjectDialog inherits Dialog {
+// The parts added in the new project form.
+component NewParts inherits VerticalLayout {
+    spacing: 16px;
+
+    for part[index] in Store.new-parts: Card {
+        height: 64px;
+        accessible-role: groupbox;
+        accessible-label: part.name;
+
+        HorizontalLayout {
+            padding-left: 18px;
+            padding-right: 8px;
+            spacing: 8px;
+
+            VerticalLayout {
+                alignment: center;
+                horizontal-stretch: 1;
+                Text {
+                    text: part.name;
+                    color: Theme.text;
+                    font-size: Theme.font-body;
+                    font-weight: 600;
+                    overflow: elide;
+                }
+                if part.rows != "" || part.quantity != "": Text {
+                    text: part.rows == "" ? @tr("{} times", part.quantity) : part.quantity == "" ? @tr("{n} row" | "{n} rows" % part.rows.to-float()) : @tr("{n} row, {} times" | "{n} rows, {} times" % part.rows.to-float(), part.quantity);
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    overflow: elide;
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("icons/close.svg");
+                    label: @tr("Remove {}", part.name);
+                    clicked => { Store.remove-new-part(index); }
+                }
+            }
+        }
+    }
+}
+
+component ProjectDialog inherits Sheet {
     in property <bool> editing;
     callback done();
 
+    property <ProjectStatus> status: ProjectStatus.active;
+    property <string> notes;
+    property <string> part-name;
+    property <string> part-rows;
+    property <string> part-quantity;
+
     title: root.editing ? @tr("Rename project") : @tr("New project");
-    dismissed => { root.done(); }
+    subtitle: root.editing ? Store.current.name : "";
+    confirm-text: root.editing ? @tr("Save") : @tr("Create");
+    confirm-enabled: !name.text.is-empty;
+    cancel => {
+        Store.discard-new-project();
+        root.done();
+    }
+    confirm => { root.submit(); }
+
+    function add-part() {
+        if root.part-name == "" {
+            return;
+        }
+        Store.add-new-part({ name: root.part-name, rows: root.part-rows, quantity: root.part-quantity });
+        root.part-name = "";
+        root.part-rows = "";
+        root.part-quantity = "";
+    }
 
     function submit() {
         if name.text.is-empty {
@@ -78,7 +144,9 @@ component ProjectDialog inherits Dialog {
         if root.editing {
             Store.edit-project(name.text);
         } else {
-            Store.create-project(name.text);
+            // A part typed in but not added yet counts, too.
+            root.add-part();
+            Store.create-project({ name: name.text, status: root.status, notes: root.notes });
         }
         root.done();
     }
@@ -86,6 +154,9 @@ component ProjectDialog inherits Dialog {
     init => {
         if root.editing {
             name.text = Store.current.name;
+        } else {
+            // A PDF or parts left over from a form that closed some other way.
+            Store.discard-new-project();
         }
         name.focus-input();
     }
@@ -95,20 +166,99 @@ component ProjectDialog inherits Dialog {
         placeholder: @tr("Name, e.g. Bunny");
         accepted => { root.submit(); }
     }
-    DialogButtons {
-        confirm-text: root.editing ? @tr("Save") : @tr("Create");
-        confirm-enabled: !name.text.is-empty;
-        cancel => { root.done(); }
-        confirm => { root.submit(); }
+
+    // When creating a project, everything else from the project screen, too.
+    if !root.editing: VerticalLayout {
+        spacing: 16px;
+
+        SectionTitle {
+            text: @tr("Status");
+        }
+        Segmented {
+            options: [{ label: @tr("Planned") }, { label: @tr("In progress") }, { label: @tr("Paused") }, { label: @tr("Finished") }];
+            selected: root.status == ProjectStatus.planned ? 0 : root.status == ProjectStatus.paused ? 2 : root.status == ProjectStatus.finished ? 3 : 1;
+            select(index) => {
+                root.status = index == 0 ? ProjectStatus.planned : index == 2 ? ProjectStatus.paused : index == 3 ? ProjectStatus.finished : ProjectStatus.active;
+            }
+        }
+        SectionTitle {
+            text: @tr("Parts");
+        }
+        if Store.new-parts.length > 0: NewParts { }
+        part-field := Field {
+            label: @tr("Part");
+            placeholder: @tr("Part, e.g. Head");
+            text <=> root.part-name;
+            accepted => { part-rows.focus-input(); }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            part-rows := Field {
+                label: @tr("Rows");
+                placeholder: @tr("Rows");
+                input-type: InputType.number;
+                text <=> root.part-rows;
+                accepted => { part-quantity.focus-input(); }
+            }
+            part-quantity := Field {
+                label: @tr("How many");
+                placeholder: @tr("How many");
+                input-type: InputType.number;
+                text <=> root.part-quantity;
+                accepted => {
+                    root.add-part();
+                    part-field.focus-input();
+                }
+            }
+        }
+        PillButton {
+            kind: ButtonKind.secondary;
+            text: @tr("Add part");
+            icon: @image-url("icons/plus.svg");
+            has-icon: true;
+            enabled: root.part-name != "";
+            clicked => {
+                root.add-part();
+                part-field.focus-input();
+            }
+        }
+        SectionTitle {
+            text: @tr("Pattern");
+        }
+        if Store.new-pdf-title == "": PillButton {
+            kind: ButtonKind.secondary;
+            text: @tr("Add PDF pattern");
+            icon: @image-url("icons/file.svg");
+            has-icon: true;
+            clicked => { Store.pick-new-pdf(); }
+        }
+        if Store.new-pdf-title != "": PatternCard {
+            draft: true;
+        }
+        SectionTitle {
+            text: @tr("Notes");
+        }
+        TextArea {
+            height: 160px;
+            text <=> root.notes;
+            label: @tr("Notes");
+            placeholder: @tr("Yarn, hook size, changes…");
+        }
     }
 }
 
-component PartDialog inherits Dialog {
+component PartDialog inherits Sheet {
     in property <bool> editing;
     callback done();
 
     title: root.editing ? @tr("Edit part") : @tr("New part");
-    dismissed => { root.done(); }
+    subtitle: Store.current.name;
+    confirm-text: root.editing ? @tr("Save") : @tr("Add");
+    confirm-enabled: !name.text.is-empty;
+    delete-label: root.editing ? @tr("Delete part") : "";
+    cancel => { root.done(); }
+    confirm => { root.submit(); }
+    delete => { Store.dialog = DialogKind.delete-part; }
 
     function submit() {
         if name.text.is-empty {
@@ -153,31 +303,19 @@ component PartDialog inherits Dialog {
         input-type: InputType.number;
         accepted => { root.submit(); }
     }
-    HorizontalLayout {
-        if root.editing: VerticalLayout {
-            alignment: end;
-            IconButton {
-                icon: @image-url("icons/trash.svg");
-                tint: Theme.danger;
-                label: @tr("Delete part");
-                clicked => { Store.dialog = DialogKind.delete-part; }
-            }
-        }
-        DialogButtons {
-            horizontal-stretch: 1;
-            confirm-text: root.editing ? @tr("Save") : @tr("Add");
-            confirm-enabled: !name.text.is-empty;
-            cancel => { root.done(); }
-            confirm => { root.submit(); }
-        }
-    }
 }
 
-component NotesDialog inherits Dialog {
+component NotesDialog inherits Sheet {
     callback done();
 
     title: @tr("Notes");
-    dismissed => { root.done(); }
+    subtitle: Store.current.name;
+    confirm-text: @tr("Save");
+    cancel => { root.done(); }
+    confirm => {
+        Store.set-notes(notes.text);
+        root.done();
+    }
 
     init => {
         notes.text = Store.current.notes;
@@ -185,16 +323,10 @@ component NotesDialog inherits Dialog {
     }
 
     notes := TextArea {
+        // Fills the room above the keyboard.
+        height: max(120px, root.body-height);
         label: @tr("Notes");
         placeholder: @tr("Yarn, hook size, changes…");
-    }
-    DialogButtons {
-        confirm-text: @tr("Save");
-        cancel => { root.done(); }
-        confirm => {
-            Store.set-notes(notes.text);
-            root.done();
-        }
     }
 }
 
@@ -270,7 +402,7 @@ export component App inherits Window {
             reject
         }
 
-        // Pages stay clear of the status and navigation bars; dialogs cover the whole window.
+        // Pages and forms stay clear of the status and navigation bars; dialogs cover the whole window.
         Rectangle {
             x: root.safe-area-insets.left;
             y: root.safe-area-insets.top;
@@ -285,6 +417,22 @@ export component App inherits Window {
             if Store.screen == Screen.about: AboutPage { }
             if Store.screen == Screen.changelog: ChangelogPage { }
             if Store.screen == Screen.donate: DonatePage { }
+
+            // Text input gets a full screen, like a page.
+            if Store.dialog == DialogKind.create || Store.dialog == DialogKind.edit: ProjectDialog {
+                editing: Store.dialog == DialogKind.edit;
+                bottom-inset: root.safe-area-insets.bottom;
+                done => { root.close-dialog(); }
+            }
+            if Store.dialog == DialogKind.add-part || Store.dialog == DialogKind.edit-part: PartDialog {
+                editing: Store.dialog == DialogKind.edit-part;
+                bottom-inset: root.safe-area-insets.bottom;
+                done => { root.close-dialog(); }
+            }
+            if Store.dialog == DialogKind.notes: NotesDialog {
+                bottom-inset: root.safe-area-insets.bottom;
+                done => { root.close-dialog(); }
+            }
 
             if Store.notice != Notice.none: Rectangle {
                 x: (parent.width - self.width) / 2;
@@ -322,11 +470,6 @@ export component App inherits Window {
             }
         }
 
-        if Store.dialog == DialogKind.create || Store.dialog == DialogKind.edit: ProjectDialog {
-            editing: Store.dialog == DialogKind.edit;
-            done => { root.close-dialog(); }
-        }
-
         if Store.dialog == DialogKind.delete: Dialog {
             title: @tr("Delete project?");
             message: @tr("“{}” and its pattern will be removed. This cannot be undone.", Store.current.name);
@@ -334,22 +477,12 @@ export component App inherits Window {
 
             DialogButtons {
                 confirm-text: @tr("Delete");
-                destructive: true;
                 cancel => { root.close-dialog(); }
                 confirm => {
                     root.close-dialog();
                     Store.delete-project();
                 }
             }
-        }
-
-        if Store.dialog == DialogKind.add-part || Store.dialog == DialogKind.edit-part: PartDialog {
-            editing: Store.dialog == DialogKind.edit-part;
-            done => { root.close-dialog(); }
-        }
-
-        if Store.dialog == DialogKind.notes: NotesDialog {
-            done => { root.close-dialog(); }
         }
 
         if Store.dialog == DialogKind.incoming-pdf: Dialog {
@@ -415,7 +548,6 @@ export component App inherits Window {
 
             DialogButtons {
                 confirm-text: @tr("Delete");
-                destructive: true;
                 cancel => { root.close-dialog(); }
                 confirm => {
                     root.close-dialog();
@@ -516,7 +648,6 @@ export component App inherits Window {
 
             DialogButtons {
                 confirm-text: @tr("Remove");
-                destructive: true;
                 cancel => { root.close-dialog(); }
                 confirm => {
                     root.close-dialog();
@@ -532,7 +663,6 @@ export component App inherits Window {
 
             DialogButtons {
                 confirm-text: @tr("Restore");
-                destructive: true;
                 cancel => { root.close-dialog(); }
                 confirm => {
                     root.close-dialog();

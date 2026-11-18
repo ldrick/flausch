@@ -53,6 +53,13 @@ export struct PartForm {
     quantity: string,
 }
 
+// The fields of the new project form.
+export struct ProjectForm {
+    name: string,
+    status: ProjectStatus,
+    notes: string,
+}
+
 export struct ProjectItem {
     id: int,
     name: string,
@@ -126,6 +133,10 @@ export global Store {
     in property <[PartItem]> parts;
     // The part shown on the part screen; same as `current.active`.
     in property <PartItem> part;
+    // Title of the PDF picked in the new project form; empty if none.
+    in property <string> new-pdf-title;
+    // Parts added in the new project form.
+    in property <[PartForm]> new-parts;
     // The part the edit and delete dialogs act on; set before opening them.
     in-out property <PartItem> edited;
     in property <Screen> screen: Screen.list;
@@ -160,7 +171,7 @@ export global Store {
     // Opens a web page in the browser.
     callback open-url(string);
     callback open-project(int);
-    callback create-project(string);
+    callback create-project(ProjectForm);
     callback edit-project(string);
     callback delete-project();
     callback set-status(ProjectStatus);
@@ -194,6 +205,13 @@ export global Store {
     callback next-piece();
 
     callback pick-pdf();
+    // The PDF for the new project form; it is kept until the project is created or the form closes.
+    callback pick-new-pdf();
+    callback discard-new-pdf();
+    callback add-new-part(PartForm);
+    callback remove-new-part(int);
+    // Drops the PDF and the parts of the new project form.
+    callback discard-new-project();
     callback remove-pdf();
     callback open-pdf();
     // page, zoom, scroll-x, scroll-y, width of the page view in physical pixels

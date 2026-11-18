@@ -67,6 +67,8 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         screen_on: None,
         volume_keys: None,
         incoming: None,
+        new_pdf: None,
+        new_parts: Vec::new(),
         last_back: None,
     };
     CONTROLLER.with_borrow_mut(|c| *c = Some(controller));
@@ -159,8 +161,8 @@ fn connect(app: &App) {
     store.on_open_project(|id| {
         with(|c| c.open_project(id as u64));
     });
-    store.on_create_project(|name| {
-        with(|c| c.create_project(&name));
+    store.on_create_project(|form| {
+        with(|c| c.create_project(&form));
     });
     store.on_edit_project(|name| {
         with(|c| c.edit_project(&name));
@@ -222,6 +224,21 @@ fn connect(app: &App) {
 fn connect_pdf_and_settings(store: &Store) {
     store.on_pick_pdf(|| {
         with(Controller::pick_pdf);
+    });
+    store.on_pick_new_pdf(|| {
+        with(Controller::pick_new_pdf);
+    });
+    store.on_discard_new_pdf(|| {
+        with(Controller::discard_new_pdf);
+    });
+    store.on_add_new_part(|form| {
+        with(|c| c.add_new_part(form));
+    });
+    store.on_remove_new_part(|index| {
+        with(|c| c.remove_new_part(index));
+    });
+    store.on_discard_new_project(|| {
+        with(Controller::discard_new_project);
     });
     store.on_remove_pdf(|| {
         with(Controller::remove_pdf);
@@ -306,6 +323,10 @@ struct Controller {
     volume_keys: Option<bool>,
     /// Title of the PDF from another app that the incoming dialog asks about.
     incoming: Option<String>,
+    /// File and title of the PDF picked in the new project form.
+    new_pdf: Option<(String, String)>,
+    /// Parts added in the new project form.
+    new_parts: Vec<PartForm>,
     last_back: Option<Instant>,
 }
 
@@ -445,8 +466,10 @@ impl Controller {
         let app = self.app();
         let store = app.global::<Store>();
         if store.get_dialog() != DialogKind::None {
-            if store.get_dialog() == DialogKind::IncomingPdf {
-                self.discard_incoming();
+            match store.get_dialog() {
+                DialogKind::IncomingPdf => self.discard_incoming(),
+                DialogKind::Create => self.discard_new_project(),
+                _ => {}
             }
             store.set_dialog(DialogKind::None);
             self.last_back = Some(now);
@@ -529,12 +552,33 @@ impl Controller {
         self.open_pdf();
     }
 
-    fn create_project(&mut self, name: &str) {
-        if name.trim().is_empty() {
+    fn create_project(&mut self, form: &ProjectForm) {
+        if form.name.trim().is_empty() {
             return;
         }
-        let id = self.library.create(name, now());
+        let now = now();
+        let id = self.library.create(&form.name, now);
+        self.library.set_status(id, form.status.into(), now);
+        self.library.set_notes(id, &form.notes, now);
+        let pdf = self.new_pdf.take();
+        if let Some((file, title)) = &pdf {
+            let project = self.library.touch(id, now).expect("just created");
+            project.pdf = Some(Pdf::new(file.clone(), title.clone()));
+        }
+        let parts = std::mem::take(&mut self.new_parts);
+        let first = parts
+            .iter()
+            .filter_map(|form| self.library.add_part(id, &part_spec(form), now))
+            .reduce(|first, _| first);
+        // Work starts with the first part.
+        if let Some(first) = first {
+            self.library.activate_part(id, first);
+        }
+        self.discard_new_project();
         self.save();
+        if let Some((file, _)) = &pdf {
+            self.create_cover(file);
+        }
         self.open_project(id);
     }
 
@@ -698,17 +742,19 @@ impl Controller {
         });
     }
 
-    fn pdf_picked(&mut self, id: u64, file: &str, result: PickResult) {
+    /// Checks a picked PDF and returns its title, or removes the file and tells why not.
+    fn checked_pdf(&mut self, file: &str, result: PickResult) -> Option<String> {
         let title = match result {
             PickResult::Picked { title } => title,
             PickResult::Cancelled => {
                 self.storage.remove_pdf(file);
-                return;
+                return None;
             }
             PickResult::Failed(e) => {
                 eprintln!("flausch: PDF import failed: {e}");
                 self.storage.remove_pdf(file);
-                return self.notify(Notice::PdfImportFailed);
+                self.notify(Notice::PdfImportFailed);
+                return None;
             }
         };
         if let Err(e) = platform::page_count(&self.storage.pdf_path(file)).and_then(|n| match n {
@@ -717,8 +763,16 @@ impl Controller {
         }) {
             eprintln!("flausch: {title} is not a usable PDF: {e}");
             self.storage.remove_pdf(file);
-            return self.notify(Notice::PdfInvalid);
+            self.notify(Notice::PdfInvalid);
+            return None;
         }
+        Some(title)
+    }
+
+    fn pdf_picked(&mut self, id: u64, file: &str, result: PickResult) {
+        let Some(title) = self.checked_pdf(file, result) else {
+            return;
+        };
         let Some(project) = self.library.touch(id, now()) else {
             self.storage.remove_pdf(file);
             return;
@@ -729,6 +783,67 @@ impl Controller {
         self.save();
         self.refresh();
         self.create_cover(file);
+    }
+
+    fn pick_new_pdf(&mut self) {
+        // Project ids start at 1, so 0 marks a PDF without a project yet.
+        let file = Storage::new_pdf_file(0, now_nanos());
+        let dest = self.storage.pdf_path(&file);
+        platform::pick_document(DocumentKind::Pdf, dest, move |result| {
+            let _ = slint::invoke_from_event_loop(move || {
+                with(|c| c.new_pdf_picked(&file, result));
+            });
+        });
+    }
+
+    fn new_pdf_picked(&mut self, file: &str, result: PickResult) {
+        let Some(title) = self.checked_pdf(file, result) else {
+            return;
+        };
+        let app = self.app();
+        let store = app.global::<Store>();
+        if store.get_dialog() != DialogKind::Create {
+            return self.storage.remove_pdf(file);
+        }
+        self.discard_new_pdf();
+        store.set_new_pdf_title(title.as_str().into());
+        self.new_pdf = Some((file.to_owned(), title));
+    }
+
+    fn discard_new_pdf(&mut self) {
+        if let Some((file, _)) = self.new_pdf.take() {
+            self.storage.remove_pdf(&file);
+        }
+        self.app().global::<Store>().set_new_pdf_title("".into());
+    }
+
+    fn add_new_part(&mut self, form: PartForm) {
+        if form.name.trim().is_empty() {
+            return;
+        }
+        self.new_parts.push(form);
+        self.show_new_parts();
+    }
+
+    fn remove_new_part(&mut self, index: i32) {
+        if let Ok(index) = usize::try_from(index)
+            && index < self.new_parts.len()
+        {
+            self.new_parts.remove(index);
+            self.show_new_parts();
+        }
+    }
+
+    fn show_new_parts(&self) {
+        self.app()
+            .global::<Store>()
+            .set_new_parts(ModelRc::new(VecModel::from(self.new_parts.clone())));
+    }
+
+    fn discard_new_project(&mut self) {
+        self.discard_new_pdf();
+        self.new_parts.clear();
+        self.show_new_parts();
     }
 
     /// Asks what to do with a PDF that another app opened with or shared to Flausch.

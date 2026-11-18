@@ -36,7 +36,7 @@ export component IconButton inherits Rectangle {
     }
 }
 
-export enum ButtonKind { primary, secondary, danger, quiet }
+export enum ButtonKind { primary, secondary, quiet }
 
 export component PillButton inherits Rectangle {
     in property <string> text;
@@ -44,15 +44,16 @@ export component PillButton inherits Rectangle {
     in property <bool> has-icon: false;
     in property <ButtonKind> kind: ButtonKind.primary;
     in property <bool> enabled: true;
+    // Compact, e.g. in a top bar.
+    in property <bool> small;
     callback clicked();
 
-    height: Theme.touch + 4px;
-    min-width: 96px;
+    height: root.small ? 40px : Theme.touch + 4px;
+    min-width: root.small ? 0 : 96px;
     horizontal-stretch: 0;
     border-radius: self.height / 2;
     background: {
         if root.kind == ButtonKind.primary { return touch.pressed ? Theme.accent-pressed : Theme.accent; }
-        if root.kind == ButtonKind.danger { return touch.pressed ? Theme.danger.darker(0.1) : Theme.danger; }
         if root.kind == ButtonKind.secondary { return touch.pressed ? Theme.surface-muted : Theme.surface; }
         return touch.pressed ? Theme.surface-muted : transparent;
     }
@@ -63,11 +64,11 @@ export component PillButton inherits Rectangle {
     accessible-label: root.text;
     accessible-action-default => { root.clicked(); }
 
-    property <color> content-color: root.kind == ButtonKind.primary ? Theme.on-accent : root.kind == ButtonKind.danger ? Theme.surface : root.kind == ButtonKind.quiet ? Theme.accent-pressed : Theme.text;
+    property <color> content-color: root.kind == ButtonKind.primary ? Theme.on-accent : root.kind == ButtonKind.quiet ? Theme.accent-pressed : Theme.text;
 
     HorizontalLayout {
-        padding-left: 22px;
-        padding-right: 22px;
+        padding-left: root.small ? 16px : 22px;
+        padding-right: root.small ? 16px : 22px;
         spacing: 8px;
         alignment: center;
 
@@ -130,7 +131,8 @@ export component Field inherits Rectangle {
 
     public function focus-input() {
         input.focus();
-        input.select-all();
+        // Cursor at the end, no select-all: the keyboard's Enter would replace a selection.
+        input.set-selection-offsets(2147483647, 2147483647);
         Store.hide-text-handles();
     }
 
@@ -361,7 +363,8 @@ export global Keyboard {
     in-out property <length> height;
 }
 
-// Modal sheet with a dimmed backdrop. Tapping the backdrop dismisses it.
+// Modal sheet with a dimmed backdrop for short questions without text input. Tapping the backdrop
+// dismisses it.
 export component Dialog inherits Rectangle {
     in property <string> title;
     in property <string> message;
@@ -375,11 +378,10 @@ export component Dialog inherits Rectangle {
 
     card := Rectangle {
         width: min(root.width - 40px, 380px);
-        height: layout.preferred-height;
+        // Scrolls if it doesn't fit, e.g. in landscape.
+        height: min(layout.preferred-height, root.height - 64px);
         x: (root.width - self.width) / 2;
-        // Centered, but moved up so the on-screen keyboard never covers it.
-        y: max(32px, min((root.height - self.height) / 2, root.height - Keyboard.height - self.height - 16px));
-        animate y { duration: Theme.animation; easing: ease-out; }
+        y: (root.height - self.height) / 2;
         background: Theme.surface;
         border-radius: Theme.radius-large;
         drop-shadow-offset-y: Theme.shadow-offset;
@@ -391,24 +393,30 @@ export component Dialog inherits Rectangle {
         // Swallow taps so they don't reach the backdrop.
         TouchArea { }
 
-        layout := VerticalLayout {
-            padding: 24px;
-            spacing: 16px;
+        Flickable {
+            content-height: layout.preferred-height;
+            interactive: layout.preferred-height > self.height;
 
-            Text {
-                text: root.title;
-                color: Theme.text;
-                font-size: Theme.font-title;
-                font-weight: 600;
-                wrap: word-wrap;
+            layout := VerticalLayout {
+                width: parent.width;
+                padding: 24px;
+                spacing: 16px;
+
+                Text {
+                    text: root.title;
+                    color: Theme.text;
+                    font-size: Theme.font-title;
+                    font-weight: 600;
+                    wrap: word-wrap;
+                }
+                if root.message != "": Text {
+                    text: root.message;
+                    color: Theme.text-muted;
+                    font-size: Theme.font-body;
+                    wrap: word-wrap;
+                }
+                @children
             }
-            if root.message != "": Text {
-                text: root.message;
-                color: Theme.text-muted;
-                font-size: Theme.font-body;
-                wrap: word-wrap;
-            }
-            @children
         }
     }
 }
@@ -417,7 +425,6 @@ export component Dialog inherits Rectangle {
 export component DialogButtons inherits HorizontalLayout {
     in property <string> confirm-text;
     in property <bool> confirm-enabled: true;
-    in property <bool> destructive: false;
     callback cancel();
     callback confirm();
 
@@ -432,7 +439,7 @@ export component DialogButtons inherits HorizontalLayout {
     }
     PillButton {
         text: root.confirm-text;
-        kind: root.destructive ? ButtonKind.danger : ButtonKind.primary;
+        kind: ButtonKind.primary;
         enabled: root.confirm-enabled;
         clicked => { root.confirm(); }
     }
@@ -479,4 +486,80 @@ export component TopBar inherits HorizontalLayout {
         }
     }
     @children
+}
+
+// Full-screen form for text input (project name, part, notes): Back discards, the small button at the top
+// right confirms. The fields scroll above the on-screen keyboard; Slint keeps the focused one in view.
+export component Sheet inherits Rectangle {
+    in property <string> title;
+    // What is being edited, e.g. the project of a part.
+    in property <string> subtitle;
+    in property <string> confirm-text;
+    in property <bool> confirm-enabled: true;
+    // Shows a delete button in the top bar.
+    in property <string> delete-label;
+    // Distance from the sheet's bottom edge to the bottom of the window (the navigation bar), which the
+    // keyboard covers, too.
+    in property <length> bottom-inset;
+    // Visible height for the fields.
+    out property <length> body-height: body.height - 2 * Theme.padding;
+    callback cancel();
+    callback confirm();
+    callback delete();
+
+    background: Theme.background;
+    // The TalkBack bridge (src/a11y.rs) only exposes what lies inside the sheet.
+    accessible-role: groupbox;
+    accessible-id: "dialog";
+
+    // Swallow taps so they don't reach the page below.
+    TouchArea { }
+
+    VerticalLayout {
+        TopBar {
+            title: root.title;
+            subtitle: root.subtitle;
+            padding-right: 16px;
+            back => { root.cancel(); }
+
+            if root.delete-label != "": VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("icons/trash.svg");
+                    label: root.delete-label;
+                    clicked => { root.delete(); }
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                PillButton {
+                    small: true;
+                    text: root.confirm-text;
+                    enabled: root.confirm-enabled;
+                    clicked => { root.confirm(); }
+                }
+            }
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+
+            body := Flickable {
+                y: 0;
+                height: parent.height - max(0, Keyboard.height - root.bottom-inset);
+                content-height: max(self.height, fields.preferred-height);
+                interactive: fields.preferred-height > self.height;
+
+                fields := VerticalLayout {
+                    // Narrow enough to read in landscape.
+                    width: min(parent.width, 600px);
+                    x: (parent.width - self.width) / 2;
+                    padding: Theme.padding;
+                    spacing: 16px;
+                    alignment: start;
+                    @children
+                }
+            }
+        }
+    }
 }

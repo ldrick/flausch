@@ -61,10 +61,33 @@ fn form(name: &str, rows: &str) -> PartForm {
     }
 }
 
+fn named(name: &str) -> ProjectForm {
+    ProjectForm {
+        name: name.into(),
+        status: ProjectStatus::Active,
+        ..ProjectForm::default()
+    }
+}
+
+/// Picks `bytes` as the PDF of the new project form, as the file picker would.
+fn pick_new(nanos: u128, bytes: &[u8]) -> String {
+    let file = Storage::new_pdf_file(0, nanos);
+    ctl(|c| {
+        std::fs::write(c.storage.pdf_path(&file), bytes).unwrap();
+        c.new_pdf_picked(
+            &file,
+            PickResult::Picked {
+                title: "pattern.pdf".into(),
+            },
+        );
+    });
+    file
+}
+
 /// Creates the project "Bunny" with the part "Head" (10 rows) and returns their ids.
 fn project_with_part() -> (u64, u64) {
     ctl(|c| {
-        c.create_project("Bunny");
+        c.create_project(&named("Bunny"));
         c.add_part(&form("Head", "10"));
         c.active_part().unwrap()
     })
@@ -105,7 +128,7 @@ fn rendered(serial: u64, page: u32, result: Result<(), &str>) -> pdf::Rendered {
 #[test]
 fn back_closes_a_dialog_before_leaving_the_screen() {
     let h = Harness::new();
-    ctl(|c| c.create_project("Bunny"));
+    ctl(|c| c.create_project(&named("Bunny")));
     assert_eq!(h.store().get_screen(), Screen::Project);
 
     h.store().set_dialog(DialogKind::Delete);
@@ -116,6 +139,64 @@ fn back_closes_a_dialog_before_leaving_the_screen() {
     assert!(back());
     assert_eq!(h.store().get_screen(), Screen::List);
     assert!(!back(), "an unhandled Back on the list closes the app");
+}
+
+#[test]
+fn a_new_project_gets_status_notes_and_pattern() {
+    let h = Harness::new();
+    h.store().set_dialog(DialogKind::Create);
+    let first = pick_new(1, PATTERN);
+    let file = pick_new(2, PATTERN);
+    assert!(!pdf_path(&first).exists(), "a replaced pick is deleted");
+    assert_eq!(h.store().get_new_pdf_title(), "pattern.pdf");
+    ctl(|c| {
+        c.add_new_part(form("Head", "10"));
+        c.add_new_part(form("Ear", ""));
+        c.add_new_part(form("Arm", "8"));
+        c.remove_new_part(1);
+    });
+    assert_eq!(h.store().get_new_parts().row_count(), 2);
+
+    ctl(|c| {
+        c.create_project(&ProjectForm {
+            name: "Bunny".into(),
+            status: ProjectStatus::Planned,
+            notes: "4 mm hook".into(),
+        });
+    });
+    assert_eq!(h.store().get_screen(), Screen::Project);
+    assert_eq!(h.store().get_new_pdf_title(), "");
+    assert_eq!(h.store().get_new_parts().row_count(), 0);
+    let saved = h.saved();
+    let project = saved.projects.first().unwrap();
+    let names: Vec<_> = project.parts.iter().map(|p| p.name.as_str()).collect();
+    assert_eq!(names, ["Head", "Arm"]);
+    assert_eq!(project.parts[0].row_goal, Some(10));
+    assert_eq!(project.active_part, Some(project.parts[0].id));
+    assert_eq!(project.status, model::Status::Planned);
+    assert_eq!(project.notes, "4 mm hook");
+    assert_eq!(project.pdf.as_ref().unwrap().file, file);
+    assert!(pdf_path(&file).exists());
+}
+
+#[test]
+fn closing_the_new_project_form_deletes_its_pattern() {
+    let h = Harness::new();
+    h.store().set_dialog(DialogKind::Create);
+    let file = pick_new(1, PATTERN);
+    ctl(|c| c.add_new_part(form("Head", "")));
+    assert!(back());
+    assert_eq!(h.store().get_new_parts().row_count(), 0);
+    assert_eq!(h.store().get_dialog(), DialogKind::None);
+    assert!(!pdf_path(&file).exists());
+    assert_eq!(h.store().get_new_pdf_title(), "");
+
+    let late = pick_new(2, PATTERN);
+    assert!(
+        !pdf_path(&late).exists(),
+        "a pick after closing the form is dropped"
+    );
+    assert_eq!(h.saved().projects.len(), 0);
 }
 
 #[test]
@@ -435,7 +516,7 @@ fn continue_opens_the_pattern_and_back_returns_to_the_list() {
     let (with_pdf, _) = project_with_part();
     import(with_pdf, 1, PATTERN);
     let without_pdf = ctl(|c| {
-        c.create_project("Scarf");
+        c.create_project(&named("Scarf"));
         c.current.unwrap()
     });
 
@@ -464,7 +545,7 @@ fn deleting_a_project_deletes_its_pattern() {
 #[test]
 fn restoring_a_backup_replaces_projects_and_settings() {
     let h = Harness::new();
-    ctl(|c| c.create_project("Old"));
+    ctl(|c| c.create_project(&named("Old")));
     let mut library = Library::default();
     library.create("From the backup", 1);
     let settings = Settings {
@@ -516,7 +597,7 @@ fn hand_over(h: &Harness, bytes: &[u8], title: &str) {
 fn a_part_made_four_times() {
     let h = Harness::new();
     ctl(|c| {
-        c.create_project("Bunny");
+        c.create_project(&named("Bunny"));
         c.add_part(&PartForm {
             quantity: "4".into(),
             ..form("Leg", "2")

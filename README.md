@@ -3,7 +3,7 @@
 # Flausch
 
 Row counter and pattern viewer for crocheting – simple, offline, free. *Flausch* is German for fluff (from
-*flauschig*, fluffy).
+*flauschig*, fluffy), pronounced /flaʊʃ/: "fl", then "ow" as in *now*, then "sh".
 
 ## Features
 

@@ -58,13 +58,21 @@ export component AboutPage inherits Rectangle {
                         spacing: 8px;
 
                         HorizontalLayout {
-                            spacing: 10px;
+                            spacing: 12px;
+                            alignment: start;
                             Text {
                                 text: "Flausch";
                                 color: Theme.accent;
                                 font-family: Theme.font-logo;
                                 font-size: 40px;
                                 vertical-alignment: center;
+                            }
+                            Text {
+                                text: "/flaʊʃ/";
+                                color: Theme.text-muted;
+                                font-size: Theme.font-body;
+                                vertical-alignment: center;
+                                accessible-role: none;
                             }
                             Text {
                                 text: Store.version;
@@ -75,7 +83,7 @@ export component AboutPage inherits Rectangle {
                             }
                         }
                         Text {
-                            text: @tr("A crochet companion. Flausch is German for fluff.");
+                            text: @tr("A crochet companion. Flausch is German for fluff and sounds like “fl”, then “ow” as in “now”, then “sh”.");
                             color: Theme.text-muted;
                             font-size: Theme.font-small;
                             wrap: word-wrap;

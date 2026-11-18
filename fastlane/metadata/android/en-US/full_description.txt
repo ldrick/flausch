@@ -1,4 +1,4 @@
-<p>Flausch keeps track of your crochet projects. The name is German for fluff (from <i>flauschig</i>, fluffy).</p>
+<p>Flausch keeps track of your crochet projects. The name is German for fluff (from <i>flauschig</i>, fluffy), pronounced /flaʊʃ/: “fl”, then “ow” as in <i>now</i>, then “sh”.</p>
 
 <p><b>Projects and parts</b></p>
 <ul>

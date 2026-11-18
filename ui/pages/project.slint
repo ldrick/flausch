@@ -5,14 +5,22 @@ import { Card, Icon, IconButton, PillButton, ButtonKind, ProgressBar, Segmented,
 export component PatternCard inherits Card {
     // Shows a button to remove the PDF from the project.
     in property <bool> removable: true;
+    // The PDF picked in the new project form, which can't be opened yet.
+    in property <bool> draft;
 
     height: 72px;
     background: touch.pressed ? Theme.surface-muted : Theme.surface;
     accessible-role: button;
-    accessible-label: @tr("Open pattern");
-    accessible-action-default => { Store.open-pdf(); }
+    accessible-label: root.draft ? Store.new-pdf-title : @tr("Open pattern");
+    accessible-enabled: !root.draft;
+    accessible-action-default => {
+        if !root.draft {
+            Store.open-pdf();
+        }
+    }
 
     touch := TouchArea {
+        enabled: !root.draft;
         clicked => { Store.open-pdf(); }
     }
 
@@ -48,7 +56,7 @@ export component PatternCard inherits Card {
                 font-size: Theme.font-small;
             }
             Text {
-                text: Store.current.pdf-title;
+                text: root.draft ? Store.new-pdf-title : Store.current.pdf-title;
                 color: Theme.text;
                 font-size: Theme.font-body;
                 overflow: elide;
@@ -60,13 +68,19 @@ export component PatternCard inherits Card {
                 icon: @image-url("../icons/close.svg");
                 tint: Theme.text-muted;
                 label: @tr("Remove pattern");
-                clicked => { Store.dialog = DialogKind.remove-pdf; }
+                clicked => {
+                    if root.draft {
+                        Store.discard-new-pdf();
+                    } else {
+                        Store.dialog = DialogKind.remove-pdf;
+                    }
+                }
             }
         }
     }
 }
 
-component SectionTitle inherits Text {
+export component SectionTitle inherits Text {
     color: Theme.text-muted;
     font-size: Theme.font-small;
     font-weight: 600;

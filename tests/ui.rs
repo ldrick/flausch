@@ -132,6 +132,33 @@ fn status_and_notes() {
 }
 
 #[test]
+fn a_new_project_starts_with_status_parts_and_notes() {
+    let (app, _dir) = fresh();
+    // Tall enough for the whole form: elements scrolled out of view can't be found.
+    app.window()
+        .set_size(slint::LogicalSize::new(412.0, 1600.0));
+    tap(&app, "New project");
+    type_into(&app, "Name", "Scarf");
+    tap(&app, "Planned");
+    type_into(&app, "Part", "Left half");
+    type_into(&app, "Rows", "120");
+    tap(&app, "Add part");
+    type_into(&app, "Part", "Fringe");
+    type_into(&app, "How many", "12");
+    type_into(&app, "Notes", "Blue yarn");
+    tap(&app, "Create");
+    assert_eq!(store(&app).get_screen(), Screen::Project);
+    let current = store(&app).get_current();
+    assert_eq!(current.status, flausch::ProjectStatus::Planned);
+    assert_eq!(current.notes, "Blue yarn");
+    let parts: Vec<_> = store(&app).get_parts().iter().collect();
+    assert_eq!(parts.len(), 2, "a part typed in but not added counts, too");
+    assert_eq!(parts[0].goal, 120);
+    assert_eq!(parts[1].quantity, 12);
+    assert_eq!(current.active.name, "Left half");
+}
+
+#[test]
 fn a_part_made_several_times() {
     let (app, _dir) = fresh();
     create_project(&app, "Bunny");
@@ -404,7 +431,7 @@ fn about_pages_show_the_app_and_the_changelog() {
     tap(&app, "Settings");
     tap(&app, "About Flausch");
     assert_eq!(store(&app).get_screen(), Screen::About);
-    let description = "A crochet companion. Flausch is German for fluff.";
+    let description = "A crochet companion. Flausch is German for fluff and sounds like “fl”, then “ow” as in “now”, then “sh”.";
     assert!(find(&app, AccessibleRole::Text, description).is_some());
     assert!(
         find(

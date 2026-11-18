@@ -405,6 +405,10 @@ msgid "No matching projects"
 msgstr "Keine passenden Projekte"
 
 #: ui/pages/pdf.slint:336 ui/pages/pdf.slint:344 ui/pages/pdf.slint:476
+msgctxt "LargeCounter"
+msgid "Choose part"
+msgstr "Teil wählen"
+
 msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
@@ -440,7 +444,7 @@ msgid "Enlarge counter"
 msgstr "Zähler vergrößern"
 
 #: ui/pages/pdf.slint:511
-msgctxt "PdfPage"
+msgctxt "LargeCounter"
 msgid "Shrink counter"
 msgstr "Zähler verkleinern"
 
@@ -832,7 +836,7 @@ msgstr "Über Flausch"
 
 #: ui/pages/about.slint:78
 msgctxt "AboutPage"
-msgid "A crochet companion. Flausch is German for fluff."
+msgid "A crochet companion. Flausch is German for fluff and sounds like “fl”, then “ow” as in “now”, then “sh”."
 msgstr "Dein Häkelbegleiter. Flausch kommt von flauschig."
 
 #: ui/pages/about.slint:108
@@ -951,3 +955,83 @@ msgstr "Nach unten verschieben"
 msgctxt "AboutPage"
 msgid "Logo font: Montez by Astigmatic, Apache License 2.0"
 msgstr "Logo-Schrift: Montez von Astigmatic, Apache-Lizenz 2.0"
+
+msgctxt "ProjectDialog"
+msgid "Add PDF pattern"
+msgstr "PDF-Anleitung hinzufügen"
+
+msgctxt "ProjectDialog"
+msgid "Finished"
+msgstr "Fertig"
+
+msgctxt "ProjectDialog"
+msgid "In progress"
+msgstr "In Arbeit"
+
+msgctxt "ProjectDialog"
+msgid "Notes"
+msgstr "Notizen"
+
+msgctxt "ProjectDialog"
+msgid "Pattern"
+msgstr "Anleitung"
+
+msgctxt "ProjectDialog"
+msgid "Paused"
+msgstr "Pausiert"
+
+msgctxt "ProjectDialog"
+msgid "Planned"
+msgstr "Geplant"
+
+msgctxt "ProjectDialog"
+msgid "Status"
+msgstr "Status"
+
+msgctxt "ProjectDialog"
+msgid "Yarn, hook size, changes…"
+msgstr "Garn, Nadelstärke, Änderungen…"
+
+msgctxt "NewParts"
+msgid "Remove {}"
+msgstr "{} entfernen"
+
+msgctxt "NewParts"
+msgid "{n} row"
+msgid_plural "{n} rows"
+msgstr[0] "{n} Reihe"
+msgstr[1] "{n} Reihen"
+
+msgctxt "NewParts"
+msgid "{n} row, {} times"
+msgid_plural "{n} rows, {} times"
+msgstr[0] "{n} Reihe, {}-mal"
+msgstr[1] "{n} Reihen, {}-mal"
+
+msgctxt "NewParts"
+msgid "{} times"
+msgstr "{}-mal"
+
+msgctxt "ProjectDialog"
+msgid "Add part"
+msgstr "Teil hinzufügen"
+
+msgctxt "ProjectDialog"
+msgid "How many"
+msgstr "Anzahl"
+
+msgctxt "ProjectDialog"
+msgid "Part"
+msgstr "Teil"
+
+msgctxt "ProjectDialog"
+msgid "Part, e.g. Head"
+msgstr "Teil, z. B. Kopf"
+
+msgctxt "ProjectDialog"
+msgid "Parts"
+msgstr "Teile"
+
+msgctxt "ProjectDialog"
+msgid "Rows"
+msgstr "Reihen"
