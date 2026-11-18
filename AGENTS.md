@@ -297,7 +297,8 @@ On the desktop under Wayland, `env -u WAYLAND_DISPLAY` forces X11 so you can tak
 
 ## Workflow
 
-`main` isn't protected yet (private repo), so these rules are a convention; follow them anyway.
+`main` is protected by a ruleset: changes only through a pull request (squash merge), the checks `fmt, clippy, test`
+and `cargo deny` must pass, no force push. Release tags `v*` can't be moved or deleted.
 
 - Don't commit unless asked. Never push to `main` directly: every change goes through a pull request.
 - One PR per topic. Small follow-ups (review feedback, a related fix) go into the open PR, not a new one.
