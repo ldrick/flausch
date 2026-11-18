@@ -2,13 +2,17 @@ name: Release
 
 # Every push to main updates the release PR "chore: release vX.Y.Z" on the branch release/next (or opens it once
 # there is a feat or fix to release). Changelogs edited in the PR are kept when main moves on. Merging the PR tags
-# the version, creates the GitHub release and attaches the signed APK. Run the workflow by hand to pick a version.
+# the version, creates the GitHub release and attaches the signed APK. Run the workflow by hand to pick a version,
+# or with `attach` to build the APK of an existing release again and attach it (e.g. after a failed upload).
 
 on:
   workflow_dispatch:
     inputs:
       version:
         description: Version (empty = next version from the commits since the last tag, 1.0.0 for the first)
+        required: false
+      attach:
+        description: Only build the APK of this existing release (e.g. 1.0.1) and attach it
         required: false
   push:
     branches: [main]
@@ -24,7 +28,8 @@ jobs:
   prepare:
     name: Update the release PR
     if: >-
-      github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore: release v')
+      (github.event_name == 'workflow_dispatch' && inputs.attach == '')
+      || (github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'chore: release v'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -78,7 +83,8 @@ jobs:
   publish:
     name: Tag, release and APK
     if: >-
-      github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore: release v')
+      (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore: release v'))
+      || (github.event_name == 'workflow_dispatch' && inputs.attach != '')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -88,9 +94,18 @@ jobs:
       KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.attach && format('v{0}', inputs.attach) || github.sha }}
       - name: Version
         id: version
+        env:
+          ATTACH: ${{ inputs.attach }}
         run: |
+          if [ -n "$ATTACH" ]; then
+            gh release view "v$ATTACH" > /dev/null
+            echo "version=$ATTACH" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
@@ -98,6 +113,7 @@ jobs:
             exit 1
           fi
       - name: Create the release
+        if: inputs.attach == ''
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -125,13 +141,14 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          cargo fetch --locked
           # Same paths as the F-Droid recipe, so F-Droid's build matches this APK and ships our signature.
           RUSTFLAGS="--remap-path-prefix=$PWD=/build --remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/cargo" \
             CARGO_APK_RELEASE_KEYSTORE="$RUNNER_TEMP/release.jks" \
             CARGO_APK_RELEASE_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" \
-            cargo apk build --lib --locked --release --target aarch64-linux-android
+            cargo apk build --lib --release --target aarch64-linux-android
           cp target/release/apk/flausch.apk "flausch-$VERSION.apk"
-          gh release upload "v$VERSION" "flausch-$VERSION.apk"
+          gh release upload --clobber "v$VERSION" "flausch-$VERSION.apk"
       - name: No keystore
         if: env.KEYSTORE == ''
         run: echo "::warning::RELEASE_KEYSTORE is not set, so the release has no APK"
