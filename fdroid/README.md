@@ -25,6 +25,8 @@ Releases go through a release PR (see "Workflow" in `AGENTS.md`):
 
 ## Notes
 
+- F-Droid builds only arm64-v8a (`--target aarch64-linux-android`, about 9 MB instead of 18 MB with x86_64).
+  Splitting per ABI would need a versionCode per ABI.
 - cargo-apk always signs and has no unsigned mode, so the recipe signs with a throwaway key; F-Droid re-signs.
 - Locally, `make apk-release` needs a keystore: set `CARGO_APK_RELEASE_KEYSTORE` and
   `CARGO_APK_RELEASE_KEYSTORE_PASSWORD`. Keep the keystore outside the repo.

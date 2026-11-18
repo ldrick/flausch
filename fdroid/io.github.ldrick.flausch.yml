@@ -27,7 +27,7 @@ Builds:
     build:
       - export RUSTUP_TOOLCHAIN=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)
       - $$rustup$$/rustup-init.sh -y --profile minimal --default-toolchain $RUSTUP_TOOLCHAIN
-        --target aarch64-linux-android --target x86_64-linux-android
+        --target aarch64-linux-android
       - source $HOME/.cargo/env
       - cargo install --locked cargo-apk@0.10.0
       - export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ANDROID_HOME=$$SDK$$ ANDROID_NDK_ROOT=$$NDK$$
@@ -36,7 +36,7 @@ Builds:
       - keytool -genkeypair -keystore $HOME/throwaway.jks -storepass android -keypass
         android -alias flausch -dname CN=flausch -keyalg RSA -validity 10000
       - CARGO_APK_RELEASE_KEYSTORE=$HOME/throwaway.jks CARGO_APK_RELEASE_KEYSTORE_PASSWORD=android
-        cargo apk build --lib --release
+        cargo apk build --lib --release --target aarch64-linux-android
     ndk: 28.2.13676358
 
 AutoUpdateMode: Version
