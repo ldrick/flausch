@@ -1,9 +1,10 @@
 name: Release
 
 # Every push to main updates the release PR "chore: release vX.Y.Z" on the branch release/next (or opens it once
-# there is a feat or fix to release). Changelogs edited in the PR are kept when main moves on. Merging the PR tags
-# the version, creates the GitHub release and attaches the signed APK. Run the workflow by hand to pick a version,
-# or with `attach` to build the APK of an existing release again and attach it (e.g. after a failed upload).
+# there is a feat or fix to release). Changelogs edited in the PR are kept when main moves on. Merging the PR creates
+# a draft release, attaches the signed APK and then publishes it, which creates the tag. Releases are immutable once
+# published, so the APK has to be there first. Run the workflow by hand to pick a version, or with `attach` to finish
+# a release that stayed a draft (e.g. after a failed build).
 
 on:
   workflow_dispatch:
@@ -12,7 +13,7 @@ on:
         description: Version (empty = next version from the commits since the last tag, 1.0.0 for the first)
         required: false
       attach:
-        description: Only build the APK of this existing release (e.g. 1.0.1) and attach it
+        description: Only finish this draft release (e.g. 1.0.1) - build and attach the APK, then publish
         required: false
   push:
     branches: [main]
@@ -81,7 +82,7 @@ jobs:
           gh workflow run ci.yml --ref "$BRANCH"
 
   publish:
-    name: Tag, release and APK
+    name: Release and APK
     if: >-
       (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore: release v'))
       || (github.event_name == 'workflow_dispatch' && inputs.attach != '')
@@ -92,37 +93,50 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
       KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+      ATTACH: ${{ inputs.attach }}
     steps:
+      - name: Draft to finish
+        id: draft
+        if: env.ATTACH != ''
+        run: |
+          # Drafts have no tag yet, so look them up in the list; a draft remembers the commit it was created for.
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.tag_name == \"v$ATTACH\")")"
+          if [ "$(jq -r .draft <<< "$release")" != true ]; then
+            echo "::error::v$ATTACH is no draft release (published releases can't get new files)"
+            exit 1
+          fi
+          echo "sha=$(jq -r .target_commitish <<< "$release")" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.attach && format('v{0}', inputs.attach) || github.sha }}
+          ref: ${{ steps.draft.outputs.sha || github.sha }}
       - name: Version
         id: version
-        env:
-          ATTACH: ${{ inputs.attach }}
         run: |
           if [ -n "$ATTACH" ]; then
-            gh release view "v$ATTACH" > /dev/null
             echo "version=$ATTACH" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
-            echo "::error::v$version is already tagged"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null \
+            || [ -n "$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.tag_name == \"v$version\") | .id")" ]; then
+            echo "::error::v$version exists already (finish a draft release with the attach input)"
             exit 1
           fi
-      - name: Create the release
-        if: inputs.attach == ''
+      - name: Create the draft release
+        if: env.ATTACH == ''
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           python3 tools/release.py notes "$VERSION" > notes.md
-          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "Flausch $VERSION" --notes-file notes.md
+          gh release create "v$VERSION" --draft --target "$GITHUB_SHA" --title "Flausch $VERSION" --notes-file notes.md
+      - name: No keystore
+        if: env.KEYSTORE == ''
+        run: |
+          echo "::error::RELEASE_KEYSTORE is not set: the release stays a draft. Set the secrets, then run the workflow with attach."
+          exit 1
       - run: rustup toolchain install
-        if: env.KEYSTORE != ''
       - name: Android SDK, NDK and JDK
-        if: env.KEYSTORE != ''
         run: |
           . android/sdk.env
           grep -v '^#' android/sdk.env >> "$GITHUB_ENV"
@@ -132,11 +146,9 @@ jobs:
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION" >> "$GITHUB_ENV"
           echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
       - uses: taiki-e/install-action@v2
-        if: env.KEYSTORE != ''
         with:
           tool: cargo-apk@0.10.0
       - name: Build and attach the signed APK
-        if: env.KEYSTORE != ''
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -149,6 +161,7 @@ jobs:
             cargo apk build --lib --release --target aarch64-linux-android
           cp target/release/apk/flausch.apk "flausch-$VERSION.apk"
           gh release upload --clobber "v$VERSION" "flausch-$VERSION.apk"
-      - name: No keystore
-        if: env.KEYSTORE == ''
-        run: echo "::warning::RELEASE_KEYSTORE is not set, so the release has no APK"
+      - name: Publish (creates the tag)
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release edit "v$VERSION" --draft=false --latest

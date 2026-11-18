@@ -6,8 +6,8 @@ description: Release a new version of Flausch. Use when the user asks to release
 # Releasing Flausch
 
 The Release workflow keeps the PR `chore: release vX.Y.Z` (branch `release/next`) up to date on every push to
-`main`: version bump, `CHANGELOG.md` and drafts of the F-Droid changelogs. Merging it tags the version, creates
-the GitHub release and attaches the signed APK. Your job is to turn the drafts into texts for users and merge.
+`main`: version bump, `CHANGELOG.md` and drafts of the F-Droid changelogs. Merging it creates a draft
+release, attaches the signed APK and publishes it, which creates the tag. Your job is to turn the drafts into texts for users and merge.
 See "Workflow" in `AGENTS.md` for the background.
 
 ## 1. Find the release PR
@@ -62,5 +62,6 @@ gh pr merge <number> --squash
 ```
 
 Then watch the run (`gh run list --workflow release.yml --limit 1`, `gh run watch <id>`) and report the release
-URL (`gh release view vX.Y.Z --json url,assets`). Without the `RELEASE_KEYSTORE` secret the release has no APK;
-say so. F-Droid picks up the tag by itself.
+URL (`gh release view vX.Y.Z --json url,assets`). If the job failed, the release is still a draft without a tag:
+report the error; once it is fixed, `gh workflow run release.yml -f attach=X.Y.Z` builds the APK and publishes.
+F-Droid picks up the tag by itself.
