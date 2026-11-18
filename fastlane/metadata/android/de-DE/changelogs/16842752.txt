@@ -1,7 +1,9 @@
 • Projekte mit Teilen und Reihenzählern, auch für Teile, die mehrfach gehäkelt werden (z. B. 4 Beine)
 • Projektstatus und Notizen
+• Projekte filtern, sortieren, suchen oder von Hand anordnen
 • PDF-Anleitungen mit Leselinie, auch aus anderen Apps geöffnet
 • Zählen mit den Lautstärketasten
 • Sicherung und Wiederherstellung
+• Hoch- und Querformat
 • Hell und dunkel, Deutsch und Englisch
 • TalkBack-Unterstützung
