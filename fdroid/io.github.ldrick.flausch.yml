@@ -12,6 +12,7 @@ AutoName: Flausch
 
 RepoType: git
 Repo: https://github.com/ldrick/flausch.git
+Binaries: https://github.com/ldrick/flausch/releases/download/v%v/flausch-%v.apk
 
 Builds:
   - versionName: 1.0.0
@@ -39,6 +40,8 @@ Builds:
       - CARGO_APK_RELEASE_KEYSTORE=$HOME/throwaway.jks CARGO_APK_RELEASE_KEYSTORE_PASSWORD=android
         cargo apk build --lib --release --target aarch64-linux-android
     ndk: 30.0.16248370
+
+AllowedAPKSigningKeys: c0f7ea99292ef05c121d4ec2cc9d44d4fb99b3df3b7946fd1e332f715935580e
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
