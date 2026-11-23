@@ -164,8 +164,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   sort, pick part) are legacy; don't add new ones.
 - Design: soft, light and minimalist (warm off-white background, white cards, soft pink accent, pill buttons). Use
   colors and sizes from `Theme` only, never hard-coded colors and not `Palette`. `Theme.dark` follows the
-  appearance setting (system, light, dark). The color scheme isn't final, so keep it centralized in
-  `theme.slint`.
+  appearance setting (system, light, dark). The light palette is #FFFFFF, #F3EEF2, #F0B9CE, #DF7FA5 (accent) and
+  #B24B73; the dark colors are derived from it. Keep all colors in `theme.slint`.
 - Shadows are hard drop shadows: no `drop-shadow-blur`, only `drop-shadow-offset-y: Theme.shadow-offset` (or
   `Theme.shadow-offset-small` for small elements) with `drop-shadow-color: Theme.shadow`.
 - Logo: the wordmark "Flausch" in Montez, no picture. In Slint use a `Text` with `font-family: Theme.font-logo`
