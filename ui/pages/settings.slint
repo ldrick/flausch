@@ -299,6 +299,12 @@ export component SettingsPage inherits Rectangle {
                             text: @tr("Donate");
                             clicked => { Store.open-page(Screen.donate); }
                         }
+                        Divider { }
+                        NavRow {
+                            text: @tr("Website");
+                            detail: "ldrick.github.io/flausch";
+                            clicked => { Store.open-url("https://ldrick.github.io/flausch/"); }
+                        }
                     }
                 }
             }

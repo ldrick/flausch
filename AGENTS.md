@@ -21,6 +21,7 @@ make check               # cargo fmt --check && cargo clippy --all-targets -- -D
 make check-android       # clippy for the Android code (cargo clippy --lib --target $TARGET)
 make deny                # cargo deny check: advisories, licenses, sources (deny.toml; needs cargo-deny)
 make ci                  # check + check-android + test + deny
+make site                # website -> target/site (copies website/, the Montez font and the store screenshots)
 make apk                 # debug app "Flausch Dev" -> target/debug/apk/flausch-dev.apk (TARGET defaults to aarch64-linux-android)
 make apk-release         # release APK (lto + strip; needs CARGO_APK_RELEASE_KEYSTORE(_PASSWORD))
 make install             # cargo apk run: build, install, launch Flausch Dev (then streams logcat until stopped)
@@ -84,6 +85,8 @@ tools/logo.py         generates logo/flausch.svg (README) and the monochrome lau
 tools/knit.py         renders the launcher and store icons: "Flausch" embroidered in white on bulging pink knit (needs numpy, scipy, pillow)
 logo/                 the wordmark SVG; logo/cat/ keeps the old cat logo (ball of yarn with cat ears) and its generators
 fastlane/metadata/    F-Droid store texts, icon, screenshots (en-US, de-DE)
+website/              ldrick.github.io/flausch: static HTML (English, de/), deployed by pages.yml via `make site`;
+                      style.css repeats the Theme colors, change them together
 fdroid/               F-Droid recipe and release steps (fdroid/README.md)
 lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
 ```
@@ -110,7 +113,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   screen. The pencil on a part card opens the edit dialog (with delete) for that part via `Store.edited`, without
   changing the active part. Settings → About lists sub-pages (`NavRow` → `Store.open-page(Screen)`): About
   Flausch, Changelog and Donate (GitHub Sponsors and Liberapay, opened in the browser through
-  `Store.open-url` → `platform::open_url`; the same links are in `.github/FUNDING.yml` and the F-Droid recipe).
+  `Store.open-url` → `platform::open_url`; the same links are in `.github/FUNDING.yml` and the F-Droid recipe),
+  plus a Website row that opens the browser directly.
   New info pages get a `Screen` value and a row there. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::sorted`: in progress, then planned and paused, then finished; within a group by
