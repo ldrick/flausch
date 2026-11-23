@@ -11,7 +11,7 @@ AVD              ?= flausch
 export ANDROID_HOME ANDROID_NDK_ROOT JAVA_HOME ANDROID_PLATFORM ANDROID_BUILD_TOOLS_VERSION
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-.PHONY: run test check check-android deny ci apk apk-release install emulator clean
+.PHONY: run test check check-android deny ci apk apk-release install emulator site clean
 
 run:            ## Run the app on the desktop
 	cargo run
@@ -49,6 +49,15 @@ install:        ## Build, install and start "Flausch Dev" on a connected device/
 
 emulator:       ## Start the Android emulator (then: make install TARGET=x86_64-linux-android)
 	$(ANDROID_HOME)/emulator/emulator -avd $(AVD)
+
+site:           ## Build the website into target/site (deployed by .github/workflows/pages.yml)
+	rm -rf target/site
+	mkdir -p target/site/fonts target/site/screenshots
+	cp -r website/. target/site/
+	cp ui/fonts/Montez-Regular.ttf ui/fonts/Montez-LICENSE.txt target/site/fonts/
+	cp fastlane/metadata/android/en-US/images/icon.png target/site/icon.png
+	cp -r fastlane/metadata/android/en-US/images/phoneScreenshots target/site/screenshots/en
+	cp -r fastlane/metadata/android/de-DE/images/phoneScreenshots target/site/screenshots/de
 
 clean:
 	cargo clean

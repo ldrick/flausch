@@ -28,7 +28,7 @@ Row counter and pattern viewer for crocheting – simple, offline, free. *Flausc
 - Backup and restore of all data as a ZIP file, e.g. when you switch phones
 - Light and dark mode, English and German, works with TalkBack
 
-Flausch runs on Android 10 and newer.
+Flausch runs on Android 10 and newer. Website: [ldrick.github.io/flausch](https://ldrick.github.io/flausch/).
 
 ## Privacy
 

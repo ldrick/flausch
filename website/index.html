@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flausch – row counter and pattern viewer for crocheting</title>
+    <meta name="description" content="Row counter and pattern viewer for crocheting – simple, offline, free. An Android app without account, ads or tracking.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="icon.png">
+    <link rel="alternate" hreflang="de" href="https://ldrick.github.io/flausch/de/">
+</head>
+<body>
+<header>
+    <nav>
+        <a href="de/" hreflang="de" lang="de">Deutsch</a>
+        <a href="https://github.com/ldrick/flausch">Source code</a>
+    </nav>
+</header>
+<main>
+    <div class="hero">
+        <h1 class="wordmark">Flausch</h1>
+        <p class="tagline">Row counter and pattern viewer for crocheting – simple, offline, free.</p>
+        <p class="pronunciation">/flaʊʃ/ – German for fluff: “fl”, then “ow” as in <i>now</i>, then “sh”.</p>
+        <div class="buttons">
+            <a class="button" href="https://github.com/ldrick/flausch/releases/latest">Download for Android</a>
+            <a class="button secondary" href="#install">How to install</a>
+        </div>
+    </div>
+
+    <div class="screenshots">
+        <img src="screenshots/en/1.png" width="1080" height="2424" alt="Project list with progress for each project">
+        <img src="screenshots/en/2.png" width="1080" height="2424" alt="A project with its parts, pattern and notes" loading="lazy">
+        <img src="screenshots/en/3.png" width="1080" height="2424" alt="PDF pattern with reading line and row counter" loading="lazy">
+        <img src="screenshots/en/4.png" width="1080" height="2424" alt="Large row counter of a part" loading="lazy">
+        <img src="screenshots/en/5.png" width="1080" height="2424" alt="Settings" loading="lazy">
+        <img src="screenshots/en/6.png" width="1080" height="2424" alt="Project list in dark mode" loading="lazy">
+    </div>
+
+    <section>
+        <h2>Features</h2>
+        <div class="cards">
+            <div class="card">
+                <h3>Projects and parts</h3>
+                <ul>
+                    <li>Split a project into parts (head, ears, body …), each with its own row counter and row goal</li>
+                    <li>Parts made several times (e.g. 4 legs) count each piece</li>
+                    <li>Status (planned, in progress, paused, finished) and notes</li>
+                    <li>Continue where you left off with one tap</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Patterns</h3>
+                <ul>
+                    <li>Import PDF patterns or share them into Flausch</li>
+                    <li>Count rows right in the pattern</li>
+                    <li>A movable reading line marks your row on every page</li>
+                    <li>Swipe to turn pages, zoom in with a double tap</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Made for crocheting</h3>
+                <ul>
+                    <li>Large buttons for one-handed use</li>
+                    <li>Count with the volume keys, the screen stays on</li>
+                    <li>Backup and restore as a ZIP file</li>
+                    <li>Light and dark, English and German, works with TalkBack</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="install">
+        <h2>Install</h2>
+        <div class="card">
+            <p>Flausch runs on Android 10 and newer. Download the APK of the
+                <a href="https://github.com/ldrick/flausch/releases/latest">latest release</a> and open it on your
+                phone; allow installing from your browser or file manager once.</p>
+            <p>To get updates automatically, add <code>https://github.com/ldrick/flausch</code> to
+                <a href="https://github.com/ImranR98/Obtainium">Obtainium</a>.</p>
+            <p class="muted">Flausch is coming to <a href="https://f-droid.org">F-Droid</a> in 2027. The F-Droid build
+                is signed with the same key as the downloads here, so you can switch later and keep your data.</p>
+        </div>
+    </section>
+
+    <section id="privacy">
+        <h2>Privacy</h2>
+        <div class="card">
+            <p>Flausch collects no data. It requests no permissions and has no internet access, so it can't send
+                anything anywhere. There is no account, no ads, no tracking and no analytics.</p>
+            <p>Your projects, row counters and PDF patterns are stored only in the app's directory on your device.
+                Backups are ZIP files that you save yourself, wherever you choose. Uninstalling the app deletes its
+                data.</p>
+            <p>This website is hosted on GitHub Pages and uses no cookies, scripts or external resources. GitHub may
+                log technical data such as IP addresses, see the
+                <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub
+                Privacy Statement</a>.</p>
+        </div>
+    </section>
+
+    <section id="donate">
+        <h2>Donate</h2>
+        <div class="card">
+            <p>I develop Flausch on my own, in my spare time, free and without ads or tracking. If it helps you with
+                your projects, I would be happy if you bought me a coffee. Thank you!</p>
+            <div class="buttons">
+                <a class="button" href="https://github.com/sponsors/ldrick">GitHub Sponsors</a>
+                <a class="button secondary" href="https://liberapay.com/ldrick">Liberapay</a>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Help and source code</h2>
+        <div class="card">
+            <p>Found a bug or have an idea? Open an <a href="https://github.com/ldrick/flausch/issues">issue</a>.
+                Flausch is free software under the GNU GPL v3 or later, written in Rust with
+                <a href="https://slint.dev">Slint</a>. The source code is on
+                <a href="https://github.com/ldrick/flausch">GitHub</a>.</p>
+        </div>
+    </section>
+</main>
+<footer>
+    <p>Made with <span class="heart" aria-label="love">♥</span> in the Black Forest</p>
+</footer>
+</body>
+</html>
