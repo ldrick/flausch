@@ -35,6 +35,16 @@ Flausch runs on Android 10 and newer.
 Flausch requests no permissions, has no internet access and collects no data. No account, no ads, no tracking.
 Projects and PDFs stay on your device.
 
+## Install
+
+Download the APK of the [latest release](https://github.com/ldrick/flausch/releases/latest) and open it on your
+phone (allow installing from your browser or file manager once). To get updates automatically, add
+`https://github.com/ldrick/flausch` to [Obtainium](https://github.com/ImranR98/Obtainium).
+
+Flausch is coming to [F-Droid](https://f-droid.org): F-Droid only includes apps that have been maintained for more
+than three months, so it will be submitted again in early 2027. The F-Droid build will be signed with the same key as
+the GitHub releases, so you can switch to it later without losing your data.
+
 ## Support
 
 I make Flausch on my own, in my spare time. If it helps you, you can buy me a coffee via

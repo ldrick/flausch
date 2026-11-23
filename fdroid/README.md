@@ -18,6 +18,12 @@ Releases go through a release PR (see "Workflow" in `AGENTS.md`):
 
 ## First submission
 
+Status: the first merge request ([fdroiddata!58021](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58021))
+was closed on 2026-11-19 only because F-Droid includes apps after they have been maintained for more than three
+months (the repository starts on 2026-11-08). Nothing in the recipe or the build was criticized. From mid-February
+2027, reopen that merge request: rebase the branch onto fdroiddata's `master`, update the recipe to the latest
+release (full commit hash, `versionCode`, `Binaries`) and mention the release history since November.
+
 1. Fork fdroiddata on GitLab and copy `io.github.ldrick.flausch.yml` to `metadata/` there.
 2. Optional, but catches most problems: `fdroid lint io.github.ldrick.flausch` and
    `fdroid build -v -l io.github.ldrick.flausch` in the fork (with fdroidserver, e.g. its Docker image).
