@@ -1,6 +1,74 @@
 import { Theme } from "../theme.slint";
-import { Store, DialogKind, ProjectItem, ProjectStatus, StatusFilter } from "../store.slint";
-import { Card, Chips, Field, Icon, IconButton, PillButton, ProgressBar } from "../components.slint";
+import { Store, DialogKind, FolderItem, ProjectItem, ProjectStatus, StatusFilter } from "../store.slint";
+import { Card, Chips, Field, Icon, IconButton, PillButton, ProgressBar, TopBar } from "../components.slint";
+
+component FolderCard inherits Card {
+    in property <FolderItem> folder;
+    // A dragged project is above it and would be dropped into it.
+    in property <bool> hovered;
+
+    height: 72px;
+    background: root.hovered ? Theme.accent-soft : touch.pressed ? Theme.surface-muted : Theme.surface;
+    border-width: root.hovered ? 1.5px : 0;
+    border-color: Theme.accent;
+    accessible-role: button;
+    accessible-label: @tr("Folder {}, {n} project" | "Folder {}, {n} projects" % root.folder.count, root.folder.name);
+    accessible-action-default => { Store.open-folder(root.folder.id); }
+
+    touch := TouchArea {
+        clicked => { Store.open-folder(root.folder.id); }
+    }
+
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 18px;
+        spacing: 16px;
+
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 44px;
+                height: 44px;
+                border-radius: Theme.radius-small;
+                background: Theme.surface-muted;
+
+                Icon {
+                    source: @image-url("../icons/folder.svg");
+                    color: Theme.accent;
+                    width: 22px;
+                    height: 22px;
+                }
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            horizontal-stretch: 1;
+
+            Text {
+                text: root.folder.name;
+                color: Theme.text;
+                font-size: Theme.font-body + 1px;
+                font-weight: 600;
+                overflow: elide;
+            }
+            Text {
+                text: @tr("{n} project" | "{n} projects" % root.folder.count);
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Icon {
+                source: @image-url("../icons/chevron-right.svg");
+                color: Theme.border;
+                width: 20px;
+                height: 20px;
+            }
+        }
+    }
+}
 
 component ProjectCard inherits Card {
     in property <ProjectItem> project;
@@ -8,7 +76,8 @@ component ProjectCard inherits Card {
     in property <bool> lifted;
     callback clicked();
     // A long press starts a drag; `moved` reports the vertical movement and the pointer's window position.
-    callback drag-started();
+    // The pointer's window position (x, y) when the drag starts and while it moves.
+    callback drag-started(length, length);
     callback drag-moved(length, length);
     callback drag-ended();
     callback move-by(int);
@@ -43,7 +112,7 @@ component ProjectCard inherits Card {
         }
         moved => {
             if root.holding {
-                root.drag-moved(self.mouse-y - self.pressed-y, root.absolute-position.y + self.mouse-y);
+                root.drag-moved(root.absolute-position.x + self.mouse-x, root.absolute-position.y + self.mouse-y);
             }
         }
         changed pressed => {
@@ -58,7 +127,7 @@ component ProjectCard inherits Card {
         running: touch.pressed && !root.holding;
         triggered => {
             root.holding = true;
-            root.drag-started();
+            root.drag-started(root.absolute-position.x + touch.mouse-x, root.absolute-position.y + touch.mouse-y);
         }
     }
 
@@ -218,25 +287,42 @@ component ProjectCard inherits Card {
     }
 }
 
-// Cards that can be dragged to another place in their status group.
+// Cards that can be dragged to another place in their status group, or onto a folder.
 component ProjectList inherits VerticalLayout {
     in property <[ProjectItem]> items;
+    // Where a dropped card goes instead of its new place: a folder id, -1 for out of the folder, 0 for none.
+    in property <int> drop-target;
     // Index of the dragged card, or -1.
     in-out property <int> dragged: -1;
     // How far the dragged card moved, including auto-scrolling.
     in-out property <length> offset;
-    // Window position of the pointer, for auto-scrolling.
+    // Window position of the pointer, for auto-scrolling and drop targets.
+    out property <length> pointer-x;
     out property <length> pointer-y;
+    // Where the drag started, and how far the list scrolled since.
+    property <length> start-x;
+    property <length> start-y;
+    property <length> scrolled;
+    // A drag ended. Called before the drop is handled: that can remove the list.
+    callback drag-done();
 
     property <length> step: 104px + Theme.spacing;
 
-    // Moves the dragged card, but not out of its status group.
-    public function move-dragged(by: length) {
-        root.offset = max((root.items[root.dragged].group-start - root.dragged) * root.step,
-            min((root.items[root.dragged].group-end - root.dragged) * root.step, root.offset + by));
+    // The dragged card stays under the finger (but not above the top of the list); only its new place is
+    // limited to its status group.
+    function follow() {
+        root.offset = max(-root.dragged * root.step - root.y, root.pointer-y - root.start-y + root.scrolled);
     }
 
+    // The list scrolled by `by` while dragging.
+    public function scroll-by(by: length) {
+        root.scrolled += by;
+        root.follow();
+    }
+
+    // Above a drop target, the other cards stay where they are.
     property <int> target: root.dragged < 0 ? -1
+        : root.drop-target != 0 ? root.dragged
         : max(root.items[root.dragged].group-start, min(root.items[root.dragged].group-end, root.dragged + Math.round(root.offset / root.step)));
 
     spacing: Theme.spacing;
@@ -246,6 +332,7 @@ component ProjectList inherits VerticalLayout {
         z: index == root.dragged ? 1 : 0;
 
         ProjectCard {
+            x: index == root.dragged ? root.pointer-x - root.start-x : 0;
             y: index == root.dragged ? root.offset
                 : root.dragged < 0 ? 0
                 : index > root.dragged && index <= root.target ? -root.step
@@ -254,22 +341,34 @@ component ProjectList inherits VerticalLayout {
                 duration: root.dragged >= 0 && index != root.dragged ? 150ms : 0ms;
             }
             width: parent.width;
+            // See-through above a drop target, so the target shows.
+            opacity: index == root.dragged && root.drop-target != 0 ? 0.4 : 1;
             project: project;
             lifted: index == root.dragged;
             clicked => { Store.open-project(project.id); }
-            drag-started => {
+            drag-started(x, y) => {
                 root.dragged = index;
                 root.offset = 0;
+                root.scrolled = 0;
+                root.start-x = x;
+                root.start-y = y;
+                root.pointer-x = x;
+                root.pointer-y = y;
             }
-            drag-moved(dy, pointer) => {
-                root.move-dragged(dy);
-                root.pointer-y = pointer;
+            drag-moved(x, y) => {
+                root.pointer-x = x;
+                root.pointer-y = y;
+                root.follow();
             }
             drag-ended => {
                 let by = root.target - root.dragged;
+                let folder = root.drop-target;
                 root.dragged = -1;
                 root.offset = 0;
-                if by != 0 {
+                root.drag-done();
+                if folder != 0 {
+                    Store.move-to-folder(project.id, max(folder, 0));
+                } else if by != 0 {
                     Store.move-project(project.id, by);
                 }
             }
@@ -279,6 +378,24 @@ component ProjectList inherits VerticalLayout {
 }
 
 export component ListPage inherits Rectangle {
+    property <bool> in-folder: Store.folder.id != 0;
+    property <int> folder-cards: Store.show-folders ? Store.folders.length : 0;
+    property <bool> has-items: Store.projects.length + Store.finished.length + root.folder-cards > 0;
+    // Nothing at all yet: the welcome text instead of the list.
+    property <bool> empty: !Store.has-projects && Store.folders.length == 0;
+    // A project card is being dragged; the pointer's window position.
+    property <bool> dragging;
+    property <length> pointer-x;
+    property <length> pointer-y;
+    // The folder card under a dragged project.
+    property <int> hovered-folder;
+    // Inside a folder, a strip at the left edge takes a dropped project out.
+    property <bool> can-drop-out: root.in-folder && !Store.searching;
+    // The left edge where a drop counts.
+    property <length> strip-width: 68px;
+    property <bool> over-strip: root.dragging && root.can-drop-out && root.pointer-x < root.absolute-position.x + root.strip-width;
+    property <int> drop-target: !root.dragging ? 0 : root.over-strip ? -1 : root.folder-cards > 0 ? root.hovered-folder : 0;
+
     function close-search() {
         Store.searching = false;
         Store.query = "";
@@ -315,7 +432,38 @@ export component ListPage inherits Rectangle {
             }
         }
 
-        if !Store.searching: HorizontalLayout {
+        if !Store.searching && root.in-folder: TopBar {
+            height: 72px;
+            title: Store.folder.name;
+            back => { Store.open-folder(0); }
+
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/edit.svg");
+                    label: @tr("Rename folder");
+                    clicked => { Store.dialog = DialogKind.edit-folder; }
+                }
+            }
+            if Store.has-projects: VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/sort.svg");
+                    label: @tr("Sort");
+                    clicked => { Store.dialog = DialogKind.sort; }
+                }
+            }
+            if Store.has-projects: VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/search.svg");
+                    label: @tr("Search");
+                    clicked => { Store.searching = true; }
+                }
+            }
+        }
+
+        if !Store.searching && !root.in-folder: HorizontalLayout {
             height: 72px;
             padding-left: Theme.padding;
             padding-right: 8px;
@@ -328,6 +476,14 @@ export component ListPage inherits Rectangle {
                 font-size: 44px;
                 vertical-alignment: center;
                 horizontal-stretch: 1;
+            }
+            if !root.empty: VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("../icons/folder-plus.svg");
+                    label: @tr("New folder");
+                    clicked => { Store.dialog = DialogKind.create-folder; }
+                }
             }
             if Store.has-projects: VerticalLayout {
                 alignment: center;
@@ -375,14 +531,26 @@ export component ListPage inherits Rectangle {
             }
         }
 
-        if Store.projects.length + Store.finished.length > 0: flick := Flickable {
+        if root.has-items: flick := Flickable {
             property <bool> dragging: active-list.dragged >= 0 || finished-list.dragged >= 0;
+            property <length> pointer-x: active-list.dragged >= 0 ? active-list.pointer-x : finished-list.pointer-x;
             property <length> pointer-y: active-list.dragged >= 0 ? active-list.pointer-y : finished-list.pointer-y;
             // Scrolls while a dragged card is near the top or bottom edge (above the floating button).
             property <length> scroll-speed: !self.dragging ? 0
                 : self.pointer-y < self.absolute-position.y + 80px ? -12px
                 : self.pointer-y > self.absolute-position.y + self.height - 160px ? 12px : 0;
             property <length> scrolled-from;
+
+            changed dragging => {
+                root.dragging = self.dragging;
+                root.hovered-folder = 0;
+            }
+            function drag-done() {
+                root.dragging = false;
+                root.hovered-folder = 0;
+            }
+            changed pointer-x => { root.pointer-x = self.pointer-x; }
+            changed pointer-y => { root.pointer-y = self.pointer-y; }
 
             vertical-stretch: 1;
             interactive: !self.dragging;
@@ -395,9 +563,9 @@ export component ListPage inherits Rectangle {
                     flick.scrolled-from = flick.content-y;
                     flick.content-y = max(min(0, flick.height - flick.content-height), min(0, flick.content-y - flick.scroll-speed));
                     if active-list.dragged >= 0 {
-                        active-list.move-dragged(flick.scrolled-from - flick.content-y);
+                        active-list.scroll-by(flick.scrolled-from - flick.content-y);
                     } else {
-                        finished-list.move-dragged(flick.scrolled-from - flick.content-y);
+                        finished-list.scroll-by(flick.scrolled-from - flick.content-y);
                     }
                 }
             }
@@ -410,8 +578,21 @@ export component ListPage inherits Rectangle {
                 spacing: Theme.spacing;
                 alignment: start;
 
+                for folder in Store.show-folders ? Store.folders : []: FolderCard {
+                    folder: folder;
+                    hovered: root.dragging && root.pointer-y >= self.absolute-position.y && root.pointer-y < self.absolute-position.y + self.height;
+                    changed hovered => {
+                        if self.hovered {
+                            root.hovered-folder = folder.id;
+                        } else if root.hovered-folder == folder.id {
+                            root.hovered-folder = 0;
+                        }
+                    }
+                }
                 active-list := ProjectList {
                     items: Store.projects;
+                    drop-target: root.drop-target;
+                    drag-done => { flick.drag-done(); }
                 }
                 if Store.finished.length > 0: Rectangle {
                     height: 32px;
@@ -448,17 +629,21 @@ export component ListPage inherits Rectangle {
                 }
                 finished-list := ProjectList {
                     items: Store.finished-open ? Store.finished : [];
+                    drop-target: root.drop-target;
+                    drag-done => { flick.drag-done(); }
                 }
             }
         }
 
-        if Store.has-projects && Store.projects.length + Store.finished.length == 0: VerticalLayout {
+        if !root.empty && !root.has-items: VerticalLayout {
             vertical-stretch: 1;
             alignment: start;
             padding: 40px;
 
             Text {
-                text: Store.query.is-empty ? @tr("No projects with this status") : @tr("No matching projects");
+                text: !Store.query.is-empty ? @tr("No matching projects")
+                    : root.in-folder && Store.folder.count == 0 ? @tr("No projects in this folder yet. Create one here, or drop a project on the folder in the main list.")
+                    : @tr("No projects with this status");
                 color: Theme.text-muted;
                 font-size: Theme.font-body;
                 horizontal-alignment: center;
@@ -466,7 +651,7 @@ export component ListPage inherits Rectangle {
             }
         }
 
-        if !Store.has-projects: VerticalLayout {
+        if root.empty: VerticalLayout {
             vertical-stretch: 1;
             alignment: center;
             padding: 40px;
@@ -491,6 +676,44 @@ export component ListPage inherits Rectangle {
                 text: @tr("Create a project to count your rows and keep your pattern at hand.");
                 color: Theme.text-muted;
                 font-size: Theme.font-body;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+        }
+    }
+
+    // Inside a folder: drag a project to the left edge to take it out. A light strip there shows it.
+    if root.dragging && root.can-drop-out: Rectangle {
+        x: 0;
+        height: (parent.height - 72px) / 2;
+        y: 72px + (parent.height - 72px - self.height) / 2;
+        width: root.strip-width;
+        border-top-right-radius: Theme.radius;
+        border-bottom-right-radius: Theme.radius;
+        background: Theme.accent-soft;
+        border-width: 1.5px;
+        border-color: Theme.accent;
+        opacity: root.over-strip ? 0.9 : 0.45;
+
+        VerticalLayout {
+            alignment: center;
+            padding: 4px;
+            spacing: 6px;
+
+            HorizontalLayout {
+                alignment: center;
+                Icon {
+                    source: @image-url("../icons/chevron-left.svg");
+                    color: Theme.text;
+                    width: 22px;
+                    height: 22px;
+                }
+            }
+            Text {
+                text: @tr("Main list");
+                color: Theme.text;
+                font-size: Theme.font-small - 1px;
+                font-weight: 600;
                 horizontal-alignment: center;
                 wrap: word-wrap;
             }

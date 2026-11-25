@@ -122,7 +122,13 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   card drags it within its group (`ProjectList` in `pages/list.slint`, auto-scrolls near the edges);
   `Store.move-project` → `Library::move_project` switches to the custom order (`Project::position`), starting
   from the current one. TalkBack gets "Move up"/"Move down" actions on cards (`list-item` role → `KIND_ITEM`)); with "All" and no search, finished
-  projects sit in a collapsed section (`Store.finished`). Finished projects have no continue button. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
+  projects sit in a collapsed section (`Store.finished`). Folders (`Library::folders`, one level, sorted by name; `Project::folder`) show
+  as cards above the projects at the top level of the list; tapping one opens it in place (`Controller::folder`,
+  `Store.folder`, Back closes it) and new projects go into the open folder. The search ignores folders and
+  matches in all of them. The folder's top bar renames it and deletes it on a sheet; deleting keeps the projects
+  (back to the top level). Holding a project card and dropping it on a folder card moves it there
+  (`Store.move-to-folder`); inside a folder, dropping it on the top bar takes it out. For TalkBack, a quiet
+  button at the bottom of the project screen opens a full-screen folder picker (only once a folder exists). Finished projects have no continue button. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
   finished pieces, "Next piece" (`Library::next_piece`) starts the next one at row 0, Previous row at row 0 goes
   back to the last row of the piece before, Reset starts over, and progress counts `goal × quantity` rows; the UI
   shows `PartItem.title` ("Leg 2/4"). There is deliberately no second counter (removed as too complicated). With `Settings::volume_keys`, the volume keys count the active part, but

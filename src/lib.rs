@@ -60,6 +60,7 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         storage,
         nav: vec![Screen::List],
         current: None,
+        folder: None,
         pdf: PdfSession::default(),
         renderer,
         covers,
@@ -175,6 +176,21 @@ fn connect(app: &App) {
     });
     store.on_set_notes(|notes| {
         with(|c| c.set_notes(&notes));
+    });
+    store.on_open_folder(|id| {
+        with(|c| c.open_folder(id as u64));
+    });
+    store.on_create_folder(|name| {
+        with(|c| c.create_folder(&name));
+    });
+    store.on_rename_folder(|name| {
+        with(|c| c.rename_folder(&name));
+    });
+    store.on_delete_folder(|| {
+        with(Controller::delete_folder);
+    });
+    store.on_move_to_folder(|project, folder| {
+        with(|c| c.move_to_folder(project as u64, folder as u64));
     });
     store.on_set_status_filter(|filter| {
         with(|c| c.set_status_filter(filter.into()));
@@ -315,6 +331,8 @@ struct Controller {
     settings: Settings,
     nav: Vec<Screen>,
     current: Option<u64>,
+    /// The folder open on the project list; `None` is the top level.
+    folder: Option<u64>,
     pdf: PdfSession,
     renderer: pdf::Renderer,
     covers: pdf::Covers,
@@ -368,11 +386,12 @@ impl Controller {
         }
     }
 
-    /// The projects in the list: filtered, searched and sorted.
+    /// The projects in the list: filtered, searched and sorted. The search covers all folders.
     fn shown(&self) -> Vec<&model::Project> {
         let app = self.app();
         let store = app.global::<Store>();
         let query = store.get_query();
+        let searching = !query.trim().is_empty();
         let names = store.get_status_names();
         let status_name = |status: model::Status| {
             let index = match status {
@@ -386,6 +405,7 @@ impl Controller {
         self.library
             .sorted(self.settings.project_filter, self.settings.project_sort)
             .into_iter()
+            .filter(|p| searching || p.folder == self.folder)
             .filter(|p| p.matches(&query, &status_name(p.status)))
             .collect()
     }
@@ -421,6 +441,15 @@ impl Controller {
         store.set_projects(ModelRc::new(VecModel::from(self.project_items(&shown))));
         store.set_finished(ModelRc::new(VecModel::from(self.project_items(&finished))));
         store.set_has_projects(!self.library.projects.is_empty());
+        let folders: Vec<FolderItem> = self
+            .library
+            .sorted_folders()
+            .into_iter()
+            .map(|f| self.folder_item(Some(f.id)))
+            .collect();
+        store.set_folders(ModelRc::new(VecModel::from(folders)));
+        store.set_folder(self.folder_item(self.folder));
+        store.set_show_folders(self.folder.is_none() && query.trim().is_empty());
         if let Some(project) = self.current.and_then(|id| self.library.get(id)) {
             store.set_current(self.project_item(project));
             let parts: Vec<PartItem> = project.parts.iter().map(part_item).collect();
@@ -485,6 +514,11 @@ impl Controller {
             store.set_query("".into());
             self.last_back = Some(now);
             self.refresh();
+            return true;
+        }
+        if self.screen() == Screen::List && self.folder.is_some() {
+            self.last_back = Some(now);
+            self.open_folder(0);
             return true;
         }
         if self.nav.len() <= 1 {
@@ -558,6 +592,7 @@ impl Controller {
         }
         let now = now();
         let id = self.library.create(&form.name, now);
+        self.library.move_to_folder(id, self.folder);
         self.library.set_status(id, form.status.into(), now);
         self.library.set_notes(id, &form.notes, now);
         let pdf = self.new_pdf.take();
@@ -657,6 +692,60 @@ impl Controller {
         self.nav = vec![Screen::List];
         self.refresh();
         self.show();
+    }
+
+    // Folders
+
+    fn folder_item(&self, id: Option<u64>) -> FolderItem {
+        id.and_then(|id| self.library.folder(id))
+            .map_or_default(|f| FolderItem {
+                id: f.id as i32,
+                name: f.name.as_str().into(),
+                count: self.library.folder_size(f.id) as i32,
+            })
+    }
+
+    fn open_folder(&mut self, id: u64) {
+        self.folder = Some(id).filter(|&id| self.library.folder(id).is_some());
+        self.refresh();
+    }
+
+    fn create_folder(&mut self, name: &str) {
+        if name.trim().is_empty() {
+            return;
+        }
+        let id = self.library.create_folder(name);
+        self.save();
+        self.open_folder(id);
+    }
+
+    fn rename_folder(&mut self, name: &str) {
+        let Some(id) = self.folder else { return };
+        if !name.trim().is_empty() && self.library.rename_folder(id, name) {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    /// Deletes the open folder; its projects go back to the top level.
+    fn delete_folder(&mut self) {
+        let Some(id) = self.folder.take() else { return };
+        if self.library.remove_folder(id).is_some() {
+            self.save();
+            self.notify(Notice::FolderDeleted);
+        }
+        self.refresh();
+    }
+
+    /// Puts a project into folder `id`, or back to the top level with 0.
+    fn move_to_folder(&mut self, project: u64, id: u64) {
+        if self
+            .library
+            .move_to_folder(project, Some(id).filter(|&id| id != 0))
+        {
+            self.save();
+            self.refresh();
+        }
     }
 
     // Parts
@@ -862,8 +951,16 @@ impl Controller {
             self.storage.discard_incoming();
             return self.notify(Notice::PdfInvalid);
         }
+        let targets: Vec<ProjectItem> = self
+            .library
+            .sorted(model::StatusFilter::All, self.settings.project_sort)
+            .into_iter()
+            .filter(|p| p.status != model::Status::Finished)
+            .map(|p| self.project_item(p))
+            .collect();
         let app = self.app();
         let store = app.global::<Store>();
+        store.set_incoming_projects(ModelRc::new(VecModel::from(targets)));
         store.set_incoming_title(title.as_str().into());
         store.set_dialog(DialogKind::IncomingPdf);
         self.incoming = Some(title);
@@ -878,6 +975,7 @@ impl Controller {
             _ => &title,
         };
         let id = self.library.create(name, now());
+        self.library.move_to_folder(id, self.folder);
         self.incoming_to_project(id);
     }
 
@@ -951,6 +1049,7 @@ impl Controller {
         ProjectItem {
             id: project.id as i32,
             name: project.name.as_str().into(),
+            folder: self.folder_item(project.folder),
             status: project.status.into(),
             notes: project.notes.as_str().into(),
             part_count: project.parts.len() as i32,
@@ -1243,6 +1342,7 @@ impl Controller {
             self.apply_settings();
         }
         self.current = None;
+        self.folder = None;
         self.nav = vec![Screen::List];
         self.refresh();
         self.show();

@@ -12,6 +12,7 @@ Row counter and pattern viewer for crocheting – simple, offline, free. *Flausc
 - Split a project into parts (e.g. head, ears, body), each with its own row counter and an optional row goal
 - Parts made several times (e.g. 4 legs) count each piece
 - Project status (planned, in progress, paused, finished) and notes
+- Folders to organize your projects
 - The project list shows the pattern cover, the current part and the total progress
 - Search by project or part name, continue where you left off with one tap
 

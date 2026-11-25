@@ -5,6 +5,7 @@
 <li>Teile ein Projekt in Teile auf (z. B. Kopf, Ohren, Körper), jedes mit eigenem Reihenzähler und optionalem Ziel</li>
 <li>Mehrfach gehäkelte Teile (z. B. 4 Beine) zählen jedes Stück</li>
 <li>Projektstatus (geplant, in Arbeit, pausiert, fertig) und Notizen</li>
+<li>Ordner für deine Projekte</li>
 <li>Die Projektliste zeigt das Cover der Anleitung, das aktuelle Teil und den Gesamtfortschritt</li>
 <li>Suche nach Projekt- und Teilnamen, mit einem Tipp dort weitermachen, wo du aufgehört hast</li>
 </ul>

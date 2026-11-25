@@ -249,6 +249,61 @@ fn search_finds_projects_by_part_name() {
 }
 
 #[test]
+fn projects_are_organized_in_folders() {
+    let (app, dir) = fresh();
+    create_project(&app, "Scarf");
+    go_back(&app);
+    assert!(
+        !exists(&app, "Move to folder"),
+        "no folder row without folders"
+    );
+
+    // A new folder opens right away, and projects created in it stay there.
+    tap(&app, "New folder");
+    type_into(&app, "Name", "Toys");
+    tap(&app, "Create");
+    assert_eq!(store(&app).get_folder().name, "Toys");
+    assert!(!exists(&app, "Scarf"));
+    create_project(&app, "Bunny");
+    go_back(&app);
+    assert!(exists(&app, "Bunny"));
+    go_back(&app);
+    assert!(exists(&app, "Folder Toys, 1 project"));
+    assert!(exists(&app, "Scarf") && !exists(&app, "Bunny"));
+
+    // Moving a project from its screen.
+    tap(&app, "Scarf");
+    tap(&app, "Move to folder");
+    tap(&app, "Toys");
+    assert!(exists(&app, "In folder Toys"));
+    go_back(&app);
+    assert!(exists(&app, "Folder Toys, 2 projects"));
+    assert!(!exists(&app, "Scarf"));
+
+    // The search looks into every folder.
+    tap(&app, "Search");
+    type_into(&app, "Search", "scarf");
+    assert!(exists(&app, "Scarf"));
+    assert!(!exists(&app, "Folder Toys, 2 projects"));
+    tap(&app, "Close search");
+
+    let app = launch(dir.path());
+    settle();
+    tap(&app, "Folder Toys, 2 projects");
+    tap(&app, "Rename folder");
+    type_into(&app, "Name", "Amigurumi");
+    tap(&app, "Save");
+    assert_eq!(store(&app).get_folder().name, "Amigurumi");
+
+    // Deleting the folder keeps its projects.
+    tap(&app, "Rename folder");
+    tap(&app, "Delete folder");
+    assert_eq!(store(&app).get_folder().id, 0);
+    assert!(exists(&app, "Scarf") && exists(&app, "Bunny"));
+    assert!(!exists(&app, "Move to folder"));
+}
+
+#[test]
 fn the_list_filters_and_groups_by_status() {
     let (app, dir) = fresh();
     create_project(&app, "Bunny");

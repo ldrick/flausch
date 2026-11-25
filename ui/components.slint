@@ -423,6 +423,7 @@ export component Dialog inherits Rectangle {
 
 // Two buttons at the bottom of a dialog: dismiss and confirm.
 export component DialogButtons inherits HorizontalLayout {
+    // No confirm button if empty, e.g. for a list that acts on a tap.
     in property <string> confirm-text;
     in property <bool> confirm-enabled: true;
     callback cancel();
@@ -494,6 +495,7 @@ export component Sheet inherits Rectangle {
     in property <string> title;
     // What is being edited, e.g. the project of a part.
     in property <string> subtitle;
+    // No confirm button if empty, e.g. for a list that acts on a tap.
     in property <string> confirm-text;
     in property <bool> confirm-enabled: true;
     // Shows a delete button in the top bar.
@@ -530,7 +532,7 @@ export component Sheet inherits Rectangle {
                     clicked => { root.delete(); }
                 }
             }
-            VerticalLayout {
+            if root.confirm-text != "": VerticalLayout {
                 alignment: center;
                 PillButton {
                     small: true;

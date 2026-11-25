@@ -1,6 +1,6 @@
 import { Palette } from "std-widgets.slint";
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm } from "store.slint";
+import { Store, Screen, DialogKind, Notice, FolderItem, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm } from "store.slint";
 import { Card, Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, Segmented, Sheet, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { PatternCard, ProjectPage, SectionTitle } from "pages/project.slint";
@@ -9,7 +9,7 @@ import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 import { AboutPage, ChangelogPage, DonatePage } from "pages/about.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, FolderItem, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm }
 
 component SortDialog inherits Dialog {
     callback done();
@@ -55,7 +55,7 @@ component SortDialog inherits Dialog {
             }
         }
         Text {
-            text: @tr("Hold a project to move it.");
+            text: @tr("Hold a project to move it, or drop it on a folder.");
             color: Theme.text-muted;
             font-size: Theme.font-small;
             wrap: word-wrap;
@@ -330,6 +330,115 @@ component NotesDialog inherits Sheet {
     }
 }
 
+component FolderDialog inherits Sheet {
+    in property <bool> editing;
+    callback done();
+
+    title: root.editing ? @tr("Rename folder") : @tr("New folder");
+    subtitle: root.editing ? Store.folder.name : "";
+    confirm-text: root.editing ? @tr("Save") : @tr("Create");
+    confirm-enabled: !name.text.is-empty;
+    delete-label: root.editing ? @tr("Delete folder") : "";
+    cancel => { root.done(); }
+    confirm => { root.submit(); }
+    delete => {
+        Store.delete-folder();
+        root.done();
+    }
+
+    function submit() {
+        if name.text.is-empty {
+            return;
+        }
+        if root.editing {
+            Store.rename-folder(name.text);
+        } else {
+            Store.create-folder(name.text);
+        }
+        root.done();
+    }
+
+    init => {
+        if root.editing {
+            name.text = Store.folder.name;
+        }
+        name.focus-input();
+    }
+
+    name := Field {
+        label: @tr("Name");
+        placeholder: @tr("Name, e.g. Gifts");
+        accepted => { root.submit(); }
+    }
+    Text {
+        text: root.editing ? @tr("Deleting the folder keeps its projects. They go back to the main list.")
+            : @tr("To fill it, hold a project on the list and drop it on the folder.");
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        wrap: word-wrap;
+    }
+}
+
+component FolderRow inherits Rectangle {
+    in property <string> label;
+    in property <bool> selected;
+    callback clicked();
+
+    height: 56px;
+    border-radius: Theme.radius-small;
+    background: root.selected ? Theme.accent-soft : touch.pressed ? Theme.surface-muted : transparent;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-checked: root.selected;
+    accessible-action-default => { root.clicked(); }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        Text {
+            text: root.label;
+            color: Theme.text;
+            font-size: Theme.font-body;
+            font-weight: root.selected ? 600 : 400;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+// Chooses the folder of the current project; a tap moves it.
+component FolderPicker inherits Sheet {
+    callback done();
+
+    title: @tr("Move to folder");
+    subtitle: Store.current.name;
+    cancel => { root.done(); }
+
+    VerticalLayout {
+        spacing: 4px;
+
+        FolderRow {
+            label: @tr("No folder");
+            selected: Store.current.folder.id == 0;
+            clicked => {
+                Store.move-to-folder(Store.current.id, 0);
+                root.done();
+            }
+        }
+        for folder in Store.folders: FolderRow {
+            label: folder.name;
+            selected: folder.id == Store.current.folder.id;
+            clicked => {
+                Store.move-to-folder(Store.current.id, folder.id);
+                root.done();
+            }
+        }
+    }
+}
+
 export component App inherits Window {
     title: "Flausch";
     preferred-width: 412px;
@@ -429,6 +538,15 @@ export component App inherits Window {
                 bottom-inset: root.safe-area-insets.bottom;
                 done => { root.close-dialog(); }
             }
+            if Store.dialog == DialogKind.create-folder || Store.dialog == DialogKind.edit-folder: FolderDialog {
+                editing: Store.dialog == DialogKind.edit-folder;
+                bottom-inset: root.safe-area-insets.bottom;
+                done => { root.close-dialog(); }
+            }
+            if Store.dialog == DialogKind.pick-folder: FolderPicker {
+                bottom-inset: root.safe-area-insets.bottom;
+                done => { root.close-dialog(); }
+            }
             if Store.dialog == DialogKind.notes: NotesDialog {
                 bottom-inset: root.safe-area-insets.bottom;
                 done => { root.close-dialog(); }
@@ -454,6 +572,7 @@ export component App inherits Window {
                         : Store.notice == Notice.backup-too-new ? @tr("This backup is from a newer version of Flausch. Please update the app first.")
                         : Store.notice == Notice.backup-restored ? @tr("Backup restored.")
                         : Store.notice == Notice.backup-restore-failed ? @tr("The backup could not be restored. Your data is unchanged.")
+                        : Store.notice == Notice.folder-deleted ? @tr("Folder deleted. Its projects are back in the main list.")
                         : @tr("The PDF could not be imported.");
                     color: Theme.background;
                     font-size: Theme.font-body;
@@ -499,7 +618,7 @@ export component App inherits Window {
                     alignment: start;
                     spacing: 4px;
 
-                    for project in Store.projects: Rectangle {
+                    for project in Store.incoming-projects: Rectangle {
                         height: 56px;
                         border-radius: Theme.radius-small;
                         background: target-touch.pressed ? Theme.surface-muted : transparent;
