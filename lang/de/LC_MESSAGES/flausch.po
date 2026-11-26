@@ -8,298 +8,301 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ui/app.slint:120
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:120
 msgctxt "ProjectDialog"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/app.slint:165
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:165
 msgctxt "ProjectDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:122
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:122
 msgctxt "ProjectDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:122
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:122
 msgctxt "ProjectDialog"
 msgid "Create"
 msgstr "Anlegen"
 
-#: ui/app.slint:448
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:566
 msgctxt "App"
 msgid "This file could not be opened as a PDF."
 msgstr "Diese Datei konnte nicht als PDF geöffnet werden."
 
-#: ui/app.slint:449
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:567
 msgctxt "App"
 msgid "The page could not be displayed."
 msgstr "Die Seite konnte nicht angezeigt werden."
 
-#: ui/app.slint:457
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:576
 msgctxt "App"
 msgid "The PDF could not be imported."
 msgstr "Das PDF konnte nicht importiert werden."
 
-#: ui/app.slint:474
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:593
 msgctxt "App"
 msgid "Delete project?"
 msgstr "Projekt löschen?"
 
-#: ui/app.slint:475
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:594
 msgctxt "App"
 msgid "“{}” and its pattern will be removed. This cannot be undone."
 msgstr ""
 "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
 "werden."
 
-#: ui/app.slint:479 ui/app.slint:550
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:598
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:598
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
-#: ui/app.slint:629
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:748
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-#: ui/app.slint:635
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:754
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: ui/app.slint:645
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:764
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-#: ui/app.slint:650
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:769
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
 
-#: ui/components.slint:436
+#: /home/ldrick/Documents/development/flausch/ui/components.slint:437
 msgctxt "DialogButtons"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ui/components.slint:466
+#: /home/ldrick/Documents/development/flausch/ui/components.slint:467
 msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
 
-#: ui/pages/list.slint:352
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:508
 msgctxt "ListPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ui/pages/list.slint:484
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:669
 msgctxt "ListPage"
 msgid "No projects yet"
 msgstr "Noch keine Projekte"
 
-#: ui/pages/list.slint:491
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:676
 msgctxt "ListPage"
 msgid "Create a project to count your rows and keep your pattern at hand."
 msgstr ""
 "Leg ein Projekt an, um Reihen zu zählen und deine Anleitung griffbereit zu "
 "haben."
 
-#: ui/pages/list.slint:504
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:728
 msgctxt "ListPage"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/pages/pdf.slint:234
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:234
 msgctxt "PdfPage"
 msgid "Zoom out"
 msgstr "Verkleinern"
 
-#: ui/pages/pdf.slint:243
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:243
 msgctxt "PdfPage"
 msgid "Zoom in"
 msgstr "Vergrößern"
 
-#: ui/pages/pdf.slint:306
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:306
 msgctxt "PdfPage"
 msgid "Page {} of {}"
 msgstr "Seite {} von {}"
 
-#: ui/pages/pdf.slint:336
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:336
 msgctxt "PdfPage"
 msgid "Loading…"
 msgstr "Wird geladen…"
 
-#: ui/pages/pdf.slint:409
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:409
 msgctxt "PdfPage"
 msgid "Previous page"
 msgstr "Vorherige Seite"
 
-#: ui/pages/pdf.slint:424
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:424
 msgctxt "PdfPage"
 msgid "Next page"
 msgstr "Nächste Seite"
 
-#: ui/pages/pdf.slint:476
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:476
 msgctxt "PdfPage"
 msgid "Previous row"
 msgstr "Vorherige Reihe"
 
-#: ui/pages/pdf.slint:515
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:515
 msgctxt "PdfPage"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/pages/pdf.slint:534
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:534
 msgctxt "PdfPage"
 msgid "Next row"
 msgstr "Nächste Reihe"
 
-#: ui/pages/project.slint:169
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:169
 msgctxt "ProjectPage"
 msgid "Delete project"
 msgstr "Projekt löschen"
 
-#: ui/pages/project.slint:233
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:233
 msgctxt "ProjectPage"
 msgid "Add PDF pattern"
 msgstr "PDF-Anleitung hinzufügen"
 
-#: ui/pages/project.slint:229
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:229
 msgctxt "ProjectPage"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/pages/settings.slint:103
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:103
 msgctxt "SettingsPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ui/pages/settings.slint:119
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:119
 msgctxt "SettingsPage"
 msgid "Language"
 msgstr "Sprache"
 
-#: ui/pages/settings.slint:122 ui/pages/settings.slint:133
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:122
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:122
 msgctxt "SettingsPage"
 msgid "System"
 msgstr "System"
 
-#: ui/pages/settings.slint:130
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:130
 msgctxt "SettingsPage"
 msgid "Appearance"
 msgstr "Erscheinungsbild"
 
-#: ui/pages/settings.slint:133
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:133
 msgctxt "SettingsPage"
 msgid "Light"
 msgstr "Hell"
 
-#: ui/pages/settings.slint:133
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:133
 msgctxt "SettingsPage"
 msgid "Dark"
 msgstr "Dunkel"
 
-#: ui/pages/settings.slint:141
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:141
 msgctxt "SettingsPage"
 msgid "Counting"
 msgstr "Zählen"
 
-#: ui/pages/settings.slint:158 ui/pages/settings.slint:172
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:158
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:158
 msgctxt "SettingsPage"
 msgid "Keep screen on"
 msgstr "Bildschirm bleibt an"
 
-#: ui/pages/settings.slint:163
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:163
 msgctxt "SettingsPage"
 msgid "While a project or pattern is open"
 msgstr "Solange ein Projekt oder eine Anleitung geöffnet ist"
 
-#: ui/pages/settings.slint:279
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:279
 msgctxt "SettingsPage"
 msgid "About"
 msgstr "Über"
 
-#: ui/pages/part.slint:18
+#: /home/ldrick/Documents/development/flausch/ui/pages/part.slint:18
 msgctxt "PartPage"
 msgid "Edit part"
 msgstr "Teil bearbeiten"
 
-#: ui/pages/part.slint:29
+#: /home/ldrick/Documents/development/flausch/ui/pages/part.slint:29
 msgctxt "PartPage"
 msgid "Delete part"
 msgstr "Teil löschen"
 
-#: ui/pages/list.slint:160
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:229
 msgctxt "ProjectCard"
 msgid "No parts yet"
 msgstr "Noch keine Teile"
 
-#: ui/pages/list.slint:160
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:229
 msgctxt "ProjectCard"
 msgid "{n} part"
 msgid_plural "{n} parts"
 msgstr[0] "{n} Teil"
 msgstr[1] "{n} Teile"
 
-#: ui/pages/list.slint:161
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:230
 msgctxt "ProjectCard"
 msgid "{} · row {} of {}"
 msgstr "{} · Reihe {} von {}"
 
-#: ui/pages/list.slint:162
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:231
 msgctxt "ProjectCard"
 msgid "{} · row {}"
 msgstr "{} · Reihe {}"
 
-#: ui/pages/project.slint:14
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:14
 msgctxt "PatternCard"
 msgid "Open pattern"
 msgstr "Anleitung öffnen"
 
-#: ui/pages/project.slint:54
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:54
 msgctxt "PatternCard"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/pages/project.slint:70
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:70
 msgctxt "PatternCard"
 msgid "Remove pattern"
 msgstr "Anleitung entfernen"
 
-#: ui/pages/project.slint:100
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:100
 msgctxt "PartCard"
 msgid "{}, row {} of {}"
 msgstr "{}, Reihe {} von {}"
 
-#: ui/pages/project.slint:100
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:100
 msgctxt "PartCard"
 msgid "{}, row {}"
 msgstr "{}, Reihe {}"
 
-#: ui/pages/project.slint:129
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:129
 msgctxt "PartCard"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/pages/project.slint:129
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:129
 msgctxt "PartCard"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/pages/project.slint:161
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:161
 msgctxt "ProjectPage"
 msgid "Rename project"
 msgstr "Projekt umbenennen"
 
-#: ui/pages/project.slint:200
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:200
 msgctxt "ProjectPage"
 msgid "Parts"
 msgstr "Teile"
 
-#: ui/pages/project.slint:203
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:203
 msgctxt "ProjectPage"
 msgid ""
 "Add the parts of your project, e.g. head, body and legs. Each part counts "
@@ -308,233 +311,237 @@ msgstr ""
 "Füge die Teile deines Projekts hinzu, z. B. Kopf, Körper und Beine. Jedes "
 "Teil zählt seine eigenen Reihen."
 
-#: ui/pages/project.slint:219
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:219
 msgctxt "ProjectPage"
 msgid "Add part"
 msgstr "Teil hinzufügen"
 
-#: ui/app.slint:120
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:120
 msgctxt "ProjectDialog"
 msgid "Rename project"
 msgstr "Projekt umbenennen"
 
-#: ui/app.slint:166
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:166
 msgctxt "ProjectDialog"
 msgid "Name, e.g. Bunny"
 msgstr "Name, z. B. Hase"
 
-#: ui/app.slint:254
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:254
 msgctxt "PartDialog"
 msgid "Edit part"
 msgstr "Teil bearbeiten"
 
-#: ui/app.slint:254
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:254
 msgctxt "PartDialog"
 msgid "New part"
 msgstr "Neues Teil"
 
-#: ui/app.slint:290
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:290
 msgctxt "PartDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:291
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:291
 msgctxt "PartDialog"
 msgid "Name, e.g. Head"
 msgstr "Name, z. B. Kopf"
 
-#: ui/app.slint:295 ui/app.slint:296
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:295
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:295
 msgctxt "PartDialog"
 msgid "Rows (optional)"
 msgstr "Reihen (optional)"
 
-#: ui/app.slint:256
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:256
 msgctxt "PartDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:256
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:256
 msgctxt "PartDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/app.slint:545
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:664
 msgctxt "App"
 msgid "Delete part?"
 msgstr "Teil löschen?"
 
-#: ui/app.slint:546
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:665
 msgctxt "App"
 msgid "“{}” and its row counter will be removed."
 msgstr "„{}“ und sein Reihenzähler werden gelöscht."
 
-#: ui/app.slint:631
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:750
 msgctxt "App"
 msgid "The row counter of “{}” goes back to 0."
 msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
 
-#: ui/app.slint:646
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:765
 msgctxt "App"
 msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
 "Das PDF wird aus diesem Projekt entfernt. Die Reihenzähler bleiben erhalten."
 
-#: ui/pages/list.slint:177
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:246
 msgctxt "ProjectCard"
 msgid "{}%"
 msgstr "{} %"
 
-#: ui/pages/list.slint:299
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:416
 msgctxt "ListPage"
 msgid "Close search"
 msgstr "Suche schließen"
 
-#: ui/pages/list.slint:309 ui/pages/list.slint:344
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:426
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:426
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:426
 msgctxt "ListPage"
 msgid "Search"
 msgstr "Suchen"
 
-#: ui/pages/list.slint:310
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:427
 msgctxt "ListPage"
 msgid "Search projects"
 msgstr "Projekte suchen"
 
-#: ui/pages/list.slint:461
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:644
 msgctxt "ListPage"
 msgid "No matching projects"
 msgstr "Keine passenden Projekte"
 
-#: ui/pages/pdf.slint:55
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:55
 msgctxt "LargeCounter"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/pages/pdf.slint:438 ui/pages/pdf.slint:446
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:438
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:438
 msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:560
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:679
 msgctxt "App"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:599
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:718
 msgctxt "App"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/app.slint:599
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:718
 msgctxt "App"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/app.slint:617
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:736
 msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ui/pages/list.slint:204
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:273
 msgctxt "ProjectCard"
 msgid "Continue {}"
 msgstr "{} fortsetzen"
 
-#: ui/pages/pdf.slint:487
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:487
 msgctxt "PdfPage"
 msgid "Enlarge counter"
 msgstr "Zähler vergrößern"
 
-#: ui/pages/pdf.slint:90
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:90
 msgctxt "LargeCounter"
 msgid "Shrink counter"
 msgstr "Zähler verkleinern"
 
-#: ui/counter.slint:51
+#: /home/ldrick/Documents/development/flausch/ui/counter.slint:51
 msgctxt "RowCount"
 msgid "Row"
 msgstr "Reihe"
 
-#: ui/counter.slint:63
+#: /home/ldrick/Documents/development/flausch/ui/counter.slint:63
 msgctxt "RowCount"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/counter.slint:71
+#: /home/ldrick/Documents/development/flausch/ui/counter.slint:71
 msgctxt "RowCount"
 msgid "of {}"
 msgstr "von {}"
 
-#: ui/counter.slint:100
+#: /home/ldrick/Documents/development/flausch/ui/counter.slint:100
 msgctxt "CounterButtons"
 msgid "Previous row"
 msgstr "Vorherige Reihe"
 
-#: ui/counter.slint:109
+#: /home/ldrick/Documents/development/flausch/ui/counter.slint:109
 msgctxt "CounterButtons"
 msgid "Next row"
 msgstr "Nächste Reihe"
 
-#: ui/counter.slint:117
+#: /home/ldrick/Documents/development/flausch/ui/counter.slint:117
 msgctxt "CounterButtons"
 msgid "Reset counter"
 msgstr "Zähler zurücksetzen"
 
-#: ui/pages/pdf.slint:225
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:225
 msgctxt "PdfPage"
 msgid "Hide reading line"
 msgstr "Leselinie ausblenden"
 
-#: ui/pages/pdf.slint:225
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:225
 msgctxt "PdfPage"
 msgid "Show reading line"
 msgstr "Leselinie einblenden"
 
-#: ui/pages/pdf.slint:358
+#: /home/ldrick/Documents/development/flausch/ui/pages/pdf.slint:358
 msgctxt "PdfPage"
 msgid "Reading line"
 msgstr "Leselinie"
 
-#: ui/pages/settings.slint:210
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:210
 msgctxt "SettingsPage"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/pages/settings.slint:220
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:220
 msgctxt "SettingsPage"
 msgid "Reading line color"
 msgstr "Farbe der Leselinie"
 
-#: ui/pages/settings.slint:227
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:227
 msgctxt "SettingsPage"
 msgid "Magenta"
 msgstr "Magenta"
 
-#: ui/pages/settings.slint:228
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:228
 msgctxt "SettingsPage"
 msgid "Red"
 msgstr "Rot"
 
-#: ui/pages/settings.slint:229
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:229
 msgctxt "SettingsPage"
 msgid "Orange"
 msgstr "Orange"
 
-#: ui/pages/settings.slint:230
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:230
 msgctxt "SettingsPage"
 msgid "Blue"
 msgstr "Blau"
 
-#: ui/pages/settings.slint:231
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:231
 msgctxt "SettingsPage"
 msgid "Green"
 msgstr "Grün"
 
-#: ui/pages/settings.slint:243
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:243
 msgctxt "SettingsPage"
 msgid "Data"
 msgstr "Daten"
 
-#: ui/pages/settings.slint:253
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:253
 msgctxt "SettingsPage"
 msgid ""
 "Save projects, row counters and patterns as a ZIP file, for example before "
@@ -543,37 +550,37 @@ msgstr ""
 "Projekte, Reihenzähler und Anleitungen als ZIP-Datei sichern, zum Beispiel "
 "vor einem Handywechsel."
 
-#: ui/pages/settings.slint:261
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:261
 msgctxt "SettingsPage"
 msgid "Export"
 msgstr "Exportieren"
 
-#: ui/pages/settings.slint:268
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:268
 msgctxt "SettingsPage"
 msgid "Import"
 msgstr "Importieren"
 
-#: ui/app.slint:450
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:568
 msgctxt "App"
 msgid "Backup saved."
 msgstr "Sicherung gespeichert."
 
-#: ui/app.slint:451
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:569
 msgctxt "App"
 msgid "The backup could not be saved."
 msgstr "Die Sicherung konnte nicht gespeichert werden."
 
-#: ui/app.slint:452
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:570
 msgctxt "App"
 msgid "The file could not be read."
 msgstr "Die Datei konnte nicht gelesen werden."
 
-#: ui/app.slint:453
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:571
 msgctxt "App"
 msgid "This file is not a Flausch backup."
 msgstr "Diese Datei ist keine Flausch-Sicherung."
 
-#: ui/app.slint:454
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:572
 msgctxt "App"
 msgid ""
 "This backup is from a newer version of Flausch. Please update the app first."
@@ -581,24 +588,24 @@ msgstr ""
 "Diese Sicherung stammt aus einer neueren Flausch-Version. Bitte aktualisiere"
 " zuerst die App."
 
-#: ui/app.slint:455
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:573
 msgctxt "App"
 msgid "Backup restored."
 msgstr "Sicherung wiederhergestellt."
 
-#: ui/app.slint:456
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:574
 msgctxt "App"
 msgid "The backup could not be restored. Your data is unchanged."
 msgstr ""
 "Die Sicherung konnte nicht wiederhergestellt werden. Deine Daten sind "
 "unverändert."
 
-#: ui/app.slint:660
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:779
 msgctxt "App"
 msgid "Restore backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: ui/app.slint:661
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:780
 msgctxt "App"
 msgid ""
 "The backup contains {n} project. It replaces all projects and settings on "
@@ -613,132 +620,135 @@ msgstr[1] ""
 "Die Sicherung enthält {n} Projekte. Sie ersetzt alle Projekte und "
 "Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
 
-#: ui/app.slint:665
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:784
 msgctxt "App"
 msgid "Restore"
 msgstr "Wiederherstellen"
 
-#: ui/pages/list.slint:23
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:92
 msgctxt "ProjectCard"
 msgid "{} ({})"
 msgstr "{} ({})"
 
-#: ui/pages/list.slint:28
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:97
 msgctxt "ProjectCard"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/pages/list.slint:29
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:98
 msgctxt "ProjectCard"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/pages/list.slint:30
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:99
 msgctxt "ProjectCard"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/settings.slint:186 ui/pages/settings.slint:200
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:186
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:186
 msgctxt "SettingsPage"
 msgid "Count with volume keys"
 msgstr "Mit Lautstärketasten zählen"
 
-#: ui/pages/settings.slint:191
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:191
 msgctxt "SettingsPage"
 msgid "Volume up counts a row, volume down goes back"
 msgstr "Lauter zählt eine Reihe, leiser geht zurück"
 
-#: ui/pages/project.slint:186
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:186
 msgctxt "ProjectPage"
 msgid "Status"
 msgstr "Status"
 
-#: ui/pages/project.slint:189
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:189
 msgctxt "ProjectPage"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/pages/project.slint:189
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:189
 msgctxt "ProjectPage"
 msgid "In progress"
 msgstr "In Arbeit"
 
-#: ui/pages/project.slint:189
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:189
 msgctxt "ProjectPage"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/pages/project.slint:189
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:189
 msgctxt "ProjectPage"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/project.slint:244
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:244
 msgctxt "ProjectPage"
 msgid "Notes"
 msgstr "Notizen"
 
-#: ui/pages/project.slint:248
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:248
 msgctxt "ProjectPage"
 msgid "Add notes"
 msgstr "Notizen hinzufügen"
 
-#: ui/pages/project.slint:257
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:257
 msgctxt "ProjectPage"
 msgid "Edit notes"
 msgstr "Notizen bearbeiten"
 
-#: ui/app.slint:311 ui/app.slint:328
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:311
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:311
 msgctxt "NotesDialog"
 msgid "Notes"
 msgstr "Notizen"
 
-#: ui/app.slint:329
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:329
 msgctxt "NotesDialog"
 msgid "Yarn, hook size, changes…"
 msgstr "Garn, Nadelstärke, Änderungen…"
 
-#: ui/app.slint:313
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:313
 msgctxt "NotesDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:489
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:608
 msgctxt "App"
 msgid "Open PDF"
 msgstr "PDF öffnen"
 
-#: ui/app.slint:490
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:609
 msgctxt "App"
 msgid "Create a new project with “{}” or add it to a project."
 msgstr "Leg mit „{}“ ein neues Projekt an oder füge es einem Projekt hinzu."
 
-#: ui/app.slint:491
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:610
 msgctxt "App"
 msgid "Create a new project with “{}”."
 msgstr "Leg mit „{}“ ein neues Projekt an."
 
-#: ui/app.slint:508 ui/app.slint:525
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:627
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:627
 msgctxt "App"
 msgid "Replaces its pattern"
 msgstr "Ersetzt die Anleitung"
 
-#: ui/app.slint:538
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:657
 msgctxt "App"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/app.slint:301
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:301
 msgctxt "PartDialog"
 msgid "How many (optional)"
 msgstr "Wie oft (optional)"
 
-#: ui/app.slint:302
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:302
 msgctxt "PartDialog"
 msgid "How many, e.g. 4 legs"
 msgstr "Wie oft, z. B. 4 Beine"
 
-#: ui/app.slint:630
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:749
 msgctxt "App"
 msgid ""
 "The row counter of “{}” goes back to 0, starting again with the first piece."
@@ -746,153 +756,153 @@ msgstr ""
 "Der Reihenzähler von „{}“ wird auf 0 gesetzt, und es geht wieder beim ersten"
 " Stück los."
 
-#: ui/counter.slint:126
+#: /home/ldrick/Documents/development/flausch/ui/counter.slint:126
 msgctxt "NextPieceButton"
 msgid "Next piece ({}/{})"
 msgstr "Nächstes Stück ({}/{})"
 
-#: ui/pages/project.slint:144
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:144
 msgctxt "PartCard"
 msgid "Edit {}"
 msgstr "{} bearbeiten"
 
-#: ui/app.slint:258
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:258
 msgctxt "PartDialog"
 msgid "Delete part"
 msgstr "Teil löschen"
 
-#: ui/pages/list.slint:360
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:516
 msgctxt "ListPage"
 msgid "All"
 msgstr "Alle"
 
-#: ui/pages/list.slint:361
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:517
 msgctxt "ListPage"
 msgid "In progress"
 msgstr "In Arbeit"
 
-#: ui/pages/list.slint:362
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:518
 msgctxt "ListPage"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/pages/list.slint:363
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:519
 msgctxt "ListPage"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/pages/list.slint:364
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:520
 msgctxt "ListPage"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/list.slint:419
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:600
 msgctxt "ListPage"
 msgid "Hide finished projects ({})"
 msgstr "Fertige Projekte ausblenden ({})"
 
-#: ui/pages/list.slint:419
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:600
 msgctxt "ListPage"
 msgid "Show finished projects ({})"
 msgstr "Fertige Projekte einblenden ({})"
 
-#: ui/pages/list.slint:427
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:608
 msgctxt "ListPage"
 msgid "Finished ({})"
 msgstr "Fertig ({})"
 
-#: ui/pages/list.slint:461
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:646
 msgctxt "ListPage"
 msgid "No projects with this status"
 msgstr "Keine Projekte mit diesem Status"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:126
+#: /home/ldrick/Documents/development/flausch/ui/store.slint:146
 msgctxt "Store"
 msgid "Planned"
 msgstr "Geplant"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:126
+#: /home/ldrick/Documents/development/flausch/ui/store.slint:146
 msgctxt "Store"
 msgid "In progress"
 msgstr "In Arbeit"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:126
+#: /home/ldrick/Documents/development/flausch/ui/store.slint:146
 msgctxt "Store"
 msgid "Paused"
 msgstr "Pausiert"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:126
+#: /home/ldrick/Documents/development/flausch/ui/store.slint:146
 msgctxt "Store"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/about.slint:39
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:39
 msgctxt "AboutPage"
 msgid "About Flausch"
 msgstr "Über Flausch"
 
-#: ui/pages/about.slint:86
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:86
 msgctxt "AboutPage"
 msgid ""
 "A crochet companion. Flausch is German for fluff and sounds like “fl”, then "
 "“ow” as in “now”, then “sh”."
 msgstr "Dein Häkelbegleiter. Flausch kommt von flauschig."
 
-#: ui/pages/about.slint:116
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:116
 msgctxt "ChangelogPage"
 msgid "Changelog"
 msgstr "Versionsverlauf"
 
-#: ui/pages/about.slint:139
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:139
 msgctxt "ChangelogPage"
 msgid "Version {}"
 msgstr "Version {}"
 
-#: ui/pages/settings.slint:288
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:288
 msgctxt "SettingsPage"
 msgid "About Flausch"
 msgstr "Über Flausch"
 
-#: ui/pages/settings.slint:294
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:294
 msgctxt "SettingsPage"
 msgid "Changelog"
 msgstr "Versionsverlauf"
 
-#: ui/pages/about.slint:176
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:176
 msgctxt "DonatePage"
 msgid "Donate"
 msgstr "Spenden"
 
-#: ui/pages/about.slint:220
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:220
 msgctxt "DonatePage"
 msgid "Opens the page in your browser."
 msgstr "Öffnet die Seite in deinem Browser."
 
-#: ui/pages/settings.slint:299
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:299
 msgctxt "SettingsPage"
 msgid "Donate"
 msgstr "Spenden"
 
-#: ui/pages/about.slint:11
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:11
 msgctxt "MadeWithLove"
 msgid "Made with love in the Black Forest"
 msgstr "Mit Liebe aus dem Schwarzwald"
 
-#: ui/pages/about.slint:14
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:14
 msgctxt "MadeWithLove"
 msgid "Made with"
 msgstr "Mit"
 
-#: ui/pages/about.slint:29
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:29
 msgctxt "MadeWithLove"
 msgid "in the Black Forest"
 msgstr "aus dem Schwarzwald"
 
-#: ui/pages/about.slint:205
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:205
 msgctxt "DonatePage"
 msgid ""
 "I develop Flausch on my own, in my spare time, free and without ads or "
@@ -903,162 +913,280 @@ msgstr ""
 "oder Tracking. Wenn dir die App bei deinen Projekten hilft, freue ich mich, "
 "wenn du mir einen Kaffee spendierst. Danke!"
 
-#: ui/pages/list.slint:336
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:452
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:452
 msgctxt "ListPage"
 msgid "Sort"
 msgstr "Sortieren"
 
-#: ui/app.slint:17
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:17
 msgctxt "SortDialog"
 msgid "Sort by"
 msgstr "Sortieren nach"
 
-#: ui/app.slint:24
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:24
 msgctxt "SortDialog"
 msgid "Last used"
 msgstr "Zuletzt benutzt"
 
-#: ui/app.slint:25
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:25
 msgctxt "SortDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:26
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:26
 msgctxt "SortDialog"
 msgid "Newest"
 msgstr "Neueste"
 
-#: ui/app.slint:27
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:27
 msgctxt "SortDialog"
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: ui/app.slint:28
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:28
 msgctxt "SortDialog"
 msgid "Custom"
 msgstr "Eigene"
 
-#: ui/app.slint:58
-msgctxt "SortDialog"
-msgid "Hold a project to move it."
-msgstr "Halte ein Projekt gedrückt, um es zu verschieben."
-
 #. Labels of the TalkBack actions on project cards.
-#: ui/store.slint:187
+#: /home/ldrick/Documents/development/flausch/ui/store.slint:217
 msgctxt "Store"
 msgid "Move up"
 msgstr "Nach oben verschieben"
 
-#: ui/store.slint:188
+#: /home/ldrick/Documents/development/flausch/ui/store.slint:218
 msgctxt "Store"
 msgid "Move down"
 msgstr "Nach unten verschieben"
 
-#: ui/pages/about.slint:93
+#: /home/ldrick/Documents/development/flausch/ui/pages/about.slint:93
 msgctxt "AboutPage"
 msgid "Logo font: Montez by Astigmatic, Apache License 2.0"
 msgstr "Logo-Schrift: Montez von Astigmatic, Apache-Lizenz 2.0"
 
-#: ui/app.slint:230
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:230
 msgctxt "ProjectDialog"
 msgid "Add PDF pattern"
 msgstr "PDF-Anleitung hinzufügen"
 
-#: ui/app.slint:178
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:178
 msgctxt "ProjectDialog"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/app.slint:178
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:178
 msgctxt "ProjectDialog"
 msgid "In progress"
 msgstr "In Arbeit"
 
-#: ui/app.slint:239 ui/app.slint:244
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:239
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:239
 msgctxt "ProjectDialog"
 msgid "Notes"
 msgstr "Notizen"
 
-#: ui/app.slint:226
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:226
 msgctxt "ProjectDialog"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/app.slint:178
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:178
 msgctxt "ProjectDialog"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/app.slint:178
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:178
 msgctxt "ProjectDialog"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/app.slint:175
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:175
 msgctxt "ProjectDialog"
 msgid "Status"
 msgstr "Status"
 
-#: ui/app.slint:245
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:245
 msgctxt "ProjectDialog"
 msgid "Yarn, hook size, changes…"
 msgstr "Garn, Nadelstärke, Änderungen…"
 
-#: ui/app.slint:102
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:102
 msgctxt "NewParts"
 msgid "Remove {}"
 msgstr "{} entfernen"
 
-#: ui/app.slint:92
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:92
 msgctxt "NewParts"
 msgid "{n} row"
 msgid_plural "{n} rows"
 msgstr[0] "{n} Reihe"
 msgstr[1] "{n} Reihen"
 
-#: ui/app.slint:92
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:92
 msgctxt "NewParts"
 msgid "{n} row, {} times"
 msgid_plural "{n} rows, {} times"
 msgstr[0] "{n} Reihe, {}-mal"
 msgstr[1] "{n} Reihen, {}-mal"
 
-#: ui/app.slint:92
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:92
 msgctxt "NewParts"
 msgid "{} times"
 msgstr "{}-mal"
 
-#: ui/app.slint:216
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:216
 msgctxt "ProjectDialog"
 msgid "Add part"
 msgstr "Teil hinzufügen"
 
-#: ui/app.slint:204 ui/app.slint:205
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:204
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:204
 msgctxt "ProjectDialog"
 msgid "How many"
 msgstr "Anzahl"
 
-#: ui/app.slint:189
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:189
 msgctxt "ProjectDialog"
 msgid "Part"
 msgstr "Teil"
 
-#: ui/app.slint:190
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:190
 msgctxt "ProjectDialog"
 msgid "Part, e.g. Head"
 msgstr "Teil, z. B. Kopf"
 
-#: ui/app.slint:185
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:185
 msgctxt "ProjectDialog"
 msgid "Parts"
 msgstr "Teile"
 
-#: ui/app.slint:197 ui/app.slint:198
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:197
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:197
 msgctxt "ProjectDialog"
 msgid "Rows"
 msgstr "Reihen"
 
-#: ui/pages/settings.slint:304
+#: /home/ldrick/Documents/development/flausch/ui/pages/settings.slint:304
 msgctxt "SettingsPage"
 msgid "Website"
 msgstr "Website"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:337
+msgctxt "FolderDialog"
+msgid "Rename folder"
+msgstr "Ordner umbenennen"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:337
+msgctxt "FolderDialog"
+msgid "New folder"
+msgstr "Neuer Ordner"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:339
+msgctxt "FolderDialog"
+msgid "Save"
+msgstr "Speichern"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:339
+msgctxt "FolderDialog"
+msgid "Create"
+msgstr "Erstellen"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:341
+msgctxt "FolderDialog"
+msgid "Delete folder"
+msgstr "Ordner löschen"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:369
+msgctxt "FolderDialog"
+msgid "Name"
+msgstr "Name"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:370
+msgctxt "FolderDialog"
+msgid "Name, e.g. Gifts"
+msgstr "Name, z. B. Geschenke"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:374
+msgctxt "FolderDialog"
+msgid "Deleting the folder keeps its projects. They go back to the main list."
+msgstr ""
+"Beim Löschen des Ordners bleiben seine Projekte erhalten. Sie kommen zurück "
+"in die Hauptliste."
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:416
+msgctxt "FolderPicker"
+msgid "Move to folder"
+msgstr "In Ordner verschieben"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:424
+msgctxt "FolderPicker"
+msgid "No folder"
+msgstr "Kein Ordner"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:575
+msgctxt "App"
+msgid "Folder deleted. Its projects are back in the main list."
+msgstr "Ordner gelöscht. Seine Projekte sind zurück in der Hauptliste."
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:15
+msgctxt "FolderCard"
+msgid "Folder {}, {n} project"
+msgid_plural "Folder {}, {n} projects"
+msgstr[0] "Ordner {}, {n} Projekt"
+msgstr[1] "Ordner {}, {n} Projekte"
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:56
+msgctxt "FolderCard"
+msgid "{n} project"
+msgid_plural "{n} projects"
+msgstr[0] "{n} Projekt"
+msgstr[1] "{n} Projekte"
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:444
+msgctxt "ListPage"
+msgid "Rename folder"
+msgstr "Ordner umbenennen"
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:484
+msgctxt "ListPage"
+msgid "New folder"
+msgstr "Neuer Ordner"
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:278
+msgctxt "ProjectPage"
+msgid "Move to folder"
+msgstr "In Ordner verschieben"
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:58
+msgctxt "SortDialog"
+msgid "Hold a project to move it, or drop it on a folder."
+msgstr ""
+"Halte ein Projekt gedrückt, um es zu verschieben oder auf einen Ordner zu "
+"ziehen."
+
+#: /home/ldrick/Documents/development/flausch/ui/app.slint:375
+msgctxt "FolderDialog"
+msgid "To fill it, hold a project on the list and drop it on the folder."
+msgstr ""
+"Halte ein Projekt in der Liste gedrückt und zieh es auf den Ordner, um ihn "
+"zu füllen."
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:645
+msgctxt "ListPage"
+msgid ""
+"No projects in this folder yet. Create one here, or drop a project on the "
+"folder in the main list."
+msgstr ""
+"Noch keine Projekte in diesem Ordner. Erstelle hier eines oder zieh ein "
+"Projekt in der Hauptliste auf den Ordner."
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/project.slint:278
+msgctxt "ProjectPage"
+msgid "In folder {}"
+msgstr "Im Ordner {}"
+
+#: /home/ldrick/Documents/development/flausch/ui/pages/list.slint:714
+msgctxt "ListPage"
+msgid "Main list"
+msgstr "Hauptliste"

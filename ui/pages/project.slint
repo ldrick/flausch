@@ -271,6 +271,15 @@ export component ProjectPage inherits Rectangle {
                         }
                     }
                 }
+
+                // Usually projects are dragged onto a folder on the list; this works with TalkBack, too.
+                if Store.folders.length > 0: PillButton {
+                    kind: ButtonKind.quiet;
+                    text: Store.current.folder.id != 0 ? @tr("In folder {}", Store.current.folder.name) : @tr("Move to folder");
+                    icon: @image-url("../icons/folder.svg");
+                    has-icon: true;
+                    clicked => { Store.dialog = DialogKind.pick-folder; }
+                }
             }
         }
     }

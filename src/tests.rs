@@ -277,6 +277,81 @@ fn back_collapses_the_counter_and_ends_the_search() {
 }
 
 #[test]
+fn folders_on_the_list() {
+    let h = Harness::new();
+    ctl(|c| c.create_project(&named("Scarf")));
+    ctl(|c| c.create_folder("Toys"));
+    let toys = h.store().get_folder().id as u64;
+    assert_ne!(toys, 0);
+    assert_eq!(h.store().get_projects().row_count(), 0);
+    assert!(!h.store().get_show_folders());
+
+    ctl(|c| c.create_project(&named("Bunny")));
+    let bunny = h.store().get_current().id as u64;
+    assert_eq!(h.saved().get(bunny).unwrap().folder, Some(toys));
+    assert_eq!(h.store().get_current().folder.name, "Toys");
+    assert!(back());
+    assert_eq!(h.store().get_projects().row_data(0).unwrap().name, "Bunny");
+
+    // Back closes the folder, then the app.
+    assert!(back());
+    assert!(h.store().get_show_folders());
+    assert_eq!(h.store().get_folders().row_data(0).unwrap().count, 1);
+    let names: Vec<_> = h.store().get_projects().iter().map(|p| p.name).collect();
+    assert_eq!(names, ["Scarf"]);
+    assert!(!back());
+
+    // The search covers every folder, but the folder stays open.
+    ctl(|c| c.open_folder(toys));
+    h.store().set_searching(true);
+    h.store().set_query("scarf".into());
+    ctl(|c| c.refresh());
+    assert_eq!(h.store().get_projects().row_data(0).unwrap().name, "Scarf");
+    assert!(back());
+    assert_eq!(h.store().get_folder().id as u64, toys);
+
+    // The incoming PDF can go to projects in any folder.
+    let (pdf, name) = Storage::incoming_paths(h.dir.path());
+    std::fs::write(pdf, PATTERN).unwrap();
+    std::fs::write(name, "cat.pdf").unwrap();
+    ctl(Controller::check_incoming);
+    assert_eq!(h.store().get_incoming_projects().row_count(), 2);
+    ctl(Controller::discard_incoming);
+
+    ctl(Controller::delete_folder);
+    assert_eq!(h.store().get_notice(), Notice::FolderDeleted);
+    assert_eq!(h.store().get_folder().id, 0);
+    assert_eq!(h.store().get_projects().row_count(), 2);
+    assert_eq!(h.saved().get(bunny).unwrap().folder, None);
+    assert_eq!(h.saved().folders, []);
+}
+
+#[test]
+fn moving_a_project_to_a_folder() {
+    let h = Harness::new();
+    ctl(|c| c.create_folder("Gifts"));
+    let gifts = h.store().get_folder().id;
+    ctl(|c| c.open_folder(0));
+    ctl(|c| c.create_project(&named("Hat")));
+    let hat = h.store().get_current().id as u64;
+
+    ctl(|c| c.move_to_folder(hat, gifts as u64));
+    assert_eq!(h.store().get_current().folder.id, gifts);
+    assert_eq!(h.saved().get(hat).unwrap().folder, Some(gifts as u64));
+    assert_eq!(h.store().get_projects().row_count(), 0);
+    ctl(|c| c.move_to_folder(hat, 999));
+    assert_eq!(h.store().get_current().folder.id, gifts, "no such folder");
+    ctl(|c| c.move_to_folder(hat, 0));
+    assert_eq!(h.saved().get(hat).unwrap().folder, None);
+
+    ctl(|c| c.open_folder(gifts as u64));
+    ctl(|c| c.rename_folder("  "));
+    ctl(|c| c.rename_folder("Presents"));
+    assert_eq!(h.store().get_folder().name, "Presents");
+    assert_eq!(h.saved().folders[0].name, "Presents");
+}
+
+#[test]
 fn rows_are_saved_right_away() {
     let h = Harness::new();
     let (id, part) = project_with_part();

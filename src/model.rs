@@ -249,6 +249,9 @@ pub struct Project {
     /// Place in the custom order (`ProjectSort::Custom`), smallest first.
     #[serde(default)]
     pub position: i64,
+    /// The folder it is in; `None` is the top level of the list.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub folder: Option<u64>,
     /// Version 1 counted rows per project. Only read for the migration.
     #[serde(default, skip_serializing, rename = "row")]
     legacy_row: Option<u32>,
@@ -295,11 +298,20 @@ impl Project {
     }
 }
 
+/// A folder on the project list. Folders don't nest.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Folder {
+    pub id: u64,
+    pub name: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Library {
     pub version: u32,
     pub next_id: u64,
     pub projects: Vec<Project>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub folders: Vec<Folder>,
 }
 
 impl Default for Library {
@@ -308,6 +320,7 @@ impl Default for Library {
             version: LIBRARY_VERSION,
             next_id: 1,
             projects: Vec::new(),
+            folders: Vec::new(),
         }
     }
 }
@@ -328,6 +341,14 @@ impl Library {
                     project.parts.push(part);
                     project.active_part = Some(id);
                 }
+            }
+        }
+        // Projects in a folder that is gone are back at the top level.
+        for i in 0..self.projects.len() {
+            if let Some(folder) = self.projects[i].folder
+                && self.folder(folder).is_none()
+            {
+                self.projects[i].folder = None;
             }
         }
         self.version = LIBRARY_VERSION;
@@ -354,6 +375,7 @@ impl Library {
             created: now,
             updated: now,
             position,
+            folder: None,
             legacy_row: None,
             legacy_row_goal: None,
         });
@@ -482,6 +504,61 @@ impl Library {
             p.pieces_done += 1;
             p.row = 0;
         })
+    }
+
+    pub fn folder(&self, id: u64) -> Option<&Folder> {
+        self.folders.iter().find(|f| f.id == id)
+    }
+
+    /// Folders by name.
+    pub fn sorted_folders(&self) -> Vec<&Folder> {
+        let mut folders: Vec<_> = self.folders.iter().collect();
+        folders.sort_by_cached_key(|f| (f.name.to_lowercase(), f.id));
+        folders
+    }
+
+    pub fn create_folder(&mut self, name: &str) -> u64 {
+        let id = self.next_id();
+        self.folders.push(Folder {
+            id,
+            name: clean_name(name),
+        });
+        id
+    }
+
+    pub fn rename_folder(&mut self, id: u64, name: &str) -> bool {
+        self.folders
+            .iter_mut()
+            .find(|f| f.id == id)
+            .map(|f| f.name = clean_name(name))
+            .is_some()
+    }
+
+    /// Removes a folder; its projects go back to the top level.
+    pub fn remove_folder(&mut self, id: u64) -> Option<Folder> {
+        let index = self.folders.iter().position(|f| f.id == id)?;
+        for project in &mut self.projects {
+            if project.folder == Some(id) {
+                project.folder = None;
+            }
+        }
+        Some(self.folders.remove(index))
+    }
+
+    /// Puts a project into a folder, or back to the top level with `None`.
+    pub fn move_to_folder(&mut self, project: u64, folder: Option<u64>) -> bool {
+        if folder.is_some_and(|f| self.folder(f).is_none()) {
+            return false;
+        }
+        self.get_mut(project).map(|p| p.folder = folder).is_some()
+    }
+
+    /// Number of projects in a folder.
+    pub fn folder_size(&self, id: u64) -> usize {
+        self.projects
+            .iter()
+            .filter(|p| p.folder == Some(id))
+            .count()
     }
 
     /// Projects the filter allows, grouped by status (`Status::group`) and sorted within a group;
@@ -819,6 +896,59 @@ mod tests {
         // New projects go to the top.
         let d = lib.create("D", 6);
         assert_eq!(ids(&lib), [d, a, b, c, done]);
+    }
+
+    #[test]
+    fn folders_hold_projects() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let scarf = lib.create("Scarf", 2);
+        let toys = lib.create_folder("  Toys  ");
+        let gifts = lib.create_folder("gifts");
+        assert_eq!(lib.folder(toys).unwrap().name, "Toys");
+        let names: Vec<_> = lib.sorted_folders().iter().map(|f| f.id).collect();
+        assert_eq!(names, [gifts, toys]);
+
+        assert!(lib.move_to_folder(hat, Some(toys)));
+        assert!(lib.move_to_folder(scarf, Some(toys)));
+        assert!(!lib.move_to_folder(scarf, Some(999)), "no such folder");
+        assert_eq!(lib.folder_size(toys), 2);
+        assert!(lib.move_to_folder(scarf, None));
+        assert_eq!(lib.folder_size(toys), 1);
+
+        assert!(lib.rename_folder(toys, "Amigurumi"));
+        assert_eq!(lib.folder(toys).unwrap().name, "Amigurumi");
+        // Removing a folder keeps its projects.
+        assert!(lib.remove_folder(toys).is_some());
+        assert_eq!(lib.get(hat).unwrap().folder, None);
+        assert_eq!(lib.projects.len(), 2);
+        assert_ne!(lib.create_folder("New"), toys, "ids are not reused");
+    }
+
+    #[test]
+    fn folders_are_kept_and_optional_on_disk() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let json = serde_json::to_string(&lib).unwrap();
+        assert!(!json.contains("folder"), "{json}");
+
+        let toys = lib.create_folder("Toys");
+        lib.move_to_folder(hat, Some(toys));
+        let json = serde_json::to_string(&lib).unwrap();
+        let mut again: Library = serde_json::from_str(&json).unwrap();
+        again.migrate();
+        assert_eq!(again, lib);
+    }
+
+    #[test]
+    fn migrate_drops_missing_folders() {
+        let json = r#"{"version":2,"next_id":3,"folders":[{"id":2,"name":"Toys"}],"projects":[
+            {"id":1,"name":"Hat","folder":7,"created":0,"updated":0},
+            {"id":3,"name":"Bear","folder":2,"created":0,"updated":0}]}"#;
+        let mut lib: Library = serde_json::from_str(json).unwrap();
+        lib.migrate();
+        assert_eq!(lib.get(1).unwrap().folder, None);
+        assert_eq!(lib.get(3).unwrap().folder, Some(2));
     }
 
     #[test]

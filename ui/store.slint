@@ -4,7 +4,7 @@ export enum Screen { list, project, part, pdf, settings, about, changelog, donat
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder }
 
 // One release in the changelog.
 export struct ChangeItem {
@@ -29,6 +29,7 @@ export enum Notice {
     backup-too-new,
     backup-restored,
     backup-restore-failed,
+    folder-deleted,
 }
 
 export struct PartItem {
@@ -60,9 +61,20 @@ export struct ProjectForm {
     notes: string,
 }
 
+// A folder on the project list.
+export struct FolderItem {
+    // 0 means no folder (the top level of the list).
+    id: int,
+    name: string,
+    // Number of projects in it.
+    count: int,
+}
+
 export struct ProjectItem {
     id: int,
     name: string,
+    // The folder it is in; id 0 if none.
+    folder: FolderItem,
     status: ProjectStatus,
     notes: string,
     part-count: int,
@@ -113,11 +125,19 @@ export struct A11yFocus {
 // The interface between Rust (src/lib.rs) and the UI. Rust sets the `in` properties and
 // handles the callbacks.
 export global Store {
-    // Projects matching `query` and `status-filter`, grouped by status (active, then planned and
+    // Projects in the open folder (in all folders while searching) matching `query` and `status-filter`, grouped by status (active, then planned and
     // paused, then finished) and most recently used first within a group. Without a query and
     // with the filter "all", finished projects are in `finished` instead.
     in property <[ProjectItem]> projects;
     in property <[ProjectItem]> finished;
+    // All folders, by name.
+    in property <[FolderItem]> folders;
+    // The folder open on the project list; id 0 at the top level.
+    in property <FolderItem> folder;
+    // The list shows the folder cards: at the top level and not searching.
+    in property <bool> show-folders;
+    // Projects the incoming PDF can go to: all but the finished ones, in every folder.
+    in property <[ProjectItem]> incoming-projects;
     // The collapsed section with the finished projects is open.
     in-out property <bool> finished-open;
     in property <StatusFilter> status-filter: StatusFilter.all;
@@ -176,6 +196,16 @@ export global Store {
     callback delete-project();
     callback set-status(ProjectStatus);
     callback set-notes(string);
+
+    // Shows a folder on the project list; 0 goes back to the top level.
+    callback open-folder(int);
+    // Creates a folder and opens it.
+    callback create-folder(string);
+    // Rename and delete act on the open folder. Deleting keeps its projects.
+    callback rename-folder(string);
+    callback delete-folder();
+    // Puts a project into a folder (dropped on it on the list, or chosen on the project screen); 0 takes it out.
+    callback move-to-folder(int /* project */, int /* folder */);
 
     callback query-changed();
     callback set-status-filter(StatusFilter);
