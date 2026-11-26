@@ -358,6 +358,86 @@ export component Switch inherits Rectangle {
     }
 }
 
+// An entry of a `TopMenu`. It closes the menu only if its `clicked` does, e.g. zoom stays open to repeat it.
+export component MenuItem inherits Rectangle {
+    in property <image> icon;
+    in property <string> text;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    height: Theme.touch + 4px;
+    border-radius: Theme.radius-small - 4px;
+    background: touch.pressed ? Theme.surface-muted : transparent;
+    opacity: root.enabled ? 1 : 0.35;
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-enabled: root.enabled;
+    accessible-action-default => {
+        if root.enabled {
+            root.clicked();
+        }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 14px;
+
+        VerticalLayout {
+            alignment: center;
+            Icon {
+                source: root.icon;
+                width: 22px;
+                height: 22px;
+            }
+        }
+        Text {
+            text: root.text;
+            color: Theme.text;
+            font-size: Theme.font-body;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+    }
+}
+
+// The menu (⋮) of a top bar, dropping down from its button at the right. A tap outside or Back closes it;
+// the items are its children.
+export component TopMenu inherits TouchArea {
+    // Distance of the menu from the top of the page.
+    in property <length> top: 56px;
+
+    clicked => { Store.menu-open = false; }
+
+    Rectangle {
+        x: parent.width - self.width - 8px;
+        y: root.top;
+        width: 240px;
+        height: menu.preferred-height;
+        background: Theme.surface;
+        border-radius: Theme.radius-small;
+        border-width: 1px;
+        border-color: Theme.border;
+        drop-shadow-offset-y: Theme.shadow-offset-small;
+        drop-shadow-color: Theme.shadow;
+        // The TalkBack bridge (src/a11y.rs) only exposes what lies inside the menu.
+        accessible-role: groupbox;
+        accessible-id: "dialog";
+
+        // Swallow taps between the items.
+        TouchArea { }
+
+        menu := VerticalLayout {
+            padding: 6px;
+            @children
+        }
+    }
+}
+
 // Height of the on-screen keyboard in window coordinates, 0 if hidden. Set by `App`.
 export global Keyboard {
     in-out property <length> height;

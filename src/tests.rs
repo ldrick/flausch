@@ -245,15 +245,15 @@ fn the_abbreviations_open_from_the_pattern_and_go_back_to_it() {
             .invoke_accessible_default_action();
     };
     tap("More options");
-    assert!(h.store().get_pdf_menu_open());
+    assert!(h.store().get_menu_open());
     assert!(back());
-    assert!(!h.store().get_pdf_menu_open());
+    assert!(!h.store().get_menu_open());
     assert_eq!(h.store().get_screen(), Screen::Pdf);
     tap("More options");
 
     h.store().set_abbreviation_query("old".into());
     tap("Abbreviations");
-    assert!(!h.store().get_pdf_menu_open());
+    assert!(!h.store().get_menu_open());
     assert_eq!(h.store().get_screen(), Screen::Abbreviations);
     assert_eq!(
         h.store().get_abbreviation_query(),

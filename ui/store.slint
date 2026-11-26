@@ -1,10 +1,10 @@
 import { Appearance, LineColor } from "theme.slint";
 
-export enum Screen { list, project, part, pdf, settings, about, changelog, donate, abbreviations }
+export enum Screen { list, project, part, pdf, settings, about, changelog, donate, abbreviations, stash }
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder, add-yarn, edit-yarn }
 
 // One release in the changelog.
 export struct ChangeItem {
@@ -81,6 +81,32 @@ export struct FolderItem {
     name: string,
     // Number of projects in it.
     count: int,
+}
+
+// The fields of the yarn form, as typed; empty number fields mean unknown.
+export struct YarnForm {
+    brand: string,
+    name: string,
+    color: string,
+    dye-lot: string,
+    fiber: string,
+    // Grams and meters per skein.
+    weight: string,
+    length: string,
+    // Skeins; empty counts as 1.
+    quantity: string,
+}
+
+// A yarn in the stash.
+export struct YarnItem {
+    id: int,
+    // Brand and yarn line; empty if neither is known.
+    title: string,
+    form: YarnForm,
+    quantity: int,
+    // Grams and meters per skein; 0 if unknown.
+    weight: int,
+    length: int,
 }
 
 export struct ProjectItem {
@@ -176,6 +202,13 @@ export global Store {
     in property <PdfView> pdf: { zoom: 1, aspect: 1.414 };
     in property <Notice> notice: Notice.none;
     in property <A11yFocus> a11y-focus;
+    // The yarn stash by brand, yarn line and color.
+    in property <[YarnItem]> yarns;
+    // Skeins in the stash, and the grams of those whose weight is known.
+    in property <int> yarn-skeins;
+    in property <int> yarn-grams;
+    // The yarn the edit form acts on; set before opening it.
+    in-out property <YarnItem> edited-yarn;
     in property <string> version;
     // The changelog, newest release first, in the current language.
     in property <[ChangeItem]> changes;
@@ -198,8 +231,8 @@ export global Store {
     in-out property <DialogKind> dialog: DialogKind.none;
     // The PDF view shows the large counter instead of the floating one.
     in-out property <bool> counter-expanded;
-    // The menu in the top bar of the PDF view is open.
-    in-out property <bool> pdf-menu-open;
+    // The menu (⋮) in the top bar of the current page is open.
+    in-out property <bool> menu-open;
 
     // Returns false if there is nothing to go back to.
     callback back() -> bool;
@@ -245,6 +278,10 @@ export global Store {
     callback add-part(PartForm);
     callback edit-part(int, PartForm);
     callback delete-part(int);
+
+    callback add-yarn(YarnForm);
+    callback edit-yarn(int, YarnForm);
+    callback delete-yarn(int);
 
     // The counter callbacks act on the active part.
     callback increment();

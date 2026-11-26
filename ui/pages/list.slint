@@ -1,6 +1,6 @@
 import { Theme } from "../theme.slint";
-import { Store, DialogKind, FolderItem, ProjectItem, ProjectStatus, StatusFilter } from "../store.slint";
-import { Card, Chips, Field, Icon, IconButton, PillButton, ProgressBar, TopBar } from "../components.slint";
+import { Store, DialogKind, Screen, FolderItem, ProjectItem, ProjectStatus, StatusFilter } from "../store.slint";
+import { Card, Chips, Field, Icon, IconButton, MenuItem, PillButton, ProgressBar, TopBar, TopMenu } from "../components.slint";
 
 component FolderCard inherits Card {
     in property <FolderItem> folder;
@@ -504,9 +504,9 @@ export component ListPage inherits Rectangle {
             VerticalLayout {
                 alignment: center;
                 IconButton {
-                    icon: @image-url("../icons/settings.svg");
-                    label: @tr("Settings");
-                    clicked => { Store.open-settings(); }
+                    icon: @image-url("../icons/more.svg");
+                    label: @tr("More options");
+                    clicked => { Store.menu-open = true; }
                 }
             }
         }
@@ -730,5 +730,27 @@ export component ListPage inherits Rectangle {
         drop-shadow-offset-y: Theme.shadow-offset;
         drop-shadow-color: Theme.shadow;
         clicked => { Store.dialog = DialogKind.create; }
+    }
+
+    // The menu of the top bar: the stash and the settings.
+    if Store.menu-open: TopMenu {
+        top: 64px;
+
+        MenuItem {
+            icon: @image-url("../icons/yarn.svg");
+            text: @tr("Yarn stash");
+            clicked => {
+                Store.menu-open = false;
+                Store.open-page(Screen.stash);
+            }
+        }
+        MenuItem {
+            icon: @image-url("../icons/settings.svg");
+            text: @tr("Settings");
+            clicked => {
+                Store.menu-open = false;
+                Store.open-settings();
+            }
+        }
     }
 }

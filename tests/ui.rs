@@ -66,6 +66,12 @@ fn go_back(app: &App) {
     tap(app, "Back");
 }
 
+/// Opens an entry of the ⋮ menu on the project list.
+fn menu(app: &App, label: &str) {
+    tap(app, "More options");
+    tap(app, label);
+}
+
 fn store(app: &App) -> Store<'_> {
     app.global::<Store>()
 }
@@ -444,7 +450,7 @@ fn escape_closes_the_dialog_first() {
 #[test]
 fn the_language_setting_is_applied_and_kept() {
     let (app, dir) = fresh();
-    tap(&app, "Settings");
+    menu(&app, "Settings");
     tap(&app, "Deutsch");
     assert!(exists(&app, "Zurück"));
 
@@ -457,7 +463,7 @@ fn the_language_setting_is_applied_and_kept() {
 fn donating_opens_the_page_in_the_browser() {
     let (app, _dir) = fresh();
     app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    tap(&app, "Settings");
+    menu(&app, "Settings");
     tap(&app, "Donate");
     assert_eq!(store(&app).get_screen(), Screen::Donate);
     // Don't start a browser in the test.
@@ -481,7 +487,7 @@ fn donating_opens_the_page_in_the_browser() {
 fn the_website_opens_in_the_browser() {
     let (app, _dir) = fresh();
     app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    tap(&app, "Settings");
+    menu(&app, "Settings");
     let opened = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
     let log = opened.clone();
     store(&app).on_open_url(move |url| log.borrow_mut().push(url.to_string()));
@@ -496,7 +502,7 @@ fn about_pages_show_the_app_and_the_changelog() {
     assert_eq!(store(&app).get_dialog(), DialogKind::None);
     // The element tree only holds what is visible, and About is at the end of the settings.
     app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    tap(&app, "Settings");
+    menu(&app, "Settings");
     tap(&app, "About Flausch");
     assert_eq!(store(&app).get_screen(), Screen::About);
     let description = "A crochet companion. Flausch is German for fluff and sounds like “fl”, then “ow” as in “now”, then “sh”.";
@@ -557,7 +563,7 @@ fn about_pages_show_the_app_and_the_changelog() {
 fn the_abbreviation_table_translates_and_searches() {
     let (app, _dir) = fresh();
     app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    tap(&app, "Settings");
+    menu(&app, "Settings");
     tap(&app, "Abbreviations");
     assert_eq!(store(&app).get_screen(), Screen::Abbreviations);
     let chain = "Luftmasche (Lm). US: ch, chain. UK: ch, chain";
@@ -591,4 +597,64 @@ fn the_abbreviation_table_translates_and_searches() {
     assert_eq!(store(&app).get_screen(), Screen::Settings);
     tap(&app, "Abbreviations");
     assert_eq!(rows(&app).len(), 34, "the search starts over");
+}
+
+#[test]
+fn the_yarn_stash_keeps_yarns() {
+    let (app, dir) = fresh();
+    // The menu closes with Back, before anything else.
+    tap(&app, "More options");
+    assert!(store(&app).get_menu_open());
+    assert!(store(&app).invoke_back());
+    assert!(!store(&app).get_menu_open());
+    assert_eq!(store(&app).get_screen(), Screen::List);
+
+    menu(&app, "Yarn stash");
+    assert_eq!(store(&app).get_screen(), Screen::Stash);
+    assert!(!store(&app).get_menu_open());
+    tap(&app, "Add yarn");
+    type_into(&app, "Brand", "Schachenmayr");
+    type_into(&app, "Yarn", "Catania");
+    type_into(&app, "Color", "Rosa 0222");
+    type_into(&app, "Dye lot", "4711");
+    type_into(&app, "Fiber", "100% cotton");
+    type_into(&app, "Grams per skein", "50");
+    type_into(&app, "Meters per skein", "125");
+    type_into(&app, "Skeins", "3");
+    tap(&app, "Add");
+    // Without a number of skeins, it is one.
+    tap(&app, "Add yarn");
+    type_into(&app, "Color", "Leftover green");
+    tap(&app, "Add");
+    assert_eq!(store(&app).get_yarn_skeins(), 4);
+    assert_eq!(store(&app).get_yarn_grams(), 150);
+
+    // Kept after a restart, and edited from its card.
+    let app = launch(dir.path());
+    store(&app).invoke_set_language(Language::En);
+    settle();
+    menu(&app, "Yarn stash");
+    let catania = "Schachenmayr Catania · Rosa 0222 · Lot 4711, 3 skeins";
+    tap(&app, catania);
+    assert_eq!(store(&app).get_dialog(), DialogKind::EditYarn);
+    type_into(&app, "Skeins", "2");
+    tap(&app, "Save");
+    assert!(exists(
+        &app,
+        "Schachenmayr Catania · Rosa 0222 · Lot 4711, 2 skeins"
+    ));
+
+    // Deleting asks first, right in the form.
+    tap(&app, "Leftover green, 1 skein");
+    tap(&app, "Delete yarn");
+    tap(&app, "Keep");
+    assert_eq!(store(&app).get_yarns().row_count(), 2);
+    tap(&app, "Delete yarn");
+    tap(&app, "Delete");
+    assert_eq!(store(&app).get_dialog(), DialogKind::None);
+    assert_eq!(store(&app).get_yarns().row_count(), 1);
+    assert_eq!(store(&app).get_yarn_skeins(), 2);
+
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::List);
 }

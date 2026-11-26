@@ -298,6 +298,75 @@ impl Project {
     }
 }
 
+/// What the yarn form sets. Text is trimmed; empty fields and zeros mean unknown.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct YarnSpec<'a> {
+    pub brand: &'a str,
+    pub name: &'a str,
+    pub color: &'a str,
+    pub dye_lot: &'a str,
+    pub fiber: &'a str,
+    /// Grams per skein.
+    pub weight: Option<u32>,
+    /// Meters per skein.
+    pub length: Option<u32>,
+    /// Skeins in the stash.
+    pub quantity: u32,
+}
+
+/// A yarn in the stash: one color (and dye lot) of a yarn line.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Yarn {
+    pub id: u64,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub brand: String,
+    /// The yarn line, e.g. "Catania".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
+    /// Color name or number.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub color: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub dye_lot: String,
+    /// Fiber content, e.g. "100% cotton".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub fiber: String,
+    /// Grams per skein.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<u32>,
+    /// Meters per skein.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub length: Option<u32>,
+    /// Skeins in the stash.
+    #[serde(default)]
+    pub quantity: u32,
+    /// Unix timestamp in seconds.
+    #[serde(default)]
+    pub created: u64,
+}
+
+impl Yarn {
+    fn edit(&mut self, spec: &YarnSpec) {
+        self.brand = clean_name(spec.brand);
+        self.name = clean_name(spec.name);
+        self.color = clean_name(spec.color);
+        self.dye_lot = clean_name(spec.dye_lot);
+        self.fiber = clean_name(spec.fiber);
+        self.weight = spec.weight.filter(|w| *w > 0);
+        self.length = spec.length.filter(|l| *l > 0);
+        self.quantity = spec.quantity;
+    }
+
+    /// Brand and yarn line, e.g. "Schachenmayr Catania".
+    pub fn title(&self) -> String {
+        [self.brand.as_str(), self.name.as_str()]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
 /// A folder on the project list. Folders don't nest.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Folder {
@@ -312,6 +381,9 @@ pub struct Library {
     pub projects: Vec<Project>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub folders: Vec<Folder>,
+    /// The yarn stash.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub yarns: Vec<Yarn>,
 }
 
 impl Default for Library {
@@ -321,6 +393,7 @@ impl Default for Library {
             next_id: 1,
             projects: Vec::new(),
             folders: Vec::new(),
+            yarns: Vec::new(),
         }
     }
 }
@@ -561,6 +634,65 @@ impl Library {
             .count()
     }
 
+    #[cfg(test)]
+    pub fn yarn(&self, id: u64) -> Option<&Yarn> {
+        self.yarns.iter().find(|y| y.id == id)
+    }
+
+    /// Adds a yarn to the stash unless brand, name and color are all empty.
+    pub fn add_yarn(&mut self, spec: &YarnSpec, now: u64) -> Option<u64> {
+        if !has_yarn_name(spec) {
+            return None;
+        }
+        let id = self.next_id();
+        let mut yarn = Yarn {
+            id,
+            brand: String::new(),
+            name: String::new(),
+            color: String::new(),
+            dye_lot: String::new(),
+            fiber: String::new(),
+            weight: None,
+            length: None,
+            quantity: 0,
+            created: now,
+        };
+        yarn.edit(spec);
+        self.yarns.push(yarn);
+        Some(id)
+    }
+
+    /// Changes a yarn; like `add_yarn`, it needs a brand, name or color.
+    pub fn edit_yarn(&mut self, id: u64, spec: &YarnSpec) -> bool {
+        if !has_yarn_name(spec) {
+            return false;
+        }
+        self.yarns
+            .iter_mut()
+            .find(|y| y.id == id)
+            .map(|y| y.edit(spec))
+            .is_some()
+    }
+
+    pub fn remove_yarn(&mut self, id: u64) -> Option<Yarn> {
+        let index = self.yarns.iter().position(|y| y.id == id)?;
+        Some(self.yarns.remove(index))
+    }
+
+    /// The stash by brand, yarn line and color.
+    pub fn sorted_yarns(&self) -> Vec<&Yarn> {
+        let mut yarns: Vec<_> = self.yarns.iter().collect();
+        yarns.sort_by_cached_key(|y| {
+            (
+                y.brand.to_lowercase(),
+                y.name.to_lowercase(),
+                y.color.to_lowercase(),
+                y.id,
+            )
+        });
+        yarns
+    }
+
     /// Projects the filter allows, grouped by status (`Status::group`) and sorted within a group;
     /// ties go to the most recently used.
     pub fn sorted(&self, filter: StatusFilter, sort: ProjectSort) -> Vec<&Project> {
@@ -620,6 +752,12 @@ impl Library {
 fn progress_key(project: &Project) -> Option<u64> {
     let (done, total) = project.progress();
     (total > 0).then(|| u64::from(done) * 1000 / u64::from(total))
+}
+
+fn has_yarn_name(spec: &YarnSpec) -> bool {
+    [spec.brand, spec.name, spec.color]
+        .iter()
+        .any(|s| !s.trim().is_empty())
 }
 
 fn clean_name(name: &str) -> String {
@@ -935,6 +1073,95 @@ mod tests {
         let toys = lib.create_folder("Toys");
         lib.move_to_folder(hat, Some(toys));
         let json = serde_json::to_string(&lib).unwrap();
+        let mut again: Library = serde_json::from_str(&json).unwrap();
+        again.migrate();
+        assert_eq!(again, lib);
+    }
+
+    #[test]
+    fn the_stash_holds_yarns() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let spec = YarnSpec {
+            brand: " Schachenmayr ",
+            name: "Catania",
+            color: "Rosa  0222",
+            dye_lot: "4711",
+            fiber: "100% cotton",
+            weight: Some(50),
+            length: Some(125),
+            quantity: 3,
+        };
+        let catania = lib.add_yarn(&spec, 5).unwrap();
+        assert_ne!(catania, hat, "ids are shared with projects");
+        let yarn = lib.yarn(catania).unwrap();
+        assert_eq!(yarn.title(), "Schachenmayr Catania");
+        assert_eq!(yarn.color, "Rosa 0222");
+        assert_eq!(
+            (yarn.weight, yarn.length, yarn.quantity),
+            (Some(50), Some(125), 3)
+        );
+
+        // Only a color is enough, but nothing at all is not.
+        let blue = lib
+            .add_yarn(
+                &YarnSpec {
+                    color: "Blue",
+                    weight: Some(0),
+                    ..YarnSpec::default()
+                },
+                6,
+            )
+            .unwrap();
+        assert_eq!(lib.yarn(blue).unwrap().weight, None, "0 g means unknown");
+        assert_eq!(lib.yarn(blue).unwrap().title(), "");
+        assert_eq!(
+            lib.add_yarn(
+                &YarnSpec {
+                    fiber: "Wool",
+                    ..YarnSpec::default()
+                },
+                7
+            ),
+            None
+        );
+        assert!(!lib.edit_yarn(blue, &YarnSpec::default()));
+
+        let sorted: Vec<_> = lib.sorted_yarns().iter().map(|y| y.id).collect();
+        assert_eq!(sorted, [blue, catania], "no brand comes first");
+
+        assert!(lib.edit_yarn(
+            catania,
+            &YarnSpec {
+                quantity: 2,
+                ..spec
+            }
+        ));
+        assert_eq!(lib.yarn(catania).unwrap().quantity, 2);
+        assert!(lib.remove_yarn(catania).is_some());
+        assert!(lib.yarn(catania).is_none());
+        assert!(!lib.edit_yarn(catania, &spec));
+    }
+
+    #[test]
+    fn yarns_are_kept_and_optional_on_disk() {
+        let mut lib = Library::default();
+        lib.create("Hat", 1);
+        let json = serde_json::to_string(&lib).unwrap();
+        assert!(!json.contains("yarns"), "{json}");
+
+        let spec = YarnSpec {
+            name: "Catania",
+            weight: Some(50),
+            quantity: 1,
+            ..YarnSpec::default()
+        };
+        lib.add_yarn(&spec, 2);
+        let json = serde_json::to_string(&lib).unwrap();
+        assert!(
+            !json.contains("dye_lot"),
+            "empty fields are left out: {json}"
+        );
         let mut again: Library = serde_json::from_str(&json).unwrap();
         again.migrate();
         assert_eq!(again, lib);

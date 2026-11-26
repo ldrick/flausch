@@ -1,0 +1,317 @@
+import { Theme } from "../theme.slint";
+import { Store, DialogKind, YarnItem } from "../store.slint";
+import { ButtonKind, Card, Field, Icon, PillButton, Sheet, TopBar } from "../components.slint";
+
+component YarnCard inherits Card {
+    in property <YarnItem> yarn;
+    callback clicked();
+
+    // "a · b", leaving out empty parts.
+    pure function join(a: string, b: string) -> string {
+        return a == "" ? b : b == "" ? a : a + " · " + b;
+    }
+
+    // Weight and length per skein, e.g. "50 g / 125 m".
+    pure function skein-size(yarn: YarnItem) -> string {
+        return yarn.weight > 0 && yarn.length > 0 ? @tr("{} g / {} m", yarn.weight, yarn.length)
+            : yarn.weight > 0 ? @tr("{} g", yarn.weight)
+            : yarn.length > 0 ? @tr("{} m", yarn.length) : "";
+    }
+
+    // Without brand and yarn line, the color is the title.
+    property <string> title: root.yarn.title != "" ? root.yarn.title : root.yarn.form.color;
+    property <string> lot: root.yarn.form.dye-lot == "" ? "" : @tr("Lot {}", root.yarn.form.dye-lot);
+    property <string> line1: root.join(root.yarn.title != "" ? root.yarn.form.color : "", root.lot);
+    property <string> line2: root.join(root.yarn.form.fiber, root.skein-size(root.yarn));
+
+    height: max(88px, content.preferred-height);
+    background: touch.pressed ? Theme.surface-muted : Theme.surface;
+    accessible-role: button;
+    accessible-label: @tr("{}, {n} skein" | "{}, {n} skeins" % root.yarn.quantity, root.join(root.title, root.line1));
+    accessible-description: root.line2;
+    accessible-action-default => { root.clicked(); }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+
+    content := HorizontalLayout {
+        padding: 14px;
+        padding-right: 18px;
+        spacing: 16px;
+
+        // Round badge with the number of skeins.
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 56px;
+                height: 56px;
+                border-radius: self.height / 2;
+                background: root.yarn.quantity > 0 ? Theme.accent : Theme.surface-muted;
+
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: root.yarn.quantity;
+                        color: root.yarn.quantity > 0 ? Theme.on-accent : Theme.text-muted;
+                        font-size: 20px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: @tr("skein" | "skeins" % root.yarn.quantity);
+                        color: root.yarn.quantity > 0 ? Theme.on-accent : Theme.text-muted;
+                        font-size: 10px;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 4px;
+            horizontal-stretch: 1;
+
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-body + 1px;
+                font-weight: 600;
+                overflow: elide;
+            }
+            if root.line1 != "": Text {
+                text: root.line1;
+                color: Theme.text;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+            if root.line2 != "": Text {
+                text: root.line2;
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+        }
+    }
+}
+
+export component StashPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("Yarn stash");
+            back => { Store.back(); }
+        }
+
+        if Store.yarns.length > 0: Flickable {
+            vertical-stretch: 1;
+            content-height: list.preferred-height;
+
+            list := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                // Leave room for the floating button.
+                padding-bottom: 112px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                Text {
+                    text: Store.yarn-grams > 0 ? @tr("{n} skein, {} g in total" | "{n} skeins, {} g in total" % Store.yarn-skeins, Store.yarn-grams)
+                        : @tr("{n} skein in total" | "{n} skeins in total" % Store.yarn-skeins);
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    font-weight: 600;
+                }
+                for yarn in Store.yarns: YarnCard {
+                    yarn: yarn;
+                    clicked => {
+                        Store.edited-yarn = yarn;
+                        Store.dialog = DialogKind.edit-yarn;
+                    }
+                }
+            }
+        }
+
+        if Store.yarns.length == 0: VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            padding: 40px;
+            padding-bottom: 120px;
+            spacing: 16px;
+
+            HorizontalLayout {
+                alignment: center;
+                Icon {
+                    source: @image-url("../icons/yarn.svg");
+                    color: Theme.accent;
+                    width: 64px;
+                    height: 64px;
+                }
+            }
+            Text {
+                text: @tr("No yarn yet");
+                color: Theme.text;
+                font-size: Theme.font-title;
+                font-weight: 600;
+                horizontal-alignment: center;
+            }
+            Text {
+                text: @tr("Note your yarn with brand, color, dye lot and how many skeins are left.");
+                color: Theme.text-muted;
+                font-size: Theme.font-body;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+        }
+    }
+
+    PillButton {
+        x: (parent.width - self.width) / 2;
+        y: parent.height - self.height - 28px;
+        width: min(parent.width - 2 * Theme.padding, 360px);
+        text: @tr("Add yarn");
+        icon: @image-url("../icons/plus.svg");
+        has-icon: true;
+        drop-shadow-offset-y: Theme.shadow-offset;
+        drop-shadow-color: Theme.shadow;
+        clicked => { Store.dialog = DialogKind.add-yarn; }
+    }
+}
+
+// Adds a yarn to the stash or edits one. Deleting asks first, right in the form.
+export component YarnDialog inherits Sheet {
+    in property <bool> editing;
+    callback done();
+
+    property <bool> confirm-delete;
+    property <bool> named: !brand.text.is-empty || !name.text.is-empty || !color.text.is-empty;
+
+    title: root.editing ? @tr("Edit yarn") : @tr("New yarn");
+    confirm-text: root.editing ? @tr("Save") : @tr("Add");
+    confirm-enabled: root.named;
+    delete-label: root.editing ? @tr("Delete yarn") : "";
+    cancel => { root.done(); }
+    confirm => { root.submit(); }
+    delete => { root.confirm-delete = true; }
+
+    function submit() {
+        if !root.named {
+            return;
+        }
+        let form = {
+            brand: brand.text,
+            name: name.text,
+            color: color.text,
+            dye-lot: lot.text,
+            fiber: fiber.text,
+            weight: weight.text,
+            length: length.text,
+            quantity: quantity.text,
+        };
+        if root.editing {
+            Store.edit-yarn(Store.edited-yarn.id, form);
+        } else {
+            Store.add-yarn(form);
+        }
+        root.done();
+    }
+
+    init => {
+        if root.editing {
+            brand.text = Store.edited-yarn.form.brand;
+            name.text = Store.edited-yarn.form.name;
+            color.text = Store.edited-yarn.form.color;
+            lot.text = Store.edited-yarn.form.dye-lot;
+            fiber.text = Store.edited-yarn.form.fiber;
+            weight.text = Store.edited-yarn.form.weight;
+            length.text = Store.edited-yarn.form.length;
+            quantity.text = Store.edited-yarn.form.quantity;
+        } else {
+            brand.focus-input();
+        }
+    }
+
+    if root.confirm-delete: Card {
+        height: question.preferred-height;
+        accessible-role: groupbox;
+
+        question := VerticalLayout {
+            padding: 18px;
+            spacing: 14px;
+
+            Text {
+                text: @tr("Delete this yarn from the stash?");
+                color: Theme.text;
+                font-size: Theme.font-body;
+                font-weight: 600;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: end;
+                PillButton {
+                    text: @tr("Keep");
+                    kind: ButtonKind.quiet;
+                    clicked => { root.confirm-delete = false; }
+                }
+                PillButton {
+                    text: @tr("Delete");
+                    clicked => {
+                        Store.delete-yarn(Store.edited-yarn.id);
+                        root.done();
+                    }
+                }
+            }
+        }
+    }
+
+    brand := Field {
+        label: @tr("Brand");
+        placeholder: @tr("Brand, e.g. Drops");
+        accepted => { name.focus-input(); }
+    }
+    name := Field {
+        label: @tr("Yarn");
+        placeholder: @tr("Yarn, e.g. Paris");
+        accepted => { color.focus-input(); }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        color := Field {
+            label: @tr("Color");
+            placeholder: @tr("Color");
+            accepted => { lot.focus-input(); }
+        }
+        lot := Field {
+            label: @tr("Dye lot");
+            placeholder: @tr("Dye lot");
+            accepted => { fiber.focus-input(); }
+        }
+    }
+    fiber := Field {
+        label: @tr("Fiber");
+        placeholder: @tr("Fiber, e.g. 100% cotton");
+        accepted => { weight.focus-input(); }
+    }
+    HorizontalLayout {
+        spacing: 8px;
+        weight := Field {
+            label: @tr("Grams per skein");
+            placeholder: @tr("g per skein");
+            input-type: InputType.number;
+            accepted => { length.focus-input(); }
+        }
+        length := Field {
+            label: @tr("Meters per skein");
+            placeholder: @tr("m per skein");
+            input-type: InputType.number;
+            accepted => { quantity.focus-input(); }
+        }
+    }
+    quantity := Field {
+        label: @tr("Skeins");
+        placeholder: @tr("Skeins (1 if empty)");
+        input-type: InputType.number;
+        accepted => { root.submit(); }
+    }
+}

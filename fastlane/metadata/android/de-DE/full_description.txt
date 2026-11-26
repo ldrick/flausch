@@ -22,6 +22,7 @@
 <p><b>Fürs Häkeln gemacht</b></p>
 <ul>
 <li>Große Tasten für die Bedienung mit einer Hand, Zählen mit den Lautstärketasten, der Bildschirm bleibt beim Arbeiten an</li>
+<li>Garnvorrat mit Marke, Farbe, Partie, Material und den übrigen Knäueln</li>
 <li>Alle Daten als ZIP-Datei sichern und wiederherstellen, z. B. beim Handywechsel</li>
 <li>Hell und dunkel, Deutsch und Englisch, funktioniert mit TalkBack</li>
 </ul>

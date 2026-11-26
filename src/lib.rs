@@ -13,7 +13,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use slint::{ComponentHandle, Image, Model, ModelRc, VecModel};
 
-use model::{Library, PartSpec, Pdf, Settings};
+use model::{Library, PartSpec, Pdf, Settings, YarnSpec};
 use platform::{DocumentKind, PickResult};
 use storage::{Backup, BackupError, Storage};
 
@@ -225,6 +225,15 @@ fn connect(app: &App) {
     });
     store.on_delete_part(|part| {
         with(|c| c.delete_part(part as u64));
+    });
+    store.on_add_yarn(|form| {
+        with(|c| c.add_yarn(&form));
+    });
+    store.on_edit_yarn(|id, form| {
+        with(|c| c.edit_yarn(id as u64, &form));
+    });
+    store.on_delete_yarn(|id| {
+        with(|c| c.delete_yarn(id as u64));
     });
     store.on_increment(|| {
         with(|c| c.count(Library::increment));
@@ -454,6 +463,16 @@ impl Controller {
         store.set_folders(ModelRc::new(VecModel::from(folders)));
         store.set_folder(self.folder_item(self.folder));
         store.set_show_folders(self.folder.is_none() && query.trim().is_empty());
+        let yarns = self.library.sorted_yarns();
+        store.set_yarn_skeins(yarns.iter().map(|y| y.quantity as i32).sum());
+        store.set_yarn_grams(
+            yarns
+                .iter()
+                .map(|y| (y.quantity * y.weight.unwrap_or(0)) as i32)
+                .sum(),
+        );
+        let yarns: Vec<YarnItem> = yarns.into_iter().map(yarn_item).collect();
+        store.set_yarns(ModelRc::new(VecModel::from(yarns)));
         if let Some(project) = self.current.and_then(|id| self.library.get(id)) {
             store.set_current(self.project_item(project));
             let parts: Vec<PartItem> = project.parts.iter().map(part_item).collect();
@@ -477,7 +496,7 @@ impl Controller {
         let app = self.app();
         let store = app.global::<Store>();
         store.set_screen(screen);
-        store.set_pdf_menu_open(false);
+        store.set_menu_open(false);
         self.update_keep_screen_on();
         self.update_volume_keys();
     }
@@ -535,8 +554,8 @@ impl Controller {
             self.last_back = Some(now);
             return true;
         }
-        if self.screen() == Screen::Pdf && store.get_pdf_menu_open() {
-            store.set_pdf_menu_open(false);
+        if store.get_menu_open() {
+            store.set_menu_open(false);
             self.last_back = Some(now);
             return true;
         }
@@ -779,6 +798,29 @@ impl Controller {
             .library
             .move_to_folder(project, Some(id).filter(|&id| id != 0))
         {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    // Yarn stash
+
+    fn add_yarn(&mut self, form: &YarnForm) {
+        if self.library.add_yarn(&yarn_spec(form), now()).is_some() {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    fn edit_yarn(&mut self, id: u64, form: &YarnForm) {
+        if self.library.edit_yarn(id, &yarn_spec(form)) {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    fn delete_yarn(&mut self, id: u64) {
+        if self.library.remove_yarn(id).is_some() {
             self.save();
             self.refresh();
         }
@@ -1465,6 +1507,40 @@ fn part_spec(form: &PartForm) -> PartSpec<'_> {
         name: &form.name,
         row_goal: parse_number(&form.rows),
         quantity: parse_number(&form.quantity).unwrap_or(1),
+    }
+}
+
+fn yarn_spec(form: &YarnForm) -> YarnSpec<'_> {
+    YarnSpec {
+        brand: &form.brand,
+        name: &form.name,
+        color: &form.color,
+        dye_lot: &form.dye_lot,
+        fiber: &form.fiber,
+        weight: parse_number(&form.weight),
+        length: parse_number(&form.length),
+        quantity: parse_number(&form.quantity).unwrap_or(1),
+    }
+}
+
+fn yarn_item(yarn: &model::Yarn) -> YarnItem {
+    let number = |n: Option<u32>| n.map_or_default(|n| n.to_string().into());
+    YarnItem {
+        id: yarn.id as i32,
+        title: yarn.title().into(),
+        form: YarnForm {
+            brand: yarn.brand.as_str().into(),
+            name: yarn.name.as_str().into(),
+            color: yarn.color.as_str().into(),
+            dye_lot: yarn.dye_lot.as_str().into(),
+            fiber: yarn.fiber.as_str().into(),
+            weight: number(yarn.weight),
+            length: number(yarn.length),
+            quantity: yarn.quantity.to_string().into(),
+        },
+        quantity: yarn.quantity as i32,
+        weight: yarn.weight.unwrap_or(0) as i32,
+        length: yarn.length.unwrap_or(0) as i32,
     }
 }
 

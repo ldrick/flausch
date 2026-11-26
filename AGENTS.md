@@ -80,7 +80,7 @@ ui/
   components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Sheet, Field, Segmented, Switch…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages),
-                      abbreviations
+                      abbreviations, stash (yarn stash and its form)
   icons/              SVG icons
   fonts/              Montez (Apache 2.0) for the wordmark "Flausch"
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
@@ -107,8 +107,8 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   active. The PDF view has a
   movable reading line (`Pdf::lines`: fraction of the page height per page, `show_line` per PDF; its color is
   `Settings::line_color` → `Theme.line-color()`). Its top bar keeps only the reading line and a ⋮ menu (Abbreviations, Zoom in/out for
-  TalkBack and people who can't pinch; `Store.pdf-menu-open`, closed by a tap outside, Back and every screen
-  change). At zoom 1, swiping left or right turns the page
+  TalkBack and people who can't pinch; `TopMenu`/`MenuItem` with `Store.menu-open`, closed by a tap outside, Back and every
+  screen change). At zoom 1, swiping left or right turns the page
   (`SwipeGestureHandler` around the page's `Flickable`); zoomed in, a drag moves the view. List progress sums all
   parts with a goal
   (`Project::progress`); search matches project and part names and the localized status name
@@ -123,7 +123,11 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   open the abbreviation table (`Screen.abbreviations`, `pages/abbreviations.slint`): German, US and UK side by
   side, UK terms that differ from US in pink (UK stitches are one taller), searched in Rust
   (`Store.abbreviation-query` → `abbreviations::search`), the search starting over each time it opens.
-  New info pages get a `Screen` value and a row there. A project also has a `Status` (planned, in progress, paused, finished; shown as a
+  New info pages get a `Screen` value and a row there. The ⋮ menu of the project list (the same `TopMenu`) holds
+  the yarn stash (`Screen.stash`, `pages/stash.slint`) and the settings; hooks (#5) go there, too. Yarns live in
+  `Library::yarns` (so backups include them, ids from `next_id`), sorted by brand, yarn line and color
+  (`Library::sorted_yarns`); a yarn needs a brand, yarn line or color. Tapping a card opens its form (`Sheet`,
+  `Store.edited-yarn`), where deleting asks inline instead of in a dialog. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::sorted`: in progress, then planned and paused, then finished; within a group by
   `Settings::project_sort`: last used, name, newest, progress or custom, chosen in the sort dialog). Holding a
