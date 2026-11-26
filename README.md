@@ -27,6 +27,7 @@ Row counter and pattern viewer for crocheting – simple, offline, free. *Flausc
 **Made for crocheting**
 
 - Large buttons for one-handed use, counting with the volume keys, the screen stays on while you work
+- Yarn stash with brand, color, dye lot, fiber and the skeins left
 - Backup and restore of all data as a ZIP file, e.g. when you switch phones
 - Light and dark mode, English and German, works with TalkBack
 

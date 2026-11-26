@@ -1,6 +1,6 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind, Screen } from "../store.slint";
-import { Icon, IconButton, TopBar } from "../components.slint";
+import { Icon, IconButton, MenuItem, TopBar, TopMenu } from "../components.slint";
 import { CounterButtons, NextPieceButton, RowCount } from "../counter.slint";
 
 component FloatingPill inherits Rectangle {
@@ -119,53 +119,6 @@ component LargeCounter inherits Rectangle {
     }
 }
 
-// An entry of the top bar menu. Zoom stays open after a tap, so it can be repeated.
-component MenuItem inherits Rectangle {
-    in property <image> icon;
-    in property <string> text;
-    in property <bool> enabled: true;
-    callback clicked();
-
-    height: Theme.touch + 4px;
-    border-radius: Theme.radius-small - 4px;
-    background: touch.pressed ? Theme.surface-muted : transparent;
-    opacity: root.enabled ? 1 : 0.35;
-    accessible-role: button;
-    accessible-label: root.text;
-    accessible-enabled: root.enabled;
-    accessible-action-default => {
-        if root.enabled {
-            root.clicked();
-        }
-    }
-
-    touch := TouchArea {
-        enabled: root.enabled;
-        clicked => { root.clicked(); }
-    }
-    HorizontalLayout {
-        padding-left: 12px;
-        padding-right: 12px;
-        spacing: 14px;
-
-        VerticalLayout {
-            alignment: center;
-            Icon {
-                source: root.icon;
-                width: 22px;
-                height: 22px;
-            }
-        }
-        Text {
-            text: root.text;
-            color: Theme.text;
-            font-size: Theme.font-body;
-            vertical-alignment: center;
-            horizontal-stretch: 1;
-        }
-    }
-}
-
 export component PdfPage inherits Rectangle {
     property <float> zoom: Store.pdf.zoom;
     property <float> start-zoom;
@@ -279,7 +232,7 @@ export component PdfPage inherits Rectangle {
                     IconButton {
                         icon: @image-url("../icons/more.svg");
                         label: @tr("More options");
-                        clicked => { Store.pdf-menu-open = true; }
+                        clicked => { Store.menu-open = true; }
                     }
                 }
             }
@@ -593,52 +546,27 @@ export component PdfPage inherits Rectangle {
         }
     }
 
-    // The menu of the top bar, dropping down from its button. A tap outside or Back closes it.
-    if Store.pdf-menu-open: TouchArea {
-        clicked => { Store.pdf-menu-open = false; }
-
-        Rectangle {
-            x: parent.width - self.width - 8px;
-            y: 56px;
-            width: 240px;
-            height: menu.preferred-height;
-            background: Theme.surface;
-            border-radius: Theme.radius-small;
-            border-width: 1px;
-            border-color: Theme.border;
-            drop-shadow-offset-y: Theme.shadow-offset-small;
-            drop-shadow-color: Theme.shadow;
-            // The TalkBack bridge (src/a11y.rs) only exposes what lies inside the menu.
-            accessible-role: groupbox;
-            accessible-id: "dialog";
-
-            // Swallow taps between the items.
-            TouchArea { }
-
-            menu := VerticalLayout {
-                padding: 6px;
-
-                MenuItem {
-                    icon: @image-url("../icons/book.svg");
-                    text: @tr("Abbreviations");
-                    clicked => {
-                        Store.pdf-menu-open = false;
-                        Store.open-page(Screen.abbreviations);
-                    }
-                }
-                MenuItem {
-                    icon: @image-url("../icons/zoom-in.svg");
-                    text: @tr("Zoom in");
-                    enabled: root.zoom < 4;
-                    clicked => { root.zoom-to(root.zoom * 1.25, flick.width / 2, flick.height / 2); }
-                }
-                MenuItem {
-                    icon: @image-url("../icons/zoom-out.svg");
-                    text: @tr("Zoom out");
-                    enabled: root.zoom > 1;
-                    clicked => { root.zoom-to(root.zoom / 1.25, flick.width / 2, flick.height / 2); }
-                }
+    // The menu of the top bar, dropping down from its button.
+    if Store.menu-open: TopMenu {
+        MenuItem {
+            icon: @image-url("../icons/book.svg");
+            text: @tr("Abbreviations");
+            clicked => {
+                Store.menu-open = false;
+                Store.open-page(Screen.abbreviations);
             }
+        }
+        MenuItem {
+            icon: @image-url("../icons/zoom-in.svg");
+            text: @tr("Zoom in");
+            enabled: root.zoom < 4;
+            clicked => { root.zoom-to(root.zoom * 1.25, flick.width / 2, flick.height / 2); }
+        }
+        MenuItem {
+            icon: @image-url("../icons/zoom-out.svg");
+            text: @tr("Zoom out");
+            enabled: root.zoom > 1;
+            clicked => { root.zoom-to(root.zoom / 1.25, flick.width / 2, flick.height / 2); }
         }
     }
 }
