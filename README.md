@@ -22,6 +22,7 @@ Row counter and pattern viewer for crocheting – simple, offline, free. *Flausc
 - Count rows right in the pattern, switch parts there or enlarge the counter
 - Swipe to turn pages, zoom in with a double tap
 - A movable reading line marks your row and remembers its position on every page
+- Abbreviation table German / US / UK English (UK terms are one stitch taller), also from the pattern
 
 **Made for crocheting**
 

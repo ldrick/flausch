@@ -1,5 +1,6 @@
 #[cfg(target_os = "android")]
 mod a11y;
+mod abbreviations;
 mod changes;
 mod model;
 mod pdf;
@@ -157,6 +158,9 @@ fn connect(app: &App) {
     });
     store.on_open_page(|screen| {
         with(|c| c.navigate(screen));
+    });
+    store.on_abbreviation_query_changed(|| {
+        with(Controller::search_abbreviations);
     });
     store.on_open_url(|url| platform::open_url(&url));
     store.on_open_project(|id| {
@@ -470,16 +474,43 @@ impl Controller {
 
     fn show(&mut self) {
         let screen = self.screen();
-        self.app().global::<Store>().set_screen(screen);
+        let app = self.app();
+        let store = app.global::<Store>();
+        store.set_screen(screen);
+        store.set_pdf_menu_open(false);
         self.update_keep_screen_on();
         self.update_volume_keys();
     }
 
     fn navigate(&mut self, screen: Screen) {
+        if screen == Screen::Abbreviations {
+            self.app()
+                .global::<Store>()
+                .set_abbreviation_query("".into());
+            self.search_abbreviations();
+        }
         if self.screen() != screen {
             self.nav.push(screen);
             self.show();
         }
+    }
+
+    fn search_abbreviations(&mut self) {
+        let app = self.app();
+        let store = app.global::<Store>();
+        let items: Vec<AbbreviationItem> = abbreviations::search(&store.get_abbreviation_query())
+            .into_iter()
+            .map(|t| AbbreviationItem {
+                de: t.de.join(", ").into(),
+                de_name: t.de_name.into(),
+                us: t.us.into(),
+                us_name: t.us_name.into(),
+                uk: t.uk.into(),
+                uk_name: t.uk_name.into(),
+                uk_differs: t.uk_differs(),
+            })
+            .collect();
+        store.set_abbreviations(ModelRc::new(VecModel::from(items)));
     }
 
     fn back(&mut self) -> bool {
@@ -501,6 +532,11 @@ impl Controller {
                 _ => {}
             }
             store.set_dialog(DialogKind::None);
+            self.last_back = Some(now);
+            return true;
+        }
+        if self.screen() == Screen::Pdf && store.get_pdf_menu_open() {
+            store.set_pdf_menu_open(false);
             self.last_back = Some(now);
             return true;
         }

@@ -229,6 +229,53 @@ fn a_part_opens_the_pattern_if_the_project_has_one() {
 }
 
 #[test]
+fn the_abbreviations_open_from_the_pattern_and_go_back_to_it() {
+    let h = Harness::new();
+    let (id, head) = project_with_part();
+    import(id, 1, PATTERN);
+    ctl(|c| c.open_part(head));
+    assert_eq!(h.store().get_screen(), Screen::Pdf);
+
+    // The top bar menu: Back closes it first, then its entry opens the table.
+    let tap = |label: &str| {
+        i_slint_backend_testing::mock_elapsed_time(Duration::from_millis(1));
+        i_slint_backend_testing::ElementHandle::find_by_accessible_label(&h.app, label)
+            .next()
+            .unwrap_or_else(|| panic!("no {label:?}"))
+            .invoke_accessible_default_action();
+    };
+    tap("More options");
+    assert!(h.store().get_pdf_menu_open());
+    assert!(back());
+    assert!(!h.store().get_pdf_menu_open());
+    assert_eq!(h.store().get_screen(), Screen::Pdf);
+    tap("More options");
+
+    h.store().set_abbreviation_query("old".into());
+    tap("Abbreviations");
+    assert!(!h.store().get_pdf_menu_open());
+    assert_eq!(h.store().get_screen(), Screen::Abbreviations);
+    assert_eq!(
+        h.store().get_abbreviation_query(),
+        "",
+        "a new search each time"
+    );
+    let all = h.store().get_abbreviations().row_count();
+    assert_eq!(all, abbreviations::TERMS.len());
+
+    h.store().set_abbreviation_query("sc".into());
+    ctl(Controller::search_abbreviations);
+    let first = h.store().get_abbreviations().row_data(0).unwrap();
+    assert_eq!((first.de.as_str(), first.uk.as_str()), ("fM, fe M", "dc"));
+    assert!(first.uk_differs);
+    assert!(h.store().get_abbreviations().row_count() < all);
+
+    assert!(back());
+    assert_eq!(h.store().get_screen(), Screen::Pdf);
+    assert_eq!(h.store().get_part().name, "Head");
+}
+
+#[test]
 fn editing_or_deleting_a_part_keeps_the_active_one() {
     let h = Harness::new();
     let (_, head) = project_with_part();
