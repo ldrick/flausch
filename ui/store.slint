@@ -1,6 +1,6 @@
 import { Appearance, LineColor } from "theme.slint";
 
-export enum Screen { list, project, part, pdf, settings, about, changelog, donate }
+export enum Screen { list, project, part, pdf, settings, about, changelog, donate, abbreviations }
 
 export enum Language { system, de, en }
 
@@ -10,6 +10,19 @@ export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part,
 export struct ChangeItem {
     version: string,
     points: [string],
+}
+
+// A row of the abbreviation table. Abbreviations can be the word itself; several German ones are
+// separated by commas.
+export struct AbbreviationItem {
+    de: string,
+    de-name: string,
+    us: string,
+    us-name: string,
+    uk: string,
+    uk-name: string,
+    // The UK abbreviation means something else than the US one (UK dc = US sc).
+    uk-differs: bool,
 }
 
 export enum ProjectStatus { planned, active, paused, finished }
@@ -166,6 +179,9 @@ export global Store {
     in property <string> version;
     // The changelog, newest release first, in the current language.
     in property <[ChangeItem]> changes;
+    // The abbreviation table, filtered by `abbreviation-query`.
+    in property <[AbbreviationItem]> abbreviations;
+    in-out property <string> abbreviation-query;
 
     in property <Language> language: Language.system;
     in property <Appearance> appearance: Appearance.system;
@@ -182,12 +198,15 @@ export global Store {
     in-out property <DialogKind> dialog: DialogKind.none;
     // The PDF view shows the large counter instead of the floating one.
     in-out property <bool> counter-expanded;
+    // The menu in the top bar of the PDF view is open.
+    in-out property <bool> pdf-menu-open;
 
     // Returns false if there is nothing to go back to.
     callback back() -> bool;
     callback open-settings();
     // A sub-page of the settings, e.g. about or changelog.
     callback open-page(Screen);
+    callback abbreviation-query-changed();
     // Opens a web page in the browser.
     callback open-url(string);
     callback open-project(int);

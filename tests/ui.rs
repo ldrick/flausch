@@ -552,3 +552,43 @@ fn about_pages_show_the_app_and_the_changelog() {
     go_back(&app);
     assert_eq!(store(&app).get_screen(), Screen::Settings);
 }
+
+#[test]
+fn the_abbreviation_table_translates_and_searches() {
+    let (app, _dir) = fresh();
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
+    tap(&app, "Settings");
+    tap(&app, "Abbreviations");
+    assert_eq!(store(&app).get_screen(), Screen::Abbreviations);
+    let chain = "Luftmasche (Lm). US: ch, chain. UK: ch, chain";
+    assert!(find(&app, AccessibleRole::Text, chain).is_some());
+
+    // "dc" is a German Stäbchen in a US pattern, but a feste Masche in a UK one.
+    type_into(&app, "Search", "dc");
+    let rows = |app: &App| {
+        store(app)
+            .get_abbreviations()
+            .iter()
+            .map(|t| t.de_name.to_string())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(rows(&app)[..2], ["feste Masche", "Stäbchen"]);
+    assert!(find(&app, AccessibleRole::Text, chain).is_none());
+    assert!(
+        find(
+            &app,
+            AccessibleRole::Text,
+            "feste Masche (fM, fe M). US: sc, single crochet. UK: dc, double crochet"
+        )
+        .is_some()
+    );
+
+    type_into(&app, "Search", "xyz");
+    assert_eq!(rows(&app), Vec::<String>::new());
+    assert!(find(&app, AccessibleRole::Text, "No matching abbreviations").is_some());
+
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::Settings);
+    tap(&app, "Abbreviations");
+    assert_eq!(rows(&app).len(), 34, "the search starts over");
+}

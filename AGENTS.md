@@ -62,6 +62,8 @@ src/
 tests/ui.rs           UI tests: drive the app through accessibility labels; fixtures in tests/fixtures/
   model.rs            UI-independent data model (Library, Project, Pdf, Settings) – no slint
   storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes, ZIP backups – no slint
+  abbreviations.rs    crochet abbreviations DE / US / UK (`TERMS`, ranked `search`) – no slint; for the
+                      abbreviation page now and the pattern parser later
   changes.rs          changelog (Settings → About → Changelog): the F-Droid changelogs embedded by build.rs, version codes
   a11y.rs             Android only: TalkBack bridge (walks the Slint element tree, sends virtual views to Java)
   pdf.rs              render workers: viewer pages (newest request only) and PNG covers of page 1
@@ -77,7 +79,8 @@ ui/
   theme.slint         Theme global: colors (light/dark), sizes, radii, fonts
   components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Sheet, Field, Segmented, Switch…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
-  pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages)
+  pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages),
+                      abbreviations
   icons/              SVG icons
   fonts/              Montez (Apache 2.0) for the wordmark "Flausch"
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
@@ -103,7 +106,9 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   until Create; Back or cancel drops both). A part typed in but not added yet is added on Create; the first part is
   active. The PDF view has a
   movable reading line (`Pdf::lines`: fraction of the page height per page, `show_line` per PDF; its color is
-  `Settings::line_color` → `Theme.line-color()`). At zoom 1, swiping left or right turns the page
+  `Settings::line_color` → `Theme.line-color()`). Its top bar keeps only the reading line and a ⋮ menu (Abbreviations, Zoom in/out for
+  TalkBack and people who can't pinch; `Store.pdf-menu-open`, closed by a tap outside, Back and every screen
+  change). At zoom 1, swiping left or right turns the page
   (`SwipeGestureHandler` around the page's `Flickable`); zoomed in, a drag moves the view. List progress sums all
   parts with a goal
   (`Project::progress`); search matches project and part names and the localized status name
@@ -114,7 +119,10 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   changing the active part. Settings → About lists sub-pages (`NavRow` → `Store.open-page(Screen)`): About
   Flausch, Changelog and Donate (GitHub Sponsors and Liberapay, opened in the browser through
   `Store.open-url` → `platform::open_url`; the same links are in `.github/FUNDING.yml` and the F-Droid recipe),
-  plus a Website row that opens the browser directly.
+  plus a Website row that opens the browser directly. Settings → Reference → Abbreviations and the ⋮ menu of the PDF view
+  open the abbreviation table (`Screen.abbreviations`, `pages/abbreviations.slint`): German, US and UK side by
+  side, UK terms that differ from US in pink (UK stitches are one taller), searched in Rust
+  (`Store.abbreviation-query` → `abbreviations::search`), the search starting over each time it opens.
   New info pages get a `Screen` value and a row there. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::sorted`: in progress, then planned and paused, then finished; within a group by

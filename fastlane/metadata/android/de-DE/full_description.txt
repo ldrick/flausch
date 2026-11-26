@@ -16,6 +16,7 @@
 <li>Reihen direkt in der Anleitung zählen, dort das Teil wechseln oder den Zähler vergrößern</li>
 <li>Eine verschiebbare Leselinie markiert deine Reihe – sie merkt sich ihre Position auf jeder Seite, Farbe wählbar</li>
 <li>Mit Wischen blättern; Zoom, Seite und Scrollposition werden pro Projekt gespeichert</li>
+<li>Abkürzungstabelle Deutsch / US- / UK-Englisch, auch direkt in der Anleitung</li>
 </ul>
 
 <p><b>Fürs Häkeln gemacht</b></p>

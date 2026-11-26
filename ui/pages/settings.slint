@@ -240,6 +240,23 @@ export component SettingsPage inherits Rectangle {
                 }
 
                 SectionTitle {
+                    text: @tr("Reference");
+                }
+                Card {
+                    height: reference.preferred-height;
+
+                    reference := VerticalLayout {
+                        padding: 6px;
+
+                        NavRow {
+                            text: @tr("Abbreviations");
+                            detail: "DE · US · UK";
+                            clicked => { Store.open-page(Screen.abbreviations); }
+                        }
+                    }
+                }
+
+                SectionTitle {
                     text: @tr("Data");
                 }
                 Card {

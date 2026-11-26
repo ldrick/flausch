@@ -16,6 +16,7 @@
 <li>Count rows right in the pattern, switch parts there or enlarge the counter</li>
 <li>A movable reading line marks your row – it remembers its position on every page, color selectable</li>
 <li>Swipe to turn pages; zoom, page and scroll position are saved per project</li>
+<li>Abbreviation table German / US / UK English, also right in the pattern</li>
 </ul>
 
 <p><b>Made for crocheting</b></p>

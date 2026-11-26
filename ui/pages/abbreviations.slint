@@ -1,0 +1,156 @@
+import { Theme } from "../theme.slint";
+import { Store } from "../store.slint";
+import { Card, Field, TopBar } from "../components.slint";
+
+// One language in a row: the abbreviation in bold, the word below it unless it is the same.
+component Cell inherits VerticalLayout {
+    in property <string> abbreviation;
+    in property <string> name;
+    // The UK term means something else in a US pattern.
+    in property <bool> highlight;
+
+    spacing: 2px;
+    alignment: start;
+
+    if root.abbreviation != "": Text {
+        text: root.abbreviation;
+        color: root.highlight ? Theme.accent-pressed : Theme.text;
+        font-size: Theme.font-body;
+        font-weight: 600;
+        wrap: word-wrap;
+    }
+    if root.name != root.abbreviation: Text {
+        text: root.name;
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        wrap: word-wrap;
+    }
+}
+
+component Header inherits Text {
+    color: Theme.text-muted;
+    font-size: Theme.font-small;
+    font-weight: 600;
+}
+
+export component AbbreviationsPage inherits Rectangle {
+    property <length> row-padding: 12px;
+    property <length> column-spacing: 8px;
+    // Three equal columns: German, US, UK.
+    property <length> column: (root.width - 2 * Theme.padding - 2 * root.row-padding - 2 * root.column-spacing) / 3;
+
+    VerticalLayout {
+        TopBar {
+            title: @tr("Abbreviations");
+            back => { Store.back(); }
+        }
+        HorizontalLayout {
+            padding-left: Theme.padding;
+            padding-right: Theme.padding;
+            padding-bottom: 8px;
+
+            Field {
+                height: 48px;
+                show-label: false;
+                label: @tr("Search");
+                placeholder: @tr("Search abbreviations");
+                text <=> Store.abbreviation-query;
+                changed text => { Store.abbreviation-query-changed(); }
+            }
+        }
+
+        Flickable {
+            vertical-stretch: 1;
+            content-height: content.preferred-height;
+
+            content := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                Text {
+                    text: @tr("UK terms are one stitch taller: a UK dc is a US sc. Pink UK terms mean something else in a US pattern. German abbreviations vary between designers.");
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    wrap: word-wrap;
+                }
+
+                if Store.abbreviations.length == 0: Text {
+                    text: @tr("No matching abbreviations");
+                    color: Theme.text-muted;
+                    font-size: Theme.font-body;
+                    horizontal-alignment: center;
+                }
+
+                if Store.abbreviations.length > 0: Card {
+                    height: table.preferred-height;
+
+                    table := VerticalLayout {
+                        padding-top: 6px;
+                        padding-bottom: 6px;
+
+                        HorizontalLayout {
+                            padding: root.row-padding;
+                            padding-bottom: 4px;
+                            spacing: root.column-spacing;
+                            accessible-role: none;
+
+                            Header {
+                                text: @tr("German");
+                                width: root.column;
+                            }
+                            Header {
+                                text: "US";
+                                width: root.column;
+                            }
+                            Header {
+                                text: "UK";
+                                width: root.column;
+                            }
+                        }
+
+                        // The outer layout doesn't see the wrapped height of a repeated layout, so pin it.
+                        for item[index] in Store.abbreviations: Rectangle {
+                            height: row.preferred-height;
+
+                            if index > 0: Rectangle {
+                                x: root.row-padding;
+                                y: 0;
+                                width: parent.width - 2 * root.row-padding;
+                                height: 1px;
+                                background: Theme.border;
+                            }
+
+                            row := HorizontalLayout {
+                                padding: root.row-padding;
+                                spacing: root.column-spacing;
+                                accessible-role: text;
+                                accessible-label: item.de-name + (item.de != "" ? " (" + item.de + ")" : "")
+                                    + ". US: " + item.us + (item.us-name != item.us ? ", " + item.us-name : "")
+                                    + ". UK: " + item.uk + (item.uk-name != item.uk ? ", " + item.uk-name : "");
+
+                                Cell {
+                                    width: root.column;
+                                    abbreviation: item.de;
+                                    name: item.de-name;
+                                }
+                                Cell {
+                                    width: root.column;
+                                    abbreviation: item.us;
+                                    name: item.us-name;
+                                }
+                                Cell {
+                                    width: root.column;
+                                    abbreviation: item.uk;
+                                    name: item.uk-name;
+                                    highlight: item.uk-differs;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

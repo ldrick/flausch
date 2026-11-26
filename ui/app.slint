@@ -1,6 +1,6 @@
 import { Palette } from "std-widgets.slint";
 import { Theme, Appearance, LineColor } from "theme.slint";
-import { Store, Screen, DialogKind, Notice, FolderItem, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm } from "store.slint";
+import { Store, Screen, DialogKind, Notice, FolderItem, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, AbbreviationItem, PartForm } from "store.slint";
 import { Card, Dialog, DialogButtons, Field, IconButton, Keyboard, PillButton, ButtonKind, Segmented, Sheet, TextArea } from "components.slint";
 import { ListPage } from "pages/list.slint";
 import { PatternCard, ProjectPage, SectionTitle } from "pages/project.slint";
@@ -8,8 +8,9 @@ import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
 import { SettingsPage } from "pages/settings.slint";
 import { AboutPage, ChangelogPage, DonatePage } from "pages/about.slint";
+import { AbbreviationsPage } from "pages/abbreviations.slint";
 
-export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, FolderItem, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, PartForm }
+export { Store, Theme, Appearance, LineColor, Screen, DialogKind, Notice, FolderItem, ProjectItem, PartItem, PdfView, Language, A11yFocus, ProjectStatus, StatusFilter, ProjectSort, ChangeItem, AbbreviationItem, PartForm }
 
 component SortDialog inherits Dialog {
     callback done();
@@ -526,6 +527,7 @@ export component App inherits Window {
             if Store.screen == Screen.about: AboutPage { }
             if Store.screen == Screen.changelog: ChangelogPage { }
             if Store.screen == Screen.donate: DonatePage { }
+            if Store.screen == Screen.abbreviations: AbbreviationsPage { }
 
             // Text input gets a full screen, like a page.
             if Store.dialog == DialogKind.create || Store.dialog == DialogKind.edit: ProjectDialog {
