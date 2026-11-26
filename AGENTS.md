@@ -337,7 +337,8 @@ and `cargo deny` must pass, no force push. Release tags `v*` can't be moved or d
   every push to `main` runs `tools/release.py prepare` on top of `main` and force-pushes the PR
   `chore: release vX.Y.Z` (branch `release/next`), opening it once there is a `feat` or `fix` since the last tag.
   The next version follows those commits (breaking → major, `feat` → minor, `fix` → patch); the first release is
-  1.0.0. To pick a version, run the workflow by hand (`gh workflow run release.yml -f version=X.Y.Z`). The PR
+  1.0.0. To pick a version, run the workflow by hand (`gh workflow run release.yml -f version=X.Y.Z`); a
+  higher version picked like that stays for later pushes while the release PR is open. The PR
   updates `version` and `version_code` in `Cargo.toml`, `Cargo.lock`, the F-Droid recipe, `CHANGELOG.md` and
   drafts the F-Droid changelogs `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`.
 - In the release PR, rewrite both changelogs for users (short, max. 500 characters, one point per line starting with `•`; the app
