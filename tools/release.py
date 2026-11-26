@@ -4,8 +4,8 @@
     tools/release.py prepare [VERSION] [--keep REF]
         bump the version, update CHANGELOG.md, the F-Droid recipe and draft the F-Droid changelogs. VERSION
         defaults to the next one from the Conventional Commits since the last tag (1.0.0 if nothing is tagged).
-        REF is the previous release branch: F-Droid changelogs edited there are kept, and commits added to
-        main since then are appended to them.
+        REF is the previous release branch: its version is kept if it is higher (picked by hand), F-Droid
+        changelogs edited there are kept, and commits added to main since then are appended to them.
     tools/release.py notes VERSION
         print the CHANGELOG.md section of VERSION
 
@@ -196,6 +196,12 @@ def prepare(requested: str | None, keep: str | None) -> None:
     commits = commits_since(tag)
     current = tag.removeprefix("v") if tag else cargo_version()
     version = requested or (next_version(current, commits) if tag else FIRST_VERSION)
+    if not requested and keep:
+        # A version picked by hand on the open release branch (e.g. a major release) stays.
+        kept = cargo_version(show(keep, CARGO_TOML) or "")
+        newer = tag is None or parse_version(kept) > parse_version(current)
+        if newer and (version is None or parse_version(kept) > parse_version(version)):
+            version = kept
     if version is None:
         return
     if tag and parse_version(version) <= parse_version(current):
