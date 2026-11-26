@@ -127,7 +127,7 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   `Store.folder`, Back closes it) and new projects go into the open folder. The search ignores folders and
   matches in all of them. The folder's top bar renames it and deletes it on a sheet; deleting keeps the projects
   (back to the top level). Holding a project card and dropping it on a folder card moves it there
-  (`Store.move-to-folder`); inside a folder, dropping it on the top bar takes it out. For TalkBack, a quiet
+  (`Store.move-to-folder`); inside a folder, dragging it onto the strip at the left edge ("Main list") takes it out. For TalkBack, a quiet
   button at the bottom of the project screen opens a full-screen folder picker (only once a folder exists). Finished projects have no continue button. A part can be made several times (`Part::quantity`, e.g. 4 legs): `pieces_done` counts
   finished pieces, "Next piece" (`Library::next_piece`) starts the next one at row 0, Previous row at row 0 goes
   back to the last row of the piece before, Reset starts over, and progress counts `goal × quantity` rows; the UI
