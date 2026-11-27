@@ -732,7 +732,7 @@ export component ListPage inherits Rectangle {
         clicked => { Store.dialog = DialogKind.create; }
     }
 
-    // The menu of the top bar: the stash, the hooks and the settings.
+    // The menu of the top bar: materials, reference, settings and info.
     if Store.menu-open: TopMenu {
         top: 64px;
 
@@ -753,11 +753,27 @@ export component ListPage inherits Rectangle {
             }
         }
         MenuItem {
+            icon: @image-url("../icons/book.svg");
+            text: @tr("Abbreviations");
+            clicked => {
+                Store.menu-open = false;
+                Store.open-page(Screen.abbreviations);
+            }
+        }
+        MenuItem {
             icon: @image-url("../icons/settings.svg");
             text: @tr("Settings");
             clicked => {
                 Store.menu-open = false;
                 Store.open-settings();
+            }
+        }
+        MenuItem {
+            icon: @image-url("../icons/info.svg");
+            text: @tr("About");
+            clicked => {
+                Store.menu-open = false;
+                Store.open-page(Screen.info);
             }
         }
     }

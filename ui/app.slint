@@ -6,8 +6,8 @@ import { ListPage } from "pages/list.slint";
 import { PatternCard, ProjectPage, SectionTitle } from "pages/project.slint";
 import { PartPage } from "pages/part.slint";
 import { PdfPage } from "pages/pdf.slint";
-import { SettingsPage } from "pages/settings.slint";
-import { AboutPage, ChangelogPage, DonatePage } from "pages/about.slint";
+import { BackupPage, SettingsPage } from "pages/settings.slint";
+import { AboutPage, ChangelogPage, DonatePage, InfoPage } from "pages/about.slint";
 import { AbbreviationsPage } from "pages/abbreviations.slint";
 import { StashPage, YarnDialog } from "pages/stash.slint";
 import { HooksPage, HookDialog } from "pages/hooks.slint";
@@ -526,6 +526,8 @@ export component App inherits Window {
             if Store.screen == Screen.part: PartPage { }
             if Store.screen == Screen.pdf: PdfPage { }
             if Store.screen == Screen.settings: SettingsPage { }
+            if Store.screen == Screen.backup: BackupPage { }
+            if Store.screen == Screen.info: InfoPage { }
             if Store.screen == Screen.about: AboutPage { }
             if Store.screen == Screen.changelog: ChangelogPage { }
             if Store.screen == Screen.donate: DonatePage { }

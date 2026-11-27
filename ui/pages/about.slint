@@ -1,7 +1,7 @@
 import { AboutSlint } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
-import { Store } from "../store.slint";
-import { ButtonKind, Card, Icon, PillButton, TopBar } from "../components.slint";
+import { Store, Screen } from "../store.slint";
+import { ButtonKind, Card, Divider, Icon, NavRow, PillButton, TopBar } from "../components.slint";
 
 // "Made with ♥ in the Black Forest", with a red heart.
 component MadeWithLove inherits HorizontalLayout {
@@ -30,6 +30,53 @@ component MadeWithLove inherits HorizontalLayout {
         color: Theme.text-muted;
         font-size: Theme.font-small;
         vertical-alignment: center;
+    }
+}
+
+// ⋮ → About: the app, its changes, donating and the website.
+export component InfoPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("About");
+            back => { Store.back(); }
+        }
+
+        VerticalLayout {
+            vertical-stretch: 1;
+            padding: Theme.padding;
+            padding-top: 4px;
+            alignment: start;
+
+            Card {
+                height: rows.preferred-height;
+
+                rows := VerticalLayout {
+                    padding: 6px;
+
+                    NavRow {
+                        text: @tr("About Flausch");
+                        detail: Store.version;
+                        clicked => { Store.open-page(Screen.about); }
+                    }
+                    Divider { }
+                    NavRow {
+                        text: @tr("Changelog");
+                        clicked => { Store.open-page(Screen.changelog); }
+                    }
+                    Divider { }
+                    NavRow {
+                        text: @tr("Donate");
+                        clicked => { Store.open-page(Screen.donate); }
+                    }
+                    Divider { }
+                    NavRow {
+                        text: @tr("Website");
+                        detail: "ldrick.github.io/flausch";
+                        clicked => { Store.open-url("https://ldrick.github.io/flausch/"); }
+                    }
+                }
+            }
+        }
     }
 }
 

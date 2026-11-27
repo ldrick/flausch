@@ -1,4 +1,4 @@
-//! The changelog in Settings → About: the F-Droid changelogs, embedded by `build.rs`.
+//! The changelog in ⋮ → About: the F-Droid changelogs, embedded by `build.rs`.
 
 include!(concat!(env!("OUT_DIR"), "/changes.rs"));
 

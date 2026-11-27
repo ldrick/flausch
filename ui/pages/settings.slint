@@ -1,12 +1,6 @@
 import { Theme, Appearance, LineColor } from "../theme.slint";
 import { Store, Language, Screen } from "../store.slint";
-import { ButtonKind, Card, Icon, PillButton, Segmented, Switch, TopBar } from "../components.slint";
-
-component SectionTitle inherits Text {
-    color: Theme.text-muted;
-    font-size: Theme.font-small;
-    font-weight: 600;
-}
+import { ButtonKind, Card, Divider, NavRow, PillButton, SectionTitle, Segmented, Switch, TopBar } from "../components.slint";
 
 component ColorSwatch inherits Rectangle {
     in property <LineColor> value;
@@ -40,63 +34,79 @@ global SettingsScroll {
     in-out property <length> y;
 }
 
-// An entry that opens a sub-page.
-component NavRow inherits Rectangle {
+// A setting that is switched on or off.
+component SwitchRow inherits HorizontalLayout {
     in property <string> text;
-    // Small text on the right, e.g. the version.
-    in property <string> detail;
-    callback clicked();
+    in property <string> description;
+    in property <bool> checked;
+    callback toggled();
 
-    height: Theme.touch + 8px;
-    border-radius: Theme.radius-small;
-    background: touch.pressed ? Theme.surface-muted : transparent;
-    accessible-role: button;
-    accessible-label: root.text;
-    accessible-action-default => { root.clicked(); }
+    padding: 12px;
+    spacing: 16px;
 
-    touch := TouchArea {
-        clicked => { root.clicked(); }
-    }
-    HorizontalLayout {
-        padding-left: 12px;
-        padding-right: 6px;
-        spacing: 8px;
+    VerticalLayout {
+        alignment: center;
+        spacing: 2px;
 
         Text {
             text: root.text;
             color: Theme.text;
             font-size: Theme.font-body;
-            vertical-alignment: center;
-            horizontal-stretch: 1;
+            wrap: word-wrap;
         }
-        Text {
-            text: root.detail;
+        if root.description != "": Text {
+            text: root.description;
             color: Theme.text-muted;
             font-size: Theme.font-small;
-            vertical-alignment: center;
+            wrap: word-wrap;
         }
-        VerticalLayout {
-            alignment: center;
-            Icon {
-                source: @image-url("../icons/chevron-right.svg");
-                color: Theme.text-muted;
-                width: 20px;
-                height: 20px;
-            }
+    }
+    VerticalLayout {
+        alignment: center;
+        Switch {
+            label: root.text;
+            checked: root.checked;
+            toggled => { root.toggled(); }
         }
     }
 }
 
-component Divider inherits Rectangle {
-    height: 1px;
+// A setting with its control below the name, e.g. a segmented choice.
+component ChoiceRow inherits VerticalLayout {
+    in property <string> text;
 
-    Rectangle {
-        x: 12px;
-        width: parent.width - 24px;
-        background: Theme.border;
+    padding: 12px;
+    spacing: 10px;
+
+    Text {
+        text: root.text;
+        color: Theme.text;
+        font-size: Theme.font-body;
+    }
+    @children
+}
+
+// A group of rows under a heading.
+component Group inherits VerticalLayout {
+    in property <string> title;
+
+    spacing: 8px;
+
+    SectionTitle {
+        text: root.title;
+    }
+    Card {
+        height: rows.preferred-height;
+
+        rows := VerticalLayout {
+            padding: 6px;
+            @children
+        }
     }
 }
 
+// Only real settings live here; reference and info pages are in the menu of the project list. Groups
+// hold uniform rows, and anything bigger gets a sub-page behind a `NavRow`.
 export component SettingsPage inherits Rectangle {
     VerticalLayout {
         TopBar {
@@ -112,115 +122,58 @@ export component SettingsPage inherits Rectangle {
             content := VerticalLayout {
                 padding: Theme.padding;
                 padding-top: 4px;
-                spacing: Theme.spacing;
+                spacing: Theme.spacing + 4px;
                 alignment: start;
 
-                SectionTitle {
-                    text: @tr("Language");
-                }
-                Segmented {
-                    options: [{ label: @tr("System") }, { label: "Deutsch" }, { label: "English" }];
-                    selected: Store.language == Language.de ? 1 : Store.language == Language.en ? 2 : 0;
-                    select(index) => {
-                        Store.set-language(index == 1 ? Language.de : index == 2 ? Language.en : Language.system);
-                    }
-                }
+                Group {
+                    title: @tr("General");
 
-                SectionTitle {
-                    text: @tr("Appearance");
-                }
-                Segmented {
-                    options: [{ label: @tr("System") }, { label: @tr("Light") }, { label: @tr("Dark") }];
-                    selected: Store.appearance == Appearance.light ? 1 : Store.appearance == Appearance.dark ? 2 : 0;
-                    select(index) => {
-                        Store.set-appearance(index == 1 ? Appearance.light : index == 2 ? Appearance.dark : Appearance.system);
-                    }
-                }
-
-                SectionTitle {
-                    text: @tr("Counting");
-                }
-                Card {
-                    height: counting.preferred-height;
-
-                    counting := VerticalLayout {
-                        padding: 18px;
-                        spacing: 16px;
-
-                        HorizontalLayout {
-                            spacing: 16px;
-
-                            VerticalLayout {
-                                alignment: center;
-                                spacing: 2px;
-
-                                Text {
-                                    text: @tr("Keep screen on");
-                                    color: Theme.text;
-                                    font-size: Theme.font-body;
-                                }
-                                Text {
-                                    text: @tr("While a project or pattern is open");
-                                    color: Theme.text-muted;
-                                    font-size: Theme.font-small;
-                                    wrap: word-wrap;
-                                }
-                            }
-                            VerticalLayout {
-                                alignment: center;
-                                Switch {
-                                    label: @tr("Keep screen on");
-                                    checked: Store.keep-screen-on;
-                                    toggled => { Store.set-keep-screen-on(!Store.keep-screen-on); }
-                                }
+                    ChoiceRow {
+                        text: @tr("Language");
+                        Segmented {
+                            options: [{ label: @tr("System") }, { label: "Deutsch" }, { label: "English" }];
+                            selected: Store.language == Language.de ? 1 : Store.language == Language.en ? 2 : 0;
+                            select(index) => {
+                                Store.set-language(index == 1 ? Language.de : index == 2 ? Language.en : Language.system);
                             }
                         }
-                        HorizontalLayout {
-                            spacing: 16px;
-
-                            VerticalLayout {
-                                alignment: center;
-                                spacing: 2px;
-
-                                Text {
-                                    text: @tr("Count with volume keys");
-                                    color: Theme.text;
-                                    font-size: Theme.font-body;
-                                }
-                                Text {
-                                    text: @tr("Volume up counts a row, volume down goes back");
-                                    color: Theme.text-muted;
-                                    font-size: Theme.font-small;
-                                    wrap: word-wrap;
-                                }
-                            }
-                            VerticalLayout {
-                                alignment: center;
-                                Switch {
-                                    label: @tr("Count with volume keys");
-                                    checked: Store.volume-keys;
-                                    toggled => { Store.set-volume-keys(!Store.volume-keys); }
-                                }
+                    }
+                    Divider { }
+                    ChoiceRow {
+                        text: @tr("Appearance");
+                        Segmented {
+                            options: [{ label: @tr("System") }, { label: @tr("Light") }, { label: @tr("Dark") }];
+                            selected: Store.appearance == Appearance.light ? 1 : Store.appearance == Appearance.dark ? 2 : 0;
+                            select(index) => {
+                                Store.set-appearance(index == 1 ? Appearance.light : index == 2 ? Appearance.dark : Appearance.system);
                             }
                         }
                     }
                 }
 
-                SectionTitle {
-                    text: @tr("Pattern");
+                Group {
+                    title: @tr("Counting");
+
+                    SwitchRow {
+                        text: @tr("Keep screen on");
+                        description: @tr("While a project or pattern is open");
+                        checked: Store.keep-screen-on;
+                        toggled => { Store.set-keep-screen-on(!Store.keep-screen-on); }
+                    }
+                    Divider { }
+                    SwitchRow {
+                        text: @tr("Count with volume keys");
+                        description: @tr("Volume up counts a row, volume down goes back");
+                        checked: Store.volume-keys;
+                        toggled => { Store.set-volume-keys(!Store.volume-keys); }
+                    }
                 }
-                Card {
-                    height: line.preferred-height;
 
-                    line := VerticalLayout {
-                        padding: 18px;
-                        spacing: 10px;
+                Group {
+                    title: @tr("Pattern");
 
-                        Text {
-                            text: @tr("Reading line color");
-                            color: Theme.text;
-                            font-size: Theme.font-body;
-                        }
+                    ChoiceRow {
+                        text: @tr("Reading line color");
                         HorizontalLayout {
                             alignment: space-between;
                             for option in [
@@ -239,88 +192,62 @@ export component SettingsPage inherits Rectangle {
                     }
                 }
 
-                SectionTitle {
-                    text: @tr("Reference");
-                }
-                Card {
-                    height: reference.preferred-height;
+                Group {
+                    title: @tr("Data");
 
-                    reference := VerticalLayout {
-                        padding: 6px;
-
-                        NavRow {
-                            text: @tr("Abbreviations");
-                            detail: "DE · US · UK";
-                            clicked => { Store.open-page(Screen.abbreviations); }
-                        }
+                    NavRow {
+                        text: @tr("Backup");
+                        detail: @tr("ZIP file");
+                        clicked => { Store.open-page(Screen.backup); }
                     }
                 }
+            }
+        }
+    }
+}
 
-                SectionTitle {
-                    text: @tr("Data");
-                }
-                Card {
-                    height: data.preferred-height;
+// Settings → Data → Backup: export and import everything as a ZIP file.
+export component BackupPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("Backup");
+            back => { Store.back(); }
+        }
 
-                    data := VerticalLayout {
-                        padding: 18px;
-                        spacing: 14px;
+        VerticalLayout {
+            vertical-stretch: 1;
+            padding: Theme.padding;
+            padding-top: 4px;
+            alignment: start;
 
-                        Text {
-                            text: @tr("Save projects, row counters and patterns as a ZIP file, for example before switching phones.");
-                            color: Theme.text-muted;
-                            font-size: Theme.font-small;
-                            wrap: word-wrap;
-                        }
-                        HorizontalLayout {
-                            spacing: 12px;
-                            PillButton {
-                                text: @tr("Export");
-                                kind: ButtonKind.secondary;
-                                horizontal-stretch: 1;
-                                enabled: !Store.backup-busy;
-                                clicked => { Store.export-backup(); }
-                            }
-                            PillButton {
-                                text: @tr("Import");
-                                kind: ButtonKind.secondary;
-                                horizontal-stretch: 1;
-                                enabled: !Store.backup-busy;
-                                clicked => { Store.import-backup(); }
-                            }
-                        }
+            Card {
+                height: backup.preferred-height;
+
+                backup := VerticalLayout {
+                    padding: 18px;
+                    spacing: 14px;
+
+                    Text {
+                        text: @tr("Save projects, row counters, patterns, yarns and hooks as a ZIP file, for example before switching phones.");
+                        color: Theme.text-muted;
+                        font-size: Theme.font-small;
+                        wrap: word-wrap;
                     }
-                }
-
-                SectionTitle {
-                    text: @tr("About");
-                }
-                Card {
-                    height: about.preferred-height;
-
-                    about := VerticalLayout {
-                        padding: 6px;
-
-                        NavRow {
-                            text: @tr("About Flausch");
-                            detail: Store.version;
-                            clicked => { Store.open-page(Screen.about); }
+                    HorizontalLayout {
+                        spacing: 12px;
+                        PillButton {
+                            text: @tr("Export");
+                            kind: ButtonKind.secondary;
+                            horizontal-stretch: 1;
+                            enabled: !Store.backup-busy;
+                            clicked => { Store.export-backup(); }
                         }
-                        Divider { }
-                        NavRow {
-                            text: @tr("Changelog");
-                            clicked => { Store.open-page(Screen.changelog); }
-                        }
-                        Divider { }
-                        NavRow {
-                            text: @tr("Donate");
-                            clicked => { Store.open-page(Screen.donate); }
-                        }
-                        Divider { }
-                        NavRow {
-                            text: @tr("Website");
-                            detail: "ldrick.github.io/flausch";
-                            clicked => { Store.open-url("https://ldrick.github.io/flausch/"); }
+                        PillButton {
+                            text: @tr("Import");
+                            kind: ButtonKind.secondary;
+                            horizontal-stretch: 1;
+                            enabled: !Store.backup-busy;
+                            clicked => { Store.import-backup(); }
                         }
                     }
                 }
