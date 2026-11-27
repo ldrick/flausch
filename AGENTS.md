@@ -80,7 +80,7 @@ ui/
   components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Sheet, Field, Segmented, Switch…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages),
-                      abbreviations, stash (yarn stash and its form)
+                      abbreviations, stash (yarn stash and its form), hooks (crochet hooks and their form)
   icons/              SVG icons
   fonts/              Montez (Apache 2.0) for the wordmark "Flausch"
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
@@ -124,10 +124,15 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   side, UK terms that differ from US in pink (UK stitches are one taller), searched in Rust
   (`Store.abbreviation-query` → `abbreviations::search`), the search starting over each time it opens.
   New info pages get a `Screen` value and a row there. The ⋮ menu of the project list (the same `TopMenu`) holds
-  the yarn stash (`Screen.stash`, `pages/stash.slint`) and the settings; hooks (#5) go there, too. Yarns live in
+  the yarn stash (`Screen.stash`, `pages/stash.slint`), the crochet hooks (`Screen.hooks`, `pages/hooks.slint`) and
+  the settings. Yarns live in
   `Library::yarns` (so backups include them, ids from `next_id`), sorted by brand, yarn line and color
   (`Library::sorted_yarns`); a yarn needs a brand, yarn line or color. Tapping a card opens its form (`Sheet`,
-  `Store.edited-yarn`), where deleting asks inline instead of in a dialog. A project also has a `Status` (planned, in progress, paused, finished; shown as a
+  `Store.edited-yarn`), where deleting asks inline instead of in a dialog. Hooks (`Library::hooks`) work the same
+  way (`Store.edited-hook`): a size in hundredths of a millimeter (the form takes "3.5" or "3,5", German shows a
+  comma: `Controller::decimal_comma`), brand and type, sorted by size; the US size comes from the Craft Yarn Council
+  table in `model::us_hook_size` (steel hooks for thread count the other way), and the form shows it while typing
+  (`Store.us-hook-size`, a pure callback). A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::sorted`: in progress, then planned and paused, then finished; within a group by
   `Settings::project_sort`: last used, name, newest, progress or custom, chosen in the sort dialog). Holding a
@@ -287,7 +292,7 @@ Slint's Android backend has no accessibility support, so Flausch brings its own 
 ## Testing on the emulator
 
 Develop and test on the emulator. The user's phone holds real data: use it only when the user asks (to install a
-finished build or to reproduce a specific bug there). On the phone, don't change device settings, don't touch
+finished build or to reproduce a specific bug there). The `issue` skill ends by installing Flausch Dev there. On the phone, don't change device settings, don't touch
 Flausch's data, make sure Flausch is in the foreground before sending input, and ask the user to unlock it if
 needed.
 
@@ -352,5 +357,8 @@ and `cargo deny` must pass, no force push. Release tags `v*` can't be moved or d
   publishes it, which creates the tag `vX.Y.Z`. Releases are immutable once published, so nothing can be added or
   swapped later. If the build fails, the release stays a draft: fix it and run
   `gh workflow run release.yml -f attach=X.Y.Z`. F-Droid picks up the tag (see `fdroid/README.md`).
+- When the user asks to implement an issue, follow the `issue` skill (`.github/skills/issue/SKILL.md`, linked in
+  `.claude/skills`): branch, build with tests, translations and docs, check on the emulator, then install Flausch Dev
+  on the user's phone so they can try it; commit and open the PR once they say so.
 - When the user asks for a release, follow the `release` skill (`.github/skills/release/SKILL.md`, linked in
   `.claude/skills`): write the changelogs in the release PR, wait for CI, merge after the user agrees.

@@ -8,74 +8,74 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ui/app.slint:122
+#: ui/app.slint:123
 msgctxt "ProjectDialog"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/app.slint:167
+#: ui/app.slint:168
 msgctxt "ProjectDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:124
+#: ui/app.slint:125
 msgctxt "ProjectDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:124
+#: ui/app.slint:125
 msgctxt "ProjectDialog"
 msgid "Create"
 msgstr "Anlegen"
 
-#: ui/app.slint:575
+#: ui/app.slint:582
 msgctxt "App"
 msgid "This file could not be opened as a PDF."
 msgstr "Diese Datei konnte nicht als PDF geöffnet werden."
 
-#: ui/app.slint:576
+#: ui/app.slint:583
 msgctxt "App"
 msgid "The page could not be displayed."
 msgstr "Die Seite konnte nicht angezeigt werden."
 
-#: ui/app.slint:585
+#: ui/app.slint:592
 msgctxt "App"
 msgid "The PDF could not be imported."
 msgstr "Das PDF konnte nicht importiert werden."
 
-#: ui/app.slint:602
+#: ui/app.slint:609
 msgctxt "App"
 msgid "Delete project?"
 msgstr "Projekt löschen?"
 
-#: ui/app.slint:603
+#: ui/app.slint:610
 msgctxt "App"
 msgid "“{}” and its pattern will be removed. This cannot be undone."
 msgstr ""
 "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
 "werden."
 
-#: ui/app.slint:607 ui/app.slint:678
+#: ui/app.slint:614 ui/app.slint:685
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
-#: ui/app.slint:757
+#: ui/app.slint:764
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-#: ui/app.slint:763
+#: ui/app.slint:770
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: ui/app.slint:773
+#: ui/app.slint:780
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-#: ui/app.slint:778
+#: ui/app.slint:785
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
@@ -90,7 +90,7 @@ msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
 
-#: ui/pages/list.slint:749
+#: ui/pages/list.slint:757
 msgctxt "ListPage"
 msgid "Settings"
 msgstr "Einstellungen"
@@ -313,67 +313,67 @@ msgctxt "ProjectPage"
 msgid "Add part"
 msgstr "Teil hinzufügen"
 
-#: ui/app.slint:122
+#: ui/app.slint:123
 msgctxt "ProjectDialog"
 msgid "Rename project"
 msgstr "Projekt umbenennen"
 
-#: ui/app.slint:168
+#: ui/app.slint:169
 msgctxt "ProjectDialog"
 msgid "Name, e.g. Bunny"
 msgstr "Name, z. B. Hase"
 
-#: ui/app.slint:256
+#: ui/app.slint:257
 msgctxt "PartDialog"
 msgid "Edit part"
 msgstr "Teil bearbeiten"
 
-#: ui/app.slint:256
+#: ui/app.slint:257
 msgctxt "PartDialog"
 msgid "New part"
 msgstr "Neues Teil"
 
-#: ui/app.slint:292
+#: ui/app.slint:293
 msgctxt "PartDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:293
+#: ui/app.slint:294
 msgctxt "PartDialog"
 msgid "Name, e.g. Head"
 msgstr "Name, z. B. Kopf"
 
-#: ui/app.slint:297 ui/app.slint:298
+#: ui/app.slint:298 ui/app.slint:299
 msgctxt "PartDialog"
 msgid "Rows (optional)"
 msgstr "Reihen (optional)"
 
-#: ui/app.slint:258
+#: ui/app.slint:259
 msgctxt "PartDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:258
+#: ui/app.slint:259
 msgctxt "PartDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/app.slint:673
+#: ui/app.slint:680
 msgctxt "App"
 msgid "Delete part?"
 msgstr "Teil löschen?"
 
-#: ui/app.slint:674
+#: ui/app.slint:681
 msgctxt "App"
 msgid "“{}” and its row counter will be removed."
 msgstr "„{}“ und sein Reihenzähler werden gelöscht."
 
-#: ui/app.slint:759
+#: ui/app.slint:766
 msgctxt "App"
 msgid "The row counter of “{}” goes back to 0."
 msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
 
-#: ui/app.slint:774
+#: ui/app.slint:781
 msgctxt "App"
 msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
@@ -414,22 +414,22 @@ msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:688
+#: ui/app.slint:695
 msgctxt "App"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:727
+#: ui/app.slint:734
 msgctxt "App"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/app.slint:727
+#: ui/app.slint:734
 msgctxt "App"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/app.slint:745
+#: ui/app.slint:752
 msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -553,27 +553,27 @@ msgctxt "SettingsPage"
 msgid "Import"
 msgstr "Importieren"
 
-#: ui/app.slint:577
+#: ui/app.slint:584
 msgctxt "App"
 msgid "Backup saved."
 msgstr "Sicherung gespeichert."
 
-#: ui/app.slint:578
+#: ui/app.slint:585
 msgctxt "App"
 msgid "The backup could not be saved."
 msgstr "Die Sicherung konnte nicht gespeichert werden."
 
-#: ui/app.slint:579
+#: ui/app.slint:586
 msgctxt "App"
 msgid "The file could not be read."
 msgstr "Die Datei konnte nicht gelesen werden."
 
-#: ui/app.slint:580
+#: ui/app.slint:587
 msgctxt "App"
 msgid "This file is not a Flausch backup."
 msgstr "Diese Datei ist keine Flausch-Sicherung."
 
-#: ui/app.slint:581
+#: ui/app.slint:588
 msgctxt "App"
 msgid ""
 "This backup is from a newer version of Flausch. Please update the app first."
@@ -581,24 +581,24 @@ msgstr ""
 "Diese Sicherung stammt aus einer neueren Flausch-Version. Bitte aktualisiere"
 " zuerst die App."
 
-#: ui/app.slint:582
+#: ui/app.slint:589
 msgctxt "App"
 msgid "Backup restored."
 msgstr "Sicherung wiederhergestellt."
 
-#: ui/app.slint:583
+#: ui/app.slint:590
 msgctxt "App"
 msgid "The backup could not be restored. Your data is unchanged."
 msgstr ""
 "Die Sicherung konnte nicht wiederhergestellt werden. Deine Daten sind "
 "unverändert."
 
-#: ui/app.slint:788
+#: ui/app.slint:795
 msgctxt "App"
 msgid "Restore backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: ui/app.slint:789
+#: ui/app.slint:796
 msgctxt "App"
 msgid ""
 "The backup contains {n} project. It replaces all projects and settings on "
@@ -613,7 +613,7 @@ msgstr[1] ""
 "Die Sicherung enthält {n} Projekte. Sie ersetzt alle Projekte und "
 "Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
 
-#: ui/app.slint:793
+#: ui/app.slint:800
 msgctxt "App"
 msgid "Restore"
 msgstr "Wiederherstellen"
@@ -688,57 +688,57 @@ msgctxt "ProjectPage"
 msgid "Edit notes"
 msgstr "Notizen bearbeiten"
 
-#: ui/app.slint:313 ui/app.slint:330
+#: ui/app.slint:314 ui/app.slint:331
 msgctxt "NotesDialog"
 msgid "Notes"
 msgstr "Notizen"
 
-#: ui/app.slint:331
+#: ui/app.slint:332
 msgctxt "NotesDialog"
 msgid "Yarn, hook size, changes…"
 msgstr "Garn, Nadelstärke, Änderungen…"
 
-#: ui/app.slint:315
+#: ui/app.slint:316
 msgctxt "NotesDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:617
+#: ui/app.slint:624
 msgctxt "App"
 msgid "Open PDF"
 msgstr "PDF öffnen"
 
-#: ui/app.slint:618
+#: ui/app.slint:625
 msgctxt "App"
 msgid "Create a new project with “{}” or add it to a project."
 msgstr "Leg mit „{}“ ein neues Projekt an oder füge es einem Projekt hinzu."
 
-#: ui/app.slint:619
+#: ui/app.slint:626
 msgctxt "App"
 msgid "Create a new project with “{}”."
 msgstr "Leg mit „{}“ ein neues Projekt an."
 
-#: ui/app.slint:636 ui/app.slint:653
+#: ui/app.slint:643 ui/app.slint:660
 msgctxt "App"
 msgid "Replaces its pattern"
 msgstr "Ersetzt die Anleitung"
 
-#: ui/app.slint:666
+#: ui/app.slint:673
 msgctxt "App"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: ui/app.slint:303
+#: ui/app.slint:304
 msgctxt "PartDialog"
 msgid "How many (optional)"
 msgstr "Wie oft (optional)"
 
-#: ui/app.slint:304
+#: ui/app.slint:305
 msgctxt "PartDialog"
 msgid "How many, e.g. 4 legs"
 msgstr "Wie oft, z. B. 4 Beine"
 
-#: ui/app.slint:758
+#: ui/app.slint:765
 msgctxt "App"
 msgid ""
 "The row counter of “{}” goes back to 0, starting again with the first piece."
@@ -756,7 +756,7 @@ msgctxt "PartCard"
 msgid "Edit {}"
 msgstr "{} bearbeiten"
 
-#: ui/app.slint:260
+#: ui/app.slint:261
 msgctxt "PartDialog"
 msgid "Delete part"
 msgstr "Teil löschen"
@@ -807,25 +807,25 @@ msgid "No projects with this status"
 msgstr "Keine Projekte mit diesem Status"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:185
+#: ui/store.slint:212
 msgctxt "Store"
 msgid "Planned"
 msgstr "Geplant"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:185
+#: ui/store.slint:212
 msgctxt "Store"
 msgid "In progress"
 msgstr "In Arbeit"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:185
+#: ui/store.slint:212
 msgctxt "Store"
 msgid "Paused"
 msgstr "Pausiert"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:185
+#: ui/store.slint:212
 msgctxt "Store"
 msgid "Finished"
 msgstr "Fertig"
@@ -908,43 +908,43 @@ msgctxt "ListPage"
 msgid "Sort"
 msgstr "Sortieren"
 
-#: ui/app.slint:19
+#: ui/app.slint:20
 msgctxt "SortDialog"
 msgid "Sort by"
 msgstr "Sortieren nach"
 
-#: ui/app.slint:26
+#: ui/app.slint:27
 msgctxt "SortDialog"
 msgid "Last used"
 msgstr "Zuletzt benutzt"
 
-#: ui/app.slint:27
+#: ui/app.slint:28
 msgctxt "SortDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:28
+#: ui/app.slint:29
 msgctxt "SortDialog"
 msgid "Newest"
 msgstr "Neueste"
 
-#: ui/app.slint:29
+#: ui/app.slint:30
 msgctxt "SortDialog"
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: ui/app.slint:30
+#: ui/app.slint:31
 msgctxt "SortDialog"
 msgid "Custom"
 msgstr "Eigene"
 
 #. Labels of the TalkBack actions on project cards.
-#: ui/store.slint:269
+#: ui/store.slint:300
 msgctxt "Store"
 msgid "Move up"
 msgstr "Nach oben verschieben"
 
-#: ui/store.slint:270
+#: ui/store.slint:301
 msgctxt "Store"
 msgid "Move down"
 msgstr "Nach unten verschieben"
@@ -954,101 +954,101 @@ msgctxt "AboutPage"
 msgid "Logo font: Montez by Astigmatic, Apache License 2.0"
 msgstr "Logo-Schrift: Montez von Astigmatic, Apache-Lizenz 2.0"
 
-#: ui/app.slint:232
+#: ui/app.slint:233
 msgctxt "ProjectDialog"
 msgid "Add PDF pattern"
 msgstr "PDF-Anleitung hinzufügen"
 
-#: ui/app.slint:180
+#: ui/app.slint:181
 msgctxt "ProjectDialog"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/app.slint:180
+#: ui/app.slint:181
 msgctxt "ProjectDialog"
 msgid "In progress"
 msgstr "In Arbeit"
 
-#: ui/app.slint:241 ui/app.slint:246
+#: ui/app.slint:242 ui/app.slint:247
 msgctxt "ProjectDialog"
 msgid "Notes"
 msgstr "Notizen"
 
-#: ui/app.slint:228
+#: ui/app.slint:229
 msgctxt "ProjectDialog"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/app.slint:180
+#: ui/app.slint:181
 msgctxt "ProjectDialog"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/app.slint:180
+#: ui/app.slint:181
 msgctxt "ProjectDialog"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/app.slint:177
+#: ui/app.slint:178
 msgctxt "ProjectDialog"
 msgid "Status"
 msgstr "Status"
 
-#: ui/app.slint:247
+#: ui/app.slint:248
 msgctxt "ProjectDialog"
 msgid "Yarn, hook size, changes…"
 msgstr "Garn, Nadelstärke, Änderungen…"
 
-#: ui/app.slint:104
+#: ui/app.slint:105
 msgctxt "NewParts"
 msgid "Remove {}"
 msgstr "{} entfernen"
 
-#: ui/app.slint:94
+#: ui/app.slint:95
 msgctxt "NewParts"
 msgid "{n} row"
 msgid_plural "{n} rows"
 msgstr[0] "{n} Reihe"
 msgstr[1] "{n} Reihen"
 
-#: ui/app.slint:94
+#: ui/app.slint:95
 msgctxt "NewParts"
 msgid "{n} row, {} times"
 msgid_plural "{n} rows, {} times"
 msgstr[0] "{n} Reihe, {}-mal"
 msgstr[1] "{n} Reihen, {}-mal"
 
-#: ui/app.slint:94
+#: ui/app.slint:95
 msgctxt "NewParts"
 msgid "{} times"
 msgstr "{}-mal"
 
-#: ui/app.slint:218
+#: ui/app.slint:219
 msgctxt "ProjectDialog"
 msgid "Add part"
 msgstr "Teil hinzufügen"
 
-#: ui/app.slint:206 ui/app.slint:207
+#: ui/app.slint:207 ui/app.slint:208
 msgctxt "ProjectDialog"
 msgid "How many"
 msgstr "Anzahl"
 
-#: ui/app.slint:191
+#: ui/app.slint:192
 msgctxt "ProjectDialog"
 msgid "Part"
 msgstr "Teil"
 
-#: ui/app.slint:192
+#: ui/app.slint:193
 msgctxt "ProjectDialog"
 msgid "Part, e.g. Head"
 msgstr "Teil, z. B. Kopf"
 
-#: ui/app.slint:187
+#: ui/app.slint:188
 msgctxt "ProjectDialog"
 msgid "Parts"
 msgstr "Teile"
 
-#: ui/app.slint:199 ui/app.slint:200
+#: ui/app.slint:200 ui/app.slint:201
 msgctxt "ProjectDialog"
 msgid "Rows"
 msgstr "Reihen"
@@ -1058,59 +1058,59 @@ msgctxt "SettingsPage"
 msgid "Website"
 msgstr "Website"
 
-#: ui/app.slint:339
+#: ui/app.slint:340
 msgctxt "FolderDialog"
 msgid "Rename folder"
 msgstr "Ordner umbenennen"
 
-#: ui/app.slint:339
+#: ui/app.slint:340
 msgctxt "FolderDialog"
 msgid "New folder"
 msgstr "Neuer Ordner"
 
-#: ui/app.slint:341
+#: ui/app.slint:342
 msgctxt "FolderDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:341
+#: ui/app.slint:342
 msgctxt "FolderDialog"
 msgid "Create"
 msgstr "Erstellen"
 
-#: ui/app.slint:343
+#: ui/app.slint:344
 msgctxt "FolderDialog"
 msgid "Delete folder"
 msgstr "Ordner löschen"
 
-#: ui/app.slint:371
+#: ui/app.slint:372
 msgctxt "FolderDialog"
 msgid "Name"
 msgstr "Name"
 
-#: ui/app.slint:372
+#: ui/app.slint:373
 msgctxt "FolderDialog"
 msgid "Name, e.g. Gifts"
 msgstr "Name, z. B. Geschenke"
 
-#: ui/app.slint:376
+#: ui/app.slint:377
 msgctxt "FolderDialog"
 msgid "Deleting the folder keeps its projects. They go back to the main list."
 msgstr ""
 "Beim Löschen des Ordners bleiben seine Projekte erhalten. Sie kommen zurück "
 "in die Hauptliste."
 
-#: ui/app.slint:418
+#: ui/app.slint:419
 msgctxt "FolderPicker"
 msgid "Move to folder"
 msgstr "In Ordner verschieben"
 
-#: ui/app.slint:426
+#: ui/app.slint:427
 msgctxt "FolderPicker"
 msgid "No folder"
 msgstr "Kein Ordner"
 
-#: ui/app.slint:584
+#: ui/app.slint:591
 msgctxt "App"
 msgid "Folder deleted. Its projects are back in the main list."
 msgstr "Ordner gelöscht. Seine Projekte sind zurück in der Hauptliste."
@@ -1144,14 +1144,14 @@ msgctxt "ProjectPage"
 msgid "Move to folder"
 msgstr "In Ordner verschieben"
 
-#: ui/app.slint:60
+#: ui/app.slint:61
 msgctxt "SortDialog"
 msgid "Hold a project to move it, or drop it on a folder."
 msgstr ""
 "Halte ein Projekt gedrückt, um es zu verschieben oder auf einen Ordner zu "
 "ziehen."
 
-#: ui/app.slint:377
+#: ui/app.slint:378
 msgctxt "FolderDialog"
 msgid "To fill it, hold a project on the list and drop it on the folder."
 msgstr ""
@@ -1422,3 +1422,132 @@ msgstr "Knäuel"
 msgctxt "YarnDialog"
 msgid "Skeins (1 if empty)"
 msgstr "Knäuel (leer = 1)"
+
+#: ui/pages/hooks.slint:8
+msgctxt "HookText"
+msgid "US {} (steel)"
+msgstr "US {} (Stahl)"
+
+#: ui/pages/hooks.slint:8
+msgctxt "HookText"
+msgid "US {}"
+msgstr "US {}"
+
+#: ui/pages/hooks.slint:21
+msgctxt "HookCard"
+msgid "{} mm"
+msgstr "{} mm"
+
+#: ui/pages/hooks.slint:61
+msgctxt "HookCard"
+msgid "mm"
+msgstr "mm"
+
+#: ui/pages/hooks.slint:95
+msgctxt "HooksPage"
+msgid "Crochet hooks"
+msgstr "Häkelnadeln"
+
+#: ui/pages/hooks.slint:138
+msgctxt "HooksPage"
+msgid "No hooks yet"
+msgstr "Noch keine Häkelnadeln"
+
+#: ui/pages/hooks.slint:145
+msgctxt "HooksPage"
+msgid ""
+"Note your crochet hooks with their size, brand and type. The US size is "
+"added for you."
+msgstr ""
+"Notiere deine Häkelnadeln mit Stärke, Marke und Art. Die US-Größe kommt von "
+"selbst dazu."
+
+#: ui/pages/hooks.slint:158
+msgctxt "HooksPage"
+msgid "Add hook"
+msgstr "Häkelnadel hinzufügen"
+
+#: ui/pages/hooks.slint:176
+msgctxt "HookDialog"
+msgid "Edit hook"
+msgstr "Nadel bearbeiten"
+
+#: ui/pages/hooks.slint:176
+msgctxt "HookDialog"
+msgid "New hook"
+msgstr "Neue Häkelnadel"
+
+#: ui/pages/hooks.slint:177
+msgctxt "HookDialog"
+msgid "Save"
+msgstr "Speichern"
+
+#: ui/pages/hooks.slint:177
+msgctxt "HookDialog"
+msgid "Add"
+msgstr "Hinzufügen"
+
+#: ui/pages/hooks.slint:179
+msgctxt "HookDialog"
+msgid "Delete hook"
+msgstr "Häkelnadel löschen"
+
+#: ui/pages/hooks.slint:220
+msgctxt "HookDialog"
+msgid "Delete this hook?"
+msgstr "Diese Häkelnadel löschen?"
+
+#: ui/pages/hooks.slint:230
+msgctxt "HookDialog"
+msgid "Keep"
+msgstr "Behalten"
+
+#: ui/pages/hooks.slint:235
+msgctxt "HookDialog"
+msgid "Delete"
+msgstr "Löschen"
+
+#: ui/pages/hooks.slint:246
+msgctxt "HookDialog"
+msgid "Size in mm"
+msgstr "Stärke in mm"
+
+#: ui/pages/hooks.slint:247
+msgctxt "HookDialog"
+msgid "Size in mm, e.g. 3.5"
+msgstr "Stärke in mm, z. B. 3,5"
+
+#: ui/pages/hooks.slint:253
+msgctxt "HookDialog"
+msgid "Not a hook size"
+msgstr "Keine Nadelstärke"
+
+#: ui/pages/hooks.slint:253
+msgctxt "HookDialog"
+msgid "No US size"
+msgstr "Keine US-Größe"
+
+#: ui/pages/hooks.slint:260
+msgctxt "HookDialog"
+msgid "Brand"
+msgstr "Marke"
+
+#: ui/pages/hooks.slint:261
+msgctxt "HookDialog"
+msgid "Brand, e.g. Clover"
+msgstr "Marke, z. B. Clover"
+
+#: ui/pages/hooks.slint:265
+msgctxt "HookDialog"
+msgid "Type"
+msgstr "Art"
+
+#: ui/pages/hooks.slint:266
+msgctxt "HookDialog"
+msgid "Type, e.g. ergonomic or Tunisian"
+msgstr "Art, z. B. ergonomisch oder tunesisch"
+
+#: ui/pages/list.slint:749
+msgctxt "ListPage"
+msgid "Crochet hooks"
+msgstr "Häkelnadeln"

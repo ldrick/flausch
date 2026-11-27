@@ -732,7 +732,7 @@ export component ListPage inherits Rectangle {
         clicked => { Store.dialog = DialogKind.create; }
     }
 
-    // The menu of the top bar: the stash and the settings.
+    // The menu of the top bar: the stash, the hooks and the settings.
     if Store.menu-open: TopMenu {
         top: 64px;
 
@@ -742,6 +742,14 @@ export component ListPage inherits Rectangle {
             clicked => {
                 Store.menu-open = false;
                 Store.open-page(Screen.stash);
+            }
+        }
+        MenuItem {
+            icon: @image-url("../icons/hook.svg");
+            text: @tr("Crochet hooks");
+            clicked => {
+                Store.menu-open = false;
+                Store.open-page(Screen.hooks);
             }
         }
         MenuItem {

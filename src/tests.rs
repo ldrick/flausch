@@ -921,3 +921,20 @@ fn dev_app_matches_android_metadata() {
         "update [package.metadata.android] in android/dev/Cargo.toml"
     );
 }
+
+#[test]
+fn hook_sizes_are_parsed_and_formatted() {
+    assert_eq!(parse_hook_size("3.5"), Some(350));
+    assert_eq!(parse_hook_size(" 3,5 mm "), Some(350));
+    assert_eq!(parse_hook_size("2.25"), Some(225));
+    assert_eq!(parse_hook_size("12"), Some(1200));
+    assert_eq!(parse_hook_size("-1"), None);
+    assert_eq!(parse_hook_size("E-4"), None);
+    assert_eq!(parse_hook_size("inf"), None);
+
+    assert_eq!(format_hook_size(350, false), "3.5");
+    assert_eq!(format_hook_size(350, true), "3,5");
+    assert_eq!(format_hook_size(225, true), "2,25");
+    assert_eq!(format_hook_size(1205, false), "12.05");
+    assert_eq!(format_hook_size(400, true), "4");
+}

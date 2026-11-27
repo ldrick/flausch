@@ -13,7 +13,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use slint::{ComponentHandle, Image, Model, ModelRc, VecModel};
 
-use model::{Library, PartSpec, Pdf, Settings, YarnSpec};
+use model::{HookSpec, Library, PartSpec, Pdf, Settings, YarnSpec};
 use platform::{DocumentKind, PickResult};
 use storage::{Backup, BackupError, Storage};
 
@@ -71,6 +71,7 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         incoming: None,
         new_pdf: None,
         new_parts: Vec::new(),
+        decimal_comma: false,
         last_back: None,
     };
     CONTROLLER.with_borrow_mut(|c| *c = Some(controller));
@@ -226,15 +227,6 @@ fn connect(app: &App) {
     store.on_delete_part(|part| {
         with(|c| c.delete_part(part as u64));
     });
-    store.on_add_yarn(|form| {
-        with(|c| c.add_yarn(&form));
-    });
-    store.on_edit_yarn(|id, form| {
-        with(|c| c.edit_yarn(id as u64, &form));
-    });
-    store.on_delete_yarn(|id| {
-        with(|c| c.delete_yarn(id as u64));
-    });
     store.on_increment(|| {
         with(|c| c.count(Library::increment));
     });
@@ -248,6 +240,31 @@ fn connect(app: &App) {
         with(|c| c.count(Library::next_piece));
     });
     connect_pdf_and_settings(&store);
+    connect_materials(&store);
+}
+
+/// The yarn stash and the crochet hooks.
+fn connect_materials(store: &Store) {
+    store.on_add_yarn(|form| {
+        with(|c| c.add_yarn(&form));
+    });
+    store.on_edit_yarn(|id, form| {
+        with(|c| c.edit_yarn(id as u64, &form));
+    });
+    store.on_delete_yarn(|id| {
+        with(|c| c.delete_yarn(id as u64));
+    });
+    store.on_add_hook(|form| {
+        with(|c| c.add_hook(&form));
+    });
+    store.on_edit_hook(|id, form| {
+        with(|c| c.edit_hook(id as u64, &form));
+    });
+    store.on_delete_hook(|id| {
+        with(|c| c.delete_hook(id as u64));
+    });
+    store.on_us_hook_size(|text| us_size(parse_hook_size(&text)));
+    store.on_valid_hook_size(|text| model::valid_hook_size(parse_hook_size(&text)).is_some());
 }
 
 fn connect_pdf_and_settings(store: &Store) {
@@ -288,7 +305,11 @@ fn connect_pdf_and_settings(store: &Store) {
         with(|c| c.notify(Notice::None));
     });
     store.on_set_language(|language| {
-        with(|c| c.update_settings(|s| s.language = language.into()));
+        with(|c| {
+            c.update_settings(|s| s.language = language.into());
+            // Hook sizes are formatted for the language.
+            c.refresh();
+        });
     });
     store.on_set_appearance(|appearance| {
         with(|c| c.update_settings(|s| s.appearance = appearance.into()));
@@ -358,6 +379,8 @@ struct Controller {
     new_pdf: Option<(String, String)>,
     /// Parts added in the new project form.
     new_parts: Vec<PartForm>,
+    /// The language writes decimals with a comma (German).
+    decimal_comma: bool,
     last_back: Option<Instant>,
 }
 
@@ -473,6 +496,13 @@ impl Controller {
         );
         let yarns: Vec<YarnItem> = yarns.into_iter().map(yarn_item).collect();
         store.set_yarns(ModelRc::new(VecModel::from(yarns)));
+        let hooks: Vec<HookItem> = self
+            .library
+            .sorted_hooks()
+            .into_iter()
+            .map(|h| hook_item(h, self.decimal_comma))
+            .collect();
+        store.set_hooks(ModelRc::new(VecModel::from(hooks)));
         if let Some(project) = self.current.and_then(|id| self.library.get(id)) {
             store.set_current(self.project_item(project));
             let parts: Vec<PartItem> = project.parts.iter().map(part_item).collect();
@@ -821,6 +851,29 @@ impl Controller {
 
     fn delete_yarn(&mut self, id: u64) {
         if self.library.remove_yarn(id).is_some() {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    // Crochet hooks
+
+    fn add_hook(&mut self, form: &HookForm) {
+        if self.library.add_hook(&hook_spec(form), now()).is_some() {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    fn edit_hook(&mut self, id: u64, form: &HookForm) {
+        if self.library.edit_hook(id, &hook_spec(form)) {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    fn delete_hook(&mut self, id: u64) {
+        if self.library.remove_hook(id).is_some() {
             self.save();
             self.refresh();
         }
@@ -1453,6 +1506,7 @@ impl Controller {
             .settings
             .language
             .translation(platform::system_language().as_deref());
+        self.decimal_comma = language == "de";
         if let Err(e) = slint::select_bundled_translation(language) {
             eprintln!("flausch: cannot select language {language}: {e}");
         }
@@ -1520,6 +1574,60 @@ fn yarn_spec(form: &YarnForm) -> YarnSpec<'_> {
         weight: parse_number(&form.weight),
         length: parse_number(&form.length),
         quantity: parse_number(&form.quantity).unwrap_or(1),
+    }
+}
+
+/// Hundredths of a millimeter from "3.5", "3,5" or "3.5 mm".
+fn parse_hook_size(text: &str) -> Option<u32> {
+    let text = text.trim().trim_end_matches("mm").trim().replace(',', ".");
+    let mm: f64 = text.parse().ok()?;
+    let size = (mm * 100.0).round();
+    (mm.is_finite() && size >= 0.0 && size <= f64::from(u32::MAX)).then_some(size as u32)
+}
+
+/// "3.5", "4" or "2.25"; with a comma for German.
+fn format_hook_size(size: u32, decimal_comma: bool) -> String {
+    let (whole, hundredths) = (size / 100, size % 100);
+    let text = match hundredths {
+        0 => whole.to_string(),
+        h if h % 10 == 0 => format!("{whole}.{}", h / 10),
+        h => format!("{whole}.{h:02}"),
+    };
+    if decimal_comma {
+        text.replace('.', ",")
+    } else {
+        text
+    }
+}
+
+fn us_size(size: Option<u32>) -> UsHookSize {
+    size.and_then(model::us_hook_size)
+        .map_or_default(|us| UsHookSize {
+            name: us.name.into(),
+            steel: us.steel,
+        })
+}
+
+fn hook_spec(form: &HookForm) -> HookSpec<'_> {
+    HookSpec {
+        size: parse_hook_size(&form.size),
+        brand: &form.brand,
+        kind: &form.kind,
+    }
+}
+
+fn hook_item(hook: &model::Hook, decimal_comma: bool) -> HookItem {
+    let size = format_hook_size(hook.size, decimal_comma);
+    HookItem {
+        id: hook.id as i32,
+        us: us_size(Some(hook.size)),
+        title: hook.title().into(),
+        form: HookForm {
+            size: size.as_str().into(),
+            brand: hook.brand.as_str().into(),
+            kind: hook.kind.as_str().into(),
+        },
+        size: size.into(),
     }
 }
 

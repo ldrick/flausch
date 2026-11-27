@@ -367,6 +367,109 @@ impl Yarn {
     }
 }
 
+/// What the hook form sets. Text is trimmed.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct HookSpec<'a> {
+    /// Hundredths of a millimeter; the form needs one.
+    pub size: Option<u32>,
+    pub brand: &'a str,
+    /// The kind of hook, e.g. "ergonomic" or "Tunisian".
+    pub kind: &'a str,
+}
+
+/// A crochet hook.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Hook {
+    pub id: u64,
+    /// Hundredths of a millimeter, e.g. 350 for 3.5 mm.
+    pub size: u32,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub brand: String,
+    /// The kind of hook, e.g. "ergonomic" or "Tunisian".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub kind: String,
+    /// Unix timestamp in seconds.
+    #[serde(default)]
+    pub created: u64,
+}
+
+/// The largest hook size the form takes: 50 mm.
+pub const MAX_HOOK_SIZE: u32 = 5000;
+
+/// US size of a hook: the letter and number, and whether it is a steel hook (thread crochet),
+/// whose numbers count the other way.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct UsHookSize {
+    pub name: &'static str,
+    pub steel: bool,
+}
+
+/// US sizes by millimeters (hundredths), after the Craft Yarn Council. Sizes in between, e.g.
+/// 2.5 or 3 mm, have no US size.
+const US_HOOK_SIZES: &[(u32, &str, bool)] = &[
+    (75, "14", true),
+    (85, "13", true),
+    (100, "12", true),
+    (110, "11", true),
+    (130, "10", true),
+    (140, "9", true),
+    (150, "8", true),
+    (165, "7", true),
+    (180, "6", true),
+    (190, "5", true),
+    (200, "4", true),
+    (210, "3", true),
+    (225, "B-1", false),
+    (275, "C-2", false),
+    (325, "D-3", false),
+    (350, "E-4", false),
+    (375, "F-5", false),
+    (400, "G-6", false),
+    (450, "7", false),
+    (500, "H-8", false),
+    (550, "I-9", false),
+    (600, "J-10", false),
+    (650, "K-10½", false),
+    (800, "L-11", false),
+    (900, "M/N-13", false),
+    (1000, "N/P-15", false),
+    (1500, "P/Q", false),
+    (1575, "Q", false),
+    (1900, "S", false),
+];
+
+impl Hook {
+    fn edit(&mut self, spec: &HookSpec) {
+        if let Some(size) = valid_hook_size(spec.size) {
+            self.size = size;
+        }
+        self.brand = clean_name(spec.brand);
+        self.kind = clean_name(spec.kind);
+    }
+
+    /// Brand and kind, e.g. "Clover Amour"; empty if neither is known.
+    pub fn title(&self) -> String {
+        [self.brand.as_str(), self.kind.as_str()]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
+/// The US size of a hook of `size` hundredths of a millimeter, if it has one.
+pub fn us_hook_size(size: u32) -> Option<UsHookSize> {
+    US_HOOK_SIZES
+        .iter()
+        .find(|(mm, _, _)| *mm == size)
+        .map(|&(_, name, steel)| UsHookSize { name, steel })
+}
+
+/// The size if the form takes it: more than 0, up to `MAX_HOOK_SIZE`.
+pub fn valid_hook_size(size: Option<u32>) -> Option<u32> {
+    size.filter(|s| (1..=MAX_HOOK_SIZE).contains(s))
+}
+
 /// A folder on the project list. Folders don't nest.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Folder {
@@ -384,6 +487,8 @@ pub struct Library {
     /// The yarn stash.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub yarns: Vec<Yarn>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hooks: Vec<Hook>,
 }
 
 impl Default for Library {
@@ -394,6 +499,7 @@ impl Default for Library {
             projects: Vec::new(),
             folders: Vec::new(),
             yarns: Vec::new(),
+            hooks: Vec::new(),
         }
     }
 }
@@ -691,6 +797,51 @@ impl Library {
             )
         });
         yarns
+    }
+
+    #[cfg(test)]
+    pub fn hook(&self, id: u64) -> Option<&Hook> {
+        self.hooks.iter().find(|h| h.id == id)
+    }
+
+    /// Adds a hook unless its size is missing or out of range.
+    pub fn add_hook(&mut self, spec: &HookSpec, now: u64) -> Option<u64> {
+        let size = valid_hook_size(spec.size)?;
+        let id = self.next_id();
+        let mut hook = Hook {
+            id,
+            size,
+            brand: String::new(),
+            kind: String::new(),
+            created: now,
+        };
+        hook.edit(spec);
+        self.hooks.push(hook);
+        Some(id)
+    }
+
+    /// Changes a hook; like `add_hook`, it needs a size.
+    pub fn edit_hook(&mut self, id: u64, spec: &HookSpec) -> bool {
+        if valid_hook_size(spec.size).is_none() {
+            return false;
+        }
+        self.hooks
+            .iter_mut()
+            .find(|h| h.id == id)
+            .map(|h| h.edit(spec))
+            .is_some()
+    }
+
+    pub fn remove_hook(&mut self, id: u64) -> Option<Hook> {
+        let index = self.hooks.iter().position(|h| h.id == id)?;
+        Some(self.hooks.remove(index))
+    }
+
+    /// The hooks from the smallest, then by brand and kind.
+    pub fn sorted_hooks(&self) -> Vec<&Hook> {
+        let mut hooks: Vec<_> = self.hooks.iter().collect();
+        hooks.sort_by_cached_key(|h| (h.size, h.brand.to_lowercase(), h.kind.to_lowercase(), h.id));
+        hooks
     }
 
     /// Projects the filter allows, grouped by status (`Status::group`) and sorted within a group;
@@ -1141,6 +1292,100 @@ mod tests {
         assert!(lib.remove_yarn(catania).is_some());
         assert!(lib.yarn(catania).is_none());
         assert!(!lib.edit_yarn(catania, &spec));
+    }
+
+    #[test]
+    fn hooks_have_a_size() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let spec = HookSpec {
+            size: Some(350),
+            brand: " Clover ",
+            kind: "Amour  ergonomic",
+        };
+        let amour = lib.add_hook(&spec, 5).unwrap();
+        assert_ne!(amour, hat, "ids are shared with projects");
+        let hook = lib.hook(amour).unwrap();
+        assert_eq!(
+            (hook.size, hook.title().as_str()),
+            (350, "Clover Amour ergonomic")
+        );
+
+        // A size is enough, but needed.
+        let small = lib
+            .add_hook(
+                &HookSpec {
+                    size: Some(200),
+                    ..HookSpec::default()
+                },
+                6,
+            )
+            .unwrap();
+        assert_eq!(lib.hook(small).unwrap().title(), "");
+        for size in [None, Some(0), Some(MAX_HOOK_SIZE + 1)] {
+            let spec = HookSpec { size, ..spec };
+            assert_eq!(lib.add_hook(&spec, 7), None, "{size:?}");
+            assert!(!lib.edit_hook(small, &spec), "{size:?}");
+        }
+
+        let big = lib
+            .add_hook(
+                &HookSpec {
+                    size: Some(350),
+                    brand: "Addi",
+                    ..HookSpec::default()
+                },
+                8,
+            )
+            .unwrap();
+        let sorted: Vec<_> = lib.sorted_hooks().iter().map(|h| h.id).collect();
+        assert_eq!(sorted, [small, big, amour], "by size, then brand");
+
+        assert!(lib.edit_hook(
+            amour,
+            &HookSpec {
+                size: Some(400),
+                ..spec
+            }
+        ));
+        assert_eq!(lib.hook(amour).unwrap().size, 400);
+        assert!(lib.remove_hook(amour).is_some());
+        assert!(lib.hook(amour).is_none());
+        assert!(!lib.edit_hook(amour, &spec));
+    }
+
+    #[test]
+    fn hooks_are_kept_and_optional_on_disk() {
+        let mut lib = Library::default();
+        lib.create("Hat", 1);
+        let json = serde_json::to_string(&lib).unwrap();
+        assert!(!json.contains("hooks"), "{json}");
+
+        lib.add_hook(
+            &HookSpec {
+                size: Some(450),
+                ..HookSpec::default()
+            },
+            2,
+        );
+        let json = serde_json::to_string(&lib).unwrap();
+        assert!(!json.contains("brand"), "empty fields are left out: {json}");
+        let mut again: Library = serde_json::from_str(&json).unwrap();
+        again.migrate();
+        assert_eq!(again, lib);
+    }
+
+    #[test]
+    fn us_hook_sizes() {
+        let us = |size| us_hook_size(size).map(|s| (s.name, s.steel));
+        assert_eq!(us(350), Some(("E-4", false)));
+        assert_eq!(us(650), Some(("K-10½", false)));
+        assert_eq!(us(150), Some(("8", true)));
+        assert_eq!(us(300), None, "3 mm has no US size");
+        assert!(
+            US_HOOK_SIZES.windows(2).all(|w| w[0].0 < w[1].0),
+            "sorted, no duplicates"
+        );
     }
 
     #[test]

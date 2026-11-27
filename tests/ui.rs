@@ -658,3 +658,65 @@ fn the_yarn_stash_keeps_yarns() {
     go_back(&app);
     assert_eq!(store(&app).get_screen(), Screen::List);
 }
+
+#[test]
+fn crochet_hooks_get_their_us_size() {
+    let (app, dir) = fresh();
+    menu(&app, "Crochet hooks");
+    assert_eq!(store(&app).get_screen(), Screen::Hooks);
+    tap(&app, "Add hook");
+    // A comma works, too, and the form shows the US size while typing.
+    type_into(&app, "Size in mm", "3,5");
+    assert!(find(&app, AccessibleRole::Text, "US E-4").is_some());
+    type_into(&app, "Brand", "Clover");
+    type_into(&app, "Type", "Amour");
+    tap(&app, "Add");
+
+    tap(&app, "Add hook");
+    type_into(&app, "Size in mm", "0");
+    assert!(find(&app, AccessibleRole::Text, "Not a hook size").is_some());
+    tap(&app, "Add");
+    assert_eq!(store(&app).get_dialog(), DialogKind::AddHook, "not taken");
+    type_into(&app, "Size in mm", "3");
+    assert!(find(&app, AccessibleRole::Text, "No US size").is_some());
+    tap(&app, "Add");
+    tap(&app, "Add hook");
+    type_into(&app, "Size in mm", "2");
+    tap(&app, "Add");
+
+    let labels: Vec<_> = store(&app)
+        .get_hooks()
+        .iter()
+        .map(|h| h.form.size.to_string())
+        .collect();
+    assert_eq!(labels, ["2", "3", "3.5"], "from the smallest");
+    assert!(exists(&app, "2 mm, US 4 (steel)"));
+    assert!(exists(&app, "3 mm"));
+
+    // Kept after a restart, in German with a comma, and edited from its card.
+    let app = launch(dir.path());
+    store(&app).invoke_set_language(Language::De);
+    settle();
+    store(&app).invoke_open_page(Screen::Hooks);
+    settle();
+    tap(&app, "3,5 mm, US E-4, Clover Amour");
+    assert_eq!(store(&app).get_dialog(), DialogKind::EditHook);
+    store(&app).invoke_set_language(Language::En);
+    settle();
+    type_into(&app, "Size in mm", "4");
+    tap(&app, "Save");
+    assert!(exists(&app, "4 mm, US G-6, Clover Amour"));
+
+    // Deleting asks first, right in the form.
+    tap(&app, "3 mm");
+    tap(&app, "Delete hook");
+    tap(&app, "Keep");
+    assert_eq!(store(&app).get_hooks().row_count(), 3);
+    tap(&app, "Delete hook");
+    tap(&app, "Delete");
+    assert_eq!(store(&app).get_dialog(), DialogKind::None);
+    assert_eq!(store(&app).get_hooks().row_count(), 2);
+
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::List);
+}
