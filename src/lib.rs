@@ -263,6 +263,16 @@ fn connect_materials(store: &Store) {
     store.on_delete_hook(|id| {
         with(|c| c.delete_hook(id as u64));
     });
+    store.on_set_project_yarn(|yarn, units| {
+        with(|c| c.set_project_yarn(yarn as u64, units.max(0) as u32));
+    });
+    store.on_set_project_yarn_text(|yarn, text| {
+        with(|c| c.set_project_yarn_text(yarn as u64, &text));
+    });
+    store.on_valid_yarn_amount(|text| parse_decimal(&text).is_some());
+    store.on_set_project_hook(|hook, used| {
+        with(|c| c.set_project_hook(hook as u64, used));
+    });
     store.on_us_hook_size(|text| us_size(parse_hook_size(&text)));
     store.on_valid_hook_size(|text| model::valid_hook_size(parse_hook_size(&text)).is_some());
 }
@@ -324,6 +334,13 @@ fn connect_pdf_and_settings(store: &Store) {
     });
     store.on_set_volume_keys(|on| {
         with(|c| c.update_settings(|s| s.volume_keys = on));
+    });
+    store.on_set_yarn_in_grams(|on| {
+        with(|c| {
+            c.update_settings(|s| s.yarn_in_grams = on);
+            // Amounts are shown in the new unit.
+            c.refresh();
+        });
     });
     store.on_export_backup(|| {
         with(Controller::export_backup);
@@ -486,16 +503,7 @@ impl Controller {
         store.set_folders(ModelRc::new(VecModel::from(folders)));
         store.set_folder(self.folder_item(self.folder));
         store.set_show_folders(self.folder.is_none() && query.trim().is_empty());
-        let yarns = self.library.sorted_yarns();
-        store.set_yarn_skeins(yarns.iter().map(|y| y.quantity as i32).sum());
-        store.set_yarn_grams(
-            yarns
-                .iter()
-                .map(|y| (y.quantity * y.weight.unwrap_or(0)) as i32)
-                .sum(),
-        );
-        let yarns: Vec<YarnItem> = yarns.into_iter().map(yarn_item).collect();
-        store.set_yarns(ModelRc::new(VecModel::from(yarns)));
+        self.refresh_stash(&store);
         let hooks: Vec<HookItem> = self
             .library
             .sorted_hooks()
@@ -508,6 +516,22 @@ impl Controller {
             let parts: Vec<PartItem> = project.parts.iter().map(part_item).collect();
             store.set_parts(ModelRc::new(VecModel::from(parts)));
             store.set_part(project.active().map_or_default(part_item));
+            self.refresh_project_yarns(&store, project);
+            let hooks: Vec<HookItem> = project
+                .hooks
+                .iter()
+                .filter_map(|id| self.library.hooks.iter().find(|h| h.id == *id))
+                .map(|h| hook_item(h, self.decimal_comma))
+                .collect();
+            store.set_current_hooks(ModelRc::new(VecModel::from(hooks)));
+            let hooks: Vec<HookItem> = self
+                .library
+                .sorted_hooks()
+                .into_iter()
+                .filter(|h| !project.hooks.contains(&h.id))
+                .map(|h| hook_item(h, self.decimal_comma))
+                .collect();
+            store.set_other_hooks(ModelRc::new(VecModel::from(hooks)));
         }
     }
 
@@ -836,14 +860,25 @@ impl Controller {
     // Yarn stash
 
     fn add_yarn(&mut self, form: &YarnForm) {
-        if self.library.add_yarn(&yarn_spec(form), now()).is_some() {
+        let spec = YarnSpec {
+            amount: skeins_to_units(form, None),
+            ..yarn_spec(form)
+        };
+        if self.library.add_yarn(&spec, now()).is_some() {
             self.save();
             self.refresh();
         }
     }
 
     fn edit_yarn(&mut self, id: u64, form: &YarnForm) {
-        if self.library.edit_yarn(id, &yarn_spec(form)) {
+        let Some(yarn) = self.library.yarns.iter().find(|y| y.id == id) else {
+            return;
+        };
+        let spec = YarnSpec {
+            amount: skeins_to_units(form, Some((yarn, self.decimal_comma))),
+            ..yarn_spec(form)
+        };
+        if self.library.edit_yarn(id, &spec) {
             self.save();
             self.refresh();
         }
@@ -854,6 +889,139 @@ impl Controller {
             self.save();
             self.refresh();
         }
+    }
+
+    // Materials of a project
+
+    fn set_project_yarn(&mut self, yarn: u64, units: u32) {
+        let Some(project) = self.current else {
+            return;
+        };
+        if self
+            .library
+            .set_project_yarn(project, yarn, units, now())
+            .is_some()
+        {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    /// Sets what the current project uses as typed: grams when counting in grams (and the weight is
+    /// known), else skeins, e.g. "1,5".
+    fn set_project_yarn_text(&mut self, yarn: u64, text: &str) {
+        let (Some(stash), Some(amount)) = (
+            self.library.yarns.iter().find(|y| y.id == yarn),
+            parse_decimal(text),
+        ) else {
+            return;
+        };
+        let per_unit = if self.in_grams(stash) {
+            1.0
+        } else {
+            f64::from(stash.unit())
+        };
+        self.set_project_yarn(yarn, to_units(amount * per_unit));
+    }
+
+    fn in_grams(&self, yarn: &model::Yarn) -> bool {
+        self.settings.yarn_in_grams && yarn.weight.is_some()
+    }
+
+    fn set_project_hook(&mut self, hook: u64, used: bool) {
+        if let Some(project) = self.current
+            && self.library.set_project_hook(project, hook, used, now())
+        {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    fn yarn_item(&self, yarn: &model::Yarn) -> YarnItem {
+        let projects: Vec<&str> = self
+            .library
+            .projects_with_yarn(yarn.id)
+            .into_iter()
+            .map(|p| p.name.as_str())
+            .collect();
+        let number = |n: Option<u32>| n.map_or_default(|n| n.to_string().into());
+        let skeins = format_skeins(yarn.units(), yarn.unit(), self.decimal_comma);
+        YarnItem {
+            id: yarn.id as i32,
+            title: yarn.title().into(),
+            form: YarnForm {
+                brand: yarn.brand.as_str().into(),
+                name: yarn.name.as_str().into(),
+                color: yarn.color.as_str().into(),
+                dye_lot: yarn.dye_lot.as_str().into(),
+                fiber: yarn.fiber.as_str().into(),
+                weight: number(yarn.weight),
+                length: number(yarn.length),
+                quantity: skeins.as_str().into(),
+            },
+            amount: self.amount(yarn.units(), yarn),
+            weight: yarn.weight.unwrap_or(0) as i32,
+            length: yarn.length.unwrap_or(0) as i32,
+            projects: projects.join(", ").into(),
+        }
+    }
+
+    /// An amount of a yarn for the UI, in the yarn's units.
+    fn amount(&self, units: u32, yarn: &model::Yarn) -> YarnAmount {
+        let skeins = format_skeins(units, yarn.unit(), self.decimal_comma);
+        YarnAmount {
+            units: units as i32,
+            unit: yarn.unit() as i32,
+            one: skeins == "1",
+            skeins: skeins.into(),
+            grams: if yarn.weight.is_some() {
+                units as i32
+            } else {
+                0
+            },
+            in_grams: self.in_grams(yarn),
+        }
+    }
+
+    /// The stash: yarns with something left, the used up ones, and the totals.
+    fn refresh_stash(&self, store: &Store) {
+        let yarns = self.library.sorted_yarns();
+        let tenths: u32 = yarns
+            .iter()
+            .map(|y| to_units(f64::from(y.units()) * 10.0 / f64::from(y.unit())))
+            .sum();
+        store.set_yarn_skeins(format_skeins(tenths, 10, self.decimal_comma).into());
+        store.set_yarn_grams(yarns.iter().map(|y| y.grams().unwrap_or(0) as i32).sum());
+        let (left, used_up): (Vec<YarnItem>, Vec<YarnItem>) = yarns
+            .into_iter()
+            .map(|y| self.yarn_item(y))
+            .partition(|y| y.amount.units > 0);
+        store.set_yarns(ModelRc::new(VecModel::from(left)));
+        store.set_used_up_yarns(ModelRc::new(VecModel::from(used_up)));
+    }
+
+    /// The yarns of the current project, and the stash yarns it could still get.
+    fn refresh_project_yarns(&self, store: &Store, project: &model::Project) {
+        let yarns: Vec<ProjectYarnItem> = project
+            .yarns
+            .iter()
+            .filter_map(|used| {
+                let yarn = self.library.yarns.iter().find(|y| y.id == used.yarn)?;
+                Some(ProjectYarnItem {
+                    yarn: self.yarn_item(yarn),
+                    used: self.amount(used.units(yarn.unit()), yarn),
+                })
+            })
+            .collect();
+        store.set_current_yarns(ModelRc::new(VecModel::from(yarns)));
+        let yarns: Vec<YarnItem> = self
+            .library
+            .sorted_yarns()
+            .into_iter()
+            .filter(|y| !y.used_up() && !project.yarns.iter().any(|used| used.yarn == y.id))
+            .map(|y| self.yarn_item(y))
+            .collect();
+        store.set_other_yarns(ModelRc::new(VecModel::from(yarns)));
     }
 
     // Crochet hooks
@@ -1500,6 +1668,7 @@ impl Controller {
         store.set_keep_screen_on(self.settings.keep_screen_on);
         store.set_line_color(self.settings.line_color.into());
         store.set_volume_keys(self.settings.volume_keys);
+        store.set_yarn_in_grams(self.settings.yarn_in_grams);
         store.set_status_filter(self.settings.project_filter.into());
         store.set_project_sort(self.settings.project_sort.into());
         let language = self
@@ -1564,6 +1733,7 @@ fn part_spec(form: &PartForm) -> PartSpec<'_> {
     }
 }
 
+/// The yarn form without the amount, which depends on the weight (`skeins_to_units`).
 fn yarn_spec(form: &YarnForm) -> YarnSpec<'_> {
     YarnSpec {
         brand: &form.brand,
@@ -1573,7 +1743,54 @@ fn yarn_spec(form: &YarnForm) -> YarnSpec<'_> {
         fiber: &form.fiber,
         weight: parse_number(&form.weight),
         length: parse_number(&form.length),
-        quantity: parse_number(&form.quantity).unwrap_or(1),
+        amount: 0,
+    }
+}
+
+/// The skeins of the yarn form in units of its weight; empty means 1. When editing (`yarn`) and the
+/// skeins and the weight are unchanged, the exact amount stays, e.g. 83 g shown as "1.7" skeins.
+fn skeins_to_units(form: &YarnForm, yarn: Option<(&model::Yarn, bool)>) -> u32 {
+    let unit = model::units_per_skein(parse_number(&form.weight));
+    if let Some((yarn, decimal_comma)) = yarn
+        && yarn.unit() == unit
+        && form.quantity.trim() == format_skeins(yarn.units(), unit, decimal_comma)
+    {
+        return yarn.units();
+    }
+    let skeins = if form.quantity.trim().is_empty() {
+        1.0
+    } else {
+        parse_decimal(&form.quantity).unwrap_or(0.0)
+    };
+    to_units(skeins * f64::from(unit))
+}
+
+/// A number as typed, with a point or a comma; not negative.
+fn parse_decimal(text: &str) -> Option<f64> {
+    let n: f64 = text.trim().replace(',', ".").parse().ok()?;
+    (n.is_finite() && (0.0..=1e7).contains(&n)).then_some(n)
+}
+
+fn to_units(n: f64) -> u32 {
+    n.round().clamp(0.0, f64::from(u32::MAX)) as u32
+}
+
+/// Skeins with at most one decimal, e.g. "1.4" or "2"; with a comma for German. A bit of yarn is at
+/// least "0.1", so it doesn't look like nothing.
+fn format_skeins(units: u32, unit: u32, decimal_comma: bool) -> String {
+    let mut tenths = to_units(f64::from(units) * 10.0 / f64::from(unit));
+    if units > 0 {
+        tenths = tenths.max(1);
+    }
+    let text = if tenths.is_multiple_of(10) {
+        (tenths / 10).to_string()
+    } else {
+        format!("{}.{}", tenths / 10, tenths % 10)
+    };
+    if decimal_comma {
+        text.replace('.', ",")
+    } else {
+        text
     }
 }
 
@@ -1628,27 +1845,6 @@ fn hook_item(hook: &model::Hook, decimal_comma: bool) -> HookItem {
             kind: hook.kind.as_str().into(),
         },
         size: size.into(),
-    }
-}
-
-fn yarn_item(yarn: &model::Yarn) -> YarnItem {
-    let number = |n: Option<u32>| n.map_or_default(|n| n.to_string().into());
-    YarnItem {
-        id: yarn.id as i32,
-        title: yarn.title().into(),
-        form: YarnForm {
-            brand: yarn.brand.as_str().into(),
-            name: yarn.name.as_str().into(),
-            color: yarn.color.as_str().into(),
-            dye_lot: yarn.dye_lot.as_str().into(),
-            fiber: yarn.fiber.as_str().into(),
-            weight: number(yarn.weight),
-            length: number(yarn.length),
-            quantity: yarn.quantity.to_string().into(),
-        },
-        quantity: yarn.quantity as i32,
-        weight: yarn.weight.unwrap_or(0) as i32,
-        length: yarn.length.unwrap_or(0) as i32,
     }
 }
 

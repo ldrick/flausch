@@ -257,6 +257,8 @@ fn search_finds_projects_by_part_name() {
 #[test]
 fn projects_are_organized_in_folders() {
     let (app, dir) = fresh();
+    // The folder button is at the end of the project screen.
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
     create_project(&app, "Scarf");
     go_back(&app);
     assert!(
@@ -662,7 +664,7 @@ fn the_yarn_stash_keeps_yarns() {
     tap(&app, "Add yarn");
     type_into(&app, "Color", "Leftover green");
     tap(&app, "Add");
-    assert_eq!(store(&app).get_yarn_skeins(), 4);
+    assert_eq!(store(&app).get_yarn_skeins(), "4");
     assert_eq!(store(&app).get_yarn_grams(), 150);
 
     // Kept after a restart, and edited from its card.
@@ -689,7 +691,7 @@ fn the_yarn_stash_keeps_yarns() {
     tap(&app, "Delete");
     assert_eq!(store(&app).get_dialog(), DialogKind::None);
     assert_eq!(store(&app).get_yarns().row_count(), 1);
-    assert_eq!(store(&app).get_yarn_skeins(), 2);
+    assert_eq!(store(&app).get_yarn_skeins(), "2");
 
     go_back(&app);
     assert_eq!(store(&app).get_screen(), Screen::List);
@@ -755,4 +757,155 @@ fn crochet_hooks_get_their_us_size() {
 
     go_back(&app);
     assert_eq!(store(&app).get_screen(), Screen::List);
+}
+
+#[test]
+fn projects_take_yarn_from_the_stash_and_use_hooks() {
+    let (app, dir) = fresh();
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
+    menu(&app, "Yarn stash");
+    tap(&app, "Add yarn");
+    type_into(&app, "Yarn", "Catania");
+    type_into(&app, "Color", "Rosa");
+    type_into(&app, "Skeins", "3");
+    tap(&app, "Add");
+    go_back(&app);
+    menu(&app, "Crochet hooks");
+    tap(&app, "Add hook");
+    type_into(&app, "Size in mm", "3.5");
+    tap(&app, "Add");
+    go_back(&app);
+
+    create_project(&app, "Hat");
+    tap(&app, "Add yarn or hook");
+    assert_eq!(store(&app).get_dialog(), DialogKind::PickMaterial);
+    tap(&app, "Catania · Rosa · 3 skeins left");
+    // One skein comes out of the stash.
+    assert_eq!(store(&app).get_dialog(), DialogKind::None);
+    let skeins = |app: &App| {
+        let yarns = store(app).get_current_yarns();
+        (
+            yarns.row_data(0).unwrap().used.skeins.to_string(),
+            store(app).get_yarn_skeins().to_string(),
+        )
+    };
+    let pair = |a: &str, b: &str| (a.to_string(), b.to_string());
+    assert_eq!(skeins(&app), pair("1", "2"));
+    tap(&app, "Take one more skein");
+    tap(&app, "Take one more skein");
+    assert_eq!(skeins(&app), pair("3", "0"));
+    tap(&app, "Put one skein back");
+    assert_eq!(skeins(&app), pair("2", "1"));
+    // Typed in: half a skein goes back.
+    tap(&app, "Change amount used");
+    type_into(&app, "Skeins used", "1,5");
+    tap(&app, "Save");
+    assert_eq!(skeins(&app), pair("1.5", "1.5"));
+    tap(&app, "Take one more skein");
+    assert_eq!(skeins(&app), pair("2.5", "0.5"));
+
+    tap(&app, "Add yarn or hook");
+    tap(&app, "3.5 mm · US E-4");
+    assert_eq!(store(&app).get_current_hooks().row_count(), 1);
+    // Everything is in the project now.
+    tap(&app, "Add yarn or hook");
+    assert_eq!(store(&app).get_other_yarns().row_count(), 0);
+    assert_eq!(store(&app).get_other_hooks().row_count(), 0);
+    go_back(&app);
+
+    // Kept after a restart; the stash shows where the yarn went.
+    let app = launch(dir.path());
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
+    store(&app).invoke_set_language(Language::En);
+    settle();
+    menu(&app, "Yarn stash");
+    let card = control(&app, "Catania · Rosa, 0.5 skeins").unwrap();
+    assert_eq!(card.accessible_description().unwrap(), "Used in Hat");
+    go_back(&app);
+    tap(&app, "Hat");
+    assert_eq!(skeins(&app), pair("2.5", "0.5"));
+
+    // Taking things off gives the yarn back.
+    tap(&app, "Take hook off the project");
+    assert_eq!(store(&app).get_current_hooks().row_count(), 0);
+    tap(&app, "Put one skein back");
+    tap(&app, "Put one skein back");
+    assert_eq!(skeins(&app), pair("0.5", "2.5"));
+    tap(&app, "Take off the project");
+    assert_eq!(store(&app).get_current_yarns().row_count(), 0);
+    assert_eq!(store(&app).get_yarn_skeins(), "3");
+}
+
+#[test]
+fn yarn_is_counted_in_grams_and_used_up_yarn_is_tucked_away() {
+    let (app, _dir) = fresh();
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
+    menu(&app, "Settings");
+    tap(&app, "Grams");
+    assert!(store(&app).get_yarn_in_grams());
+    go_back(&app);
+
+    menu(&app, "Yarn stash");
+    tap(&app, "Add yarn");
+    type_into(&app, "Yarn", "Paris");
+    type_into(&app, "Grams per skein", "50");
+    type_into(&app, "Skeins", "2.4");
+    tap(&app, "Add");
+    assert!(exists(&app, "Paris, 120 g"));
+    go_back(&app);
+
+    // Adding asks for the grams right away.
+    create_project(&app, "Hat");
+    tap(&app, "Add yarn or hook");
+    tap(&app, "Paris · 120 g left");
+    assert_eq!(store(&app).get_dialog(), DialogKind::YarnGrams);
+    type_into(&app, "Grams used", "80");
+    tap(&app, "Save");
+    let used = |app: &App| {
+        store(app)
+            .get_current_yarns()
+            .row_data(0)
+            .map(|y| y.used.grams)
+    };
+    assert_eq!(used(&app), Some(80));
+    assert_eq!(store(&app).get_yarn_grams(), 40);
+    // Weighed again: all of it.
+    tap(&app, "Change amount used");
+    type_into(&app, "Grams used", "500");
+    tap(&app, "Save");
+    assert_eq!(used(&app), Some(120), "no more than the stash had");
+    go_back(&app);
+
+    // Nothing left: the yarn moves into the collapsed "Used up" section.
+    menu(&app, "Yarn stash");
+    assert_eq!(store(&app).get_yarns().row_count(), 0);
+    assert_eq!(store(&app).get_used_up_yarns().row_count(), 1);
+    assert!(!exists(&app, "Paris, 0 g"));
+    tap(&app, "Show used up yarns (1)");
+    assert!(exists(&app, "Paris, 0 g"));
+    tap(&app, "Hide used up yarns (1)");
+    go_back(&app);
+
+    // ✕ puts it all back.
+    tap(&app, "Hat");
+    tap(&app, "Take off the project");
+    assert_eq!(used(&app), None);
+    assert_eq!(store(&app).get_yarn_grams(), 120);
+
+    // Counting in skeins again: −/+ instead.
+    store(&app).invoke_set_yarn_in_grams(false);
+    settle();
+    tap(&app, "Add yarn or hook");
+    tap(&app, "Paris · 2.4 skeins left");
+    // One skein: the rest stays in the stash.
+    assert_eq!(
+        store(&app)
+            .get_current_yarns()
+            .row_data(0)
+            .unwrap()
+            .used
+            .skeins,
+        "1"
+    );
+    assert!(exists(&app, "Take one more skein"));
 }

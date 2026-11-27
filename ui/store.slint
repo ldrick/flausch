@@ -4,7 +4,7 @@ export enum Screen { list, project, part, pdf, settings, about, changelog, donat
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder, add-yarn, edit-yarn, add-hook, edit-hook }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder, add-yarn, edit-yarn, add-hook, edit-hook, pick-material, yarn-grams }
 
 // One release in the changelog.
 export struct ChangeItem {
@@ -93,8 +93,24 @@ export struct YarnForm {
     // Grams and meters per skein.
     weight: string,
     length: string,
-    // Skeins; empty counts as 1.
+    // Skeins, e.g. "2.4"; empty counts as 1.
     quantity: string,
+}
+
+// An amount of yarn: in the stash or used in a project. Yarn is counted in units: grams with grams per
+// skein, else tenths of a skein.
+export struct YarnAmount {
+    units: int,
+    // Units per skein.
+    unit: int,
+    // Skeins with at most one decimal, e.g. "1,4".
+    skeins: string,
+    // Exactly one skein, for the plural.
+    one: bool,
+    // 0 without grams per skein.
+    grams: int,
+    // Shown in grams: counting in grams (setting) and grams per skein known.
+    in-grams: bool,
 }
 
 // A yarn in the stash.
@@ -103,10 +119,19 @@ export struct YarnItem {
     // Brand and yarn line; empty if neither is known.
     title: string,
     form: YarnForm,
-    quantity: int,
+    // What is in the stash.
+    amount: YarnAmount,
     // Grams and meters per skein; 0 if unknown.
     weight: int,
     length: int,
+    // The projects that use it, e.g. "Hat, Scarf".
+    projects: string,
+}
+
+// A yarn of the current project, with the skeins it took out of the stash.
+export struct ProjectYarnItem {
+    yarn: YarnItem,
+    used: YarnAmount,
 }
 
 // The fields of the hook form, as typed.
@@ -229,10 +254,13 @@ export global Store {
     in property <PdfView> pdf: { zoom: 1, aspect: 1.414 };
     in property <Notice> notice: Notice.none;
     in property <A11yFocus> a11y-focus;
-    // The yarn stash by brand, yarn line and color.
+    // The yarn stash by brand, yarn line and color: the yarns with skeins left, and the used up ones
+    // (no skeins left) in a collapsed section.
     in property <[YarnItem]> yarns;
-    // Skeins in the stash, and the grams of those whose weight is known.
-    in property <int> yarn-skeins;
+    in property <[YarnItem]> used-up-yarns;
+    in-out property <bool> used-up-open;
+    // Skeins in the stash (e.g. "4,5"), and the grams of those whose weight is known.
+    in property <string> yarn-skeins;
     in property <int> yarn-grams;
     // The yarn the edit form acts on; set before opening it.
     in-out property <YarnItem> edited-yarn;
@@ -240,6 +268,14 @@ export global Store {
     in property <[HookItem]> hooks;
     // The hook the edit form acts on; set before opening it.
     in-out property <HookItem> edited-hook;
+    // Yarns and hooks of the current project, in the order they were added.
+    in property <[ProjectYarnItem]> current-yarns;
+    in property <[HookItem]> current-hooks;
+    // The yarn of the current project whose grams are being entered.
+    in-out property <ProjectYarnItem> edited-project-yarn;
+    // What the current project can still get: stash yarns and hooks it doesn't use yet.
+    in property <[YarnItem]> other-yarns;
+    in property <[HookItem]> other-hooks;
     in property <string> version;
     // The changelog, newest release first, in the current language.
     in property <[ChangeItem]> changes;
@@ -252,6 +288,8 @@ export global Store {
     in property <bool> keep-screen-on: true;
     in property <LineColor> line-color: LineColor.magenta;
     in property <bool> volume-keys;
+    // Yarn is counted in grams instead of skeins (yarns with grams per skein only).
+    in property <bool> yarn-in-grams;
     // A backup is being written, chosen or restored.
     in property <bool> backup-busy;
     // Number of projects in the backup the restore dialog asks about.
@@ -319,6 +357,15 @@ export global Store {
     callback delete-hook(int);
     // The US size for a size in millimeters as typed in the hook form.
     pure callback us-hook-size(string) -> UsHookSize;
+    // How much of a stash yarn (id) the current project uses, in the yarn's units; takes it out of the
+    // stash or puts it back. 0 takes the yarn off the project.
+    callback set-project-yarn(int, int);
+    // The same as typed: grams when the yarn is shown in grams, else skeins, e.g. "1,5".
+    callback set-project-yarn-text(int, string);
+    // Whether such an amount can be typed.
+    pure callback valid-yarn-amount(string) -> bool;
+    // Adds a hook to the current project (true) or takes it off.
+    callback set-project-hook(int, bool);
     // Whether the hook form takes a size in millimeters as typed.
     pure callback valid-hook-size(string) -> bool;
 
@@ -352,6 +399,7 @@ export global Store {
     callback set-keep-screen-on(bool);
     callback set-line-color(LineColor);
     callback set-volume-keys(bool);
+    callback set-yarn-in-grams(bool);
     callback export-backup();
     // Lets the user choose a backup, then opens the restore dialog.
     callback import-backup();

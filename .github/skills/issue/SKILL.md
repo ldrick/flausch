@@ -17,7 +17,9 @@ gh issue view <n> --json title,body,comments,milestone,labels
 Issues are often a single line. Fill the gaps from the principles in `AGENTS.md` (offline, one hand, little
 text, no new modals) and from similar features: find the closest merged PR (`git log --oneline`, `git show
 <sha> --stat`) and mirror its structure (model → `Store` contract → controller → page/`Sheet` → menu or row,
-tests, translations, docs). Ask the user only if the issue leaves a real product decision open.
+tests, translations, docs). If the issue leaves product decisions open (units, what happens on delete,
+where it lives in the UI), ask them all at once in one question before writing code, with a recommended
+option each. Don't ask again mid-way unless something new comes up.
 
 ## 2. Branch
 
@@ -39,7 +41,8 @@ git switch -c <type>/<n>-<short-name>   # e.g. feat/5-crochet-hooks
 - Update `AGENTS.md`, and for user-visible features the feature lists in `README.md`,
   `fastlane/metadata/android/{en-US,de-DE}/full_description.txt` and `website/{,de/}index.html`.
 
-Then:
+While iterating, build with `cargo build` and run only the tests you touch (`cargo test <name>`).
+Once at the end:
 
 ```sh
 make check && make test
@@ -49,9 +52,12 @@ For Android-specific changes also `make check-android`; after dependency changes
 
 ## 4. Check on the emulator
 
-Start the build and the emulator in the background (`make apk TARGET=x86_64-linux-android`, `make emulator`),
-install, open the new screens and look at screenshots (see "Testing on the emulator" in `AGENTS.md`). Fix what
-looks wrong (cut-off text, spacing, dark theme). Leave the emulator running.
+Only for new or changed screens; skip it for logic-only changes (the UI tests cover those). Build for the
+emulator (`make apk TARGET=x86_64-linux-android`; start it with `make emulator` in the background if it isn't
+running), install, and take at most 3 screenshots of the new screens, cropped to the changed area and scaled to
+50% (`magick … -crop … -resize 50%`). Tap with physical pixels from the full-size screen, never from a scaled or
+side-by-side image. Fix what looks wrong (cut-off German text, dark theme), then go on; the user tries the rest
+on the phone. Leave the emulator running.
 
 ## 5. Install on the phone
 

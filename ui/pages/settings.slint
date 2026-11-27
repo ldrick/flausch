@@ -170,6 +170,19 @@ export component SettingsPage inherits Rectangle {
                 }
 
                 Group {
+                    title: @tr("Yarn");
+
+                    ChoiceRow {
+                        text: @tr("Count yarn in");
+                        Segmented {
+                            options: [{ label: @tr("Skeins") }, { label: @tr("Grams") }];
+                            selected: Store.yarn-in-grams ? 1 : 0;
+                            select(index) => { Store.set-yarn-in-grams(index == 1); }
+                        }
+                    }
+                }
+
+                Group {
                     title: @tr("Pattern");
 
                     ChoiceRow {

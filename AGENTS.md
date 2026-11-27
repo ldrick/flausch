@@ -137,7 +137,19 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   way (`Store.edited-hook`): a size in hundredths of a millimeter (the form takes "3.5" or "3,5", German shows a
   comma: `Controller::decimal_comma`), brand and type, sorted by size; the US size comes from the Craft Yarn Council
   table in `model::us_hook_size` (steel hooks for thread count the other way), and the form shows it while typing
-  (`Store.us-hook-size`, a pure callback). A project also has a `Status` (planned, in progress, paused, finished; shown as a
+  (`Store.us-hook-size`, a pure callback). Projects use yarns and hooks from the stash (`Project::yarns` with the
+  skeins, `Project::hooks`; "Yarn & hooks" on the project screen, added through `MaterialPicker`, a `Sheet` with
+  `Store.other-yarns`/`other-hooks`). The yarn comes out of the stash right away (`Library::set_project_yarn`,
+  never more than the stash has). Each yarn counts in units (`model::units_per_skein`): grams with grams per
+  skein, else tenths of a skein; `Yarn::quantity`/`opened` and `ProjectYarn::skeins`/`opened` are full skeins plus
+  the opened one, and a new weight converts them (`Library::edit_yarn`). The UI gets `YarnAmount`s: skeins with one
+  decimal ("1,4", `format_skeins`), or grams. `Settings::yarn_in_grams` (Settings → Yarn) picks how to count, so the
+  two never mix on a screen: in skeins with −/+ (one skein) or in grams with ✕ (only yarns with grams per skein); a
+  tap on the amount types it in either way (`YarnGramsDialog`, in grams also right after picking a yarn). The yarn
+  form takes decimal skeins and keeps the exact amount if they are saved unchanged (`skeins_to_units`). Deleting a
+  project keeps the stash as it is (the yarn counts as used). Deleting a yarn or hook takes it off the projects,
+  and `migrate` drops links to missing ones. Stash cards show the projects that use a yarn; used up yarns sit in a
+  collapsed section (`Store.used-up-yarns`) and aren't offered to projects. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::sorted`: in progress, then planned and paused, then finished; within a group by
   `Settings::project_sort`: last used, name, newest, progress or custom, chosen in the sort dialog). Holding a
