@@ -1,0 +1,269 @@
+import { Theme } from "../theme.slint";
+import { Store, DialogKind, HookItem, UsHookSize } from "../store.slint";
+import { ButtonKind, Card, Field, Icon, PillButton, Sheet, TopBar } from "../components.slint";
+
+global HookText {
+    // "US E-4", "US 8 (steel)", or empty without a US size.
+    public pure function us(us: UsHookSize) -> string {
+        return us.name == "" ? "" : us.steel ? @tr("US {} (steel)", us.name) : @tr("US {}", us.name);
+    }
+}
+
+component HookCard inherits Card {
+    in property <HookItem> hook;
+    callback clicked();
+
+    // "a, b", leaving out empty parts.
+    pure function join(a: string, b: string) -> string {
+        return a == "" ? b : b == "" ? a : a + ", " + b;
+    }
+
+    property <string> mm: @tr("{} mm", root.hook.size);
+    property <string> us: HookText.us(root.hook.us);
+    // Without brand and kind, the size is the title.
+    property <string> title: root.hook.title != "" ? root.hook.title : root.mm;
+    property <string> detail: root.hook.title != "" ? (root.us == "" ? root.mm : root.mm + " · " + root.us) : root.us;
+
+    height: max(88px, content.preferred-height);
+    background: touch.pressed ? Theme.surface-muted : Theme.surface;
+    accessible-role: button;
+    accessible-label: root.join(root.join(root.mm, root.us), root.hook.title);
+    accessible-action-default => { root.clicked(); }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+
+    content := HorizontalLayout {
+        padding: 14px;
+        padding-right: 18px;
+        spacing: 16px;
+
+        // Round badge with the size.
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 56px;
+                height: 56px;
+                border-radius: self.height / 2;
+                background: Theme.accent;
+
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: root.hook.size;
+                        color: Theme.on-accent;
+                        font-size: root.hook.size.character-count > 3 ? 16px : 20px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: @tr("mm");
+                        color: Theme.on-accent;
+                        font-size: 10px;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 4px;
+            horizontal-stretch: 1;
+
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-body + 1px;
+                font-weight: 600;
+                overflow: elide;
+            }
+            if root.detail != "": Text {
+                text: root.detail;
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+        }
+    }
+}
+
+export component HooksPage inherits Rectangle {
+    VerticalLayout {
+        TopBar {
+            title: @tr("Crochet hooks");
+            back => { Store.back(); }
+        }
+
+        if Store.hooks.length > 0: Flickable {
+            vertical-stretch: 1;
+            content-height: list.preferred-height;
+
+            list := VerticalLayout {
+                padding: Theme.padding;
+                padding-top: 4px;
+                // Leave room for the floating button.
+                padding-bottom: 112px;
+                spacing: Theme.spacing;
+                alignment: start;
+
+                for hook in Store.hooks: HookCard {
+                    hook: hook;
+                    clicked => {
+                        Store.edited-hook = hook;
+                        Store.dialog = DialogKind.edit-hook;
+                    }
+                }
+            }
+        }
+
+        if Store.hooks.length == 0: VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            padding: 40px;
+            padding-bottom: 120px;
+            spacing: 16px;
+
+            HorizontalLayout {
+                alignment: center;
+                Icon {
+                    source: @image-url("../icons/hook.svg");
+                    color: Theme.accent;
+                    width: 64px;
+                    height: 64px;
+                }
+            }
+            Text {
+                text: @tr("No hooks yet");
+                color: Theme.text;
+                font-size: Theme.font-title;
+                font-weight: 600;
+                horizontal-alignment: center;
+            }
+            Text {
+                text: @tr("Note your crochet hooks with their size, brand and type. The US size is added for you.");
+                color: Theme.text-muted;
+                font-size: Theme.font-body;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+        }
+    }
+
+    PillButton {
+        x: (parent.width - self.width) / 2;
+        y: parent.height - self.height - 28px;
+        width: min(parent.width - 2 * Theme.padding, 360px);
+        text: @tr("Add hook");
+        icon: @image-url("../icons/plus.svg");
+        has-icon: true;
+        drop-shadow-offset-y: Theme.shadow-offset;
+        drop-shadow-color: Theme.shadow;
+        clicked => { Store.dialog = DialogKind.add-hook; }
+    }
+}
+
+// Adds a hook or edits one. Deleting asks first, right in the form.
+export component HookDialog inherits Sheet {
+    in property <bool> editing;
+    callback done();
+
+    property <bool> confirm-delete;
+    property <UsHookSize> us: Store.us-hook-size(size.text);
+    property <bool> sized: Store.valid-hook-size(size.text);
+
+    title: root.editing ? @tr("Edit hook") : @tr("New hook");
+    confirm-text: root.editing ? @tr("Save") : @tr("Add");
+    confirm-enabled: root.sized;
+    delete-label: root.editing ? @tr("Delete hook") : "";
+    cancel => { root.done(); }
+    confirm => { root.submit(); }
+    delete => { root.confirm-delete = true; }
+
+    function submit() {
+        if !root.sized {
+            return;
+        }
+        let form = {
+            size: size.text,
+            brand: brand.text,
+            kind: kind.text,
+        };
+        if root.editing {
+            Store.edit-hook(Store.edited-hook.id, form);
+        } else {
+            Store.add-hook(form);
+        }
+        root.done();
+    }
+
+    init => {
+        if root.editing {
+            size.text = Store.edited-hook.form.size;
+            brand.text = Store.edited-hook.form.brand;
+            kind.text = Store.edited-hook.form.kind;
+        } else {
+            size.focus-input();
+        }
+    }
+
+    if root.confirm-delete: Card {
+        height: question.preferred-height;
+        accessible-role: groupbox;
+
+        question := VerticalLayout {
+            padding: 18px;
+            spacing: 14px;
+
+            Text {
+                text: @tr("Delete this hook?");
+                color: Theme.text;
+                font-size: Theme.font-body;
+                font-weight: 600;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: end;
+                PillButton {
+                    text: @tr("Keep");
+                    kind: ButtonKind.quiet;
+                    clicked => { root.confirm-delete = false; }
+                }
+                PillButton {
+                    text: @tr("Delete");
+                    clicked => {
+                        Store.delete-hook(Store.edited-hook.id);
+                        root.done();
+                    }
+                }
+            }
+        }
+    }
+
+    size := Field {
+        label: @tr("Size in mm");
+        placeholder: @tr("Size in mm, e.g. 3.5");
+        input-type: InputType.decimal;
+        accepted => { brand.focus-input(); }
+    }
+    // The US size of what is typed, so it can be checked against a US pattern.
+    if !size.text.is-empty: Text {
+        text: !root.sized ? @tr("Not a hook size") : root.us.name == "" ? @tr("No US size") : HookText.us(root.us);
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        accessible-role: text;
+        accessible-label: self.text;
+    }
+    brand := Field {
+        label: @tr("Brand");
+        placeholder: @tr("Brand, e.g. Clover");
+        accepted => { kind.focus-input(); }
+    }
+    kind := Field {
+        label: @tr("Type");
+        placeholder: @tr("Type, e.g. ergonomic or Tunisian");
+        accepted => { root.submit(); }
+    }
+}

@@ -1,10 +1,10 @@
 import { Appearance, LineColor } from "theme.slint";
 
-export enum Screen { list, project, part, pdf, settings, about, changelog, donate, abbreviations, stash }
+export enum Screen { list, project, part, pdf, settings, about, changelog, donate, abbreviations, stash, hooks }
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder, add-yarn, edit-yarn }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder, add-yarn, edit-yarn, add-hook, edit-hook }
 
 // One release in the changelog.
 export struct ChangeItem {
@@ -109,6 +109,33 @@ export struct YarnItem {
     length: int,
 }
 
+// The fields of the hook form, as typed.
+export struct HookForm {
+    // Millimeters, with a point or a comma.
+    size: string,
+    brand: string,
+    // The kind of hook, e.g. ergonomic or Tunisian.
+    kind: string,
+}
+
+// The US size of a hook, e.g. "E-4"; empty if it has none. Steel hooks (thread crochet) count
+// their numbers the other way.
+export struct UsHookSize {
+    name: string,
+    steel: bool,
+}
+
+// A crochet hook.
+export struct HookItem {
+    id: int,
+    // Millimeters, formatted for the language, e.g. "3,5".
+    size: string,
+    us: UsHookSize,
+    // Brand and kind; empty if neither is known.
+    title: string,
+    form: HookForm,
+}
+
 export struct ProjectItem {
     id: int,
     name: string,
@@ -209,6 +236,10 @@ export global Store {
     in property <int> yarn-grams;
     // The yarn the edit form acts on; set before opening it.
     in-out property <YarnItem> edited-yarn;
+    // The hooks from the smallest.
+    in property <[HookItem]> hooks;
+    // The hook the edit form acts on; set before opening it.
+    in-out property <HookItem> edited-hook;
     in property <string> version;
     // The changelog, newest release first, in the current language.
     in property <[ChangeItem]> changes;
@@ -282,6 +313,14 @@ export global Store {
     callback add-yarn(YarnForm);
     callback edit-yarn(int, YarnForm);
     callback delete-yarn(int);
+
+    callback add-hook(HookForm);
+    callback edit-hook(int, HookForm);
+    callback delete-hook(int);
+    // The US size for a size in millimeters as typed in the hook form.
+    pure callback us-hook-size(string) -> UsHookSize;
+    // Whether the hook form takes a size in millimeters as typed.
+    pure callback valid-hook-size(string) -> bool;
 
     // The counter callbacks act on the active part.
     callback increment();
