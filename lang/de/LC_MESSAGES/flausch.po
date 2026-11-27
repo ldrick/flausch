@@ -28,54 +28,54 @@ msgctxt "ProjectDialog"
 msgid "Create"
 msgstr "Anlegen"
 
-#: ui/app.slint:582
+#: ui/app.slint:584
 msgctxt "App"
 msgid "This file could not be opened as a PDF."
 msgstr "Diese Datei konnte nicht als PDF geöffnet werden."
 
-#: ui/app.slint:583
+#: ui/app.slint:585
 msgctxt "App"
 msgid "The page could not be displayed."
 msgstr "Die Seite konnte nicht angezeigt werden."
 
-#: ui/app.slint:592
+#: ui/app.slint:594
 msgctxt "App"
 msgid "The PDF could not be imported."
 msgstr "Das PDF konnte nicht importiert werden."
 
-#: ui/app.slint:609
+#: ui/app.slint:611
 msgctxt "App"
 msgid "Delete project?"
 msgstr "Projekt löschen?"
 
-#: ui/app.slint:610
+#: ui/app.slint:612
 msgctxt "App"
 msgid "“{}” and its pattern will be removed. This cannot be undone."
 msgstr ""
 "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
 "werden."
 
-#: ui/app.slint:614 ui/app.slint:685
+#: ui/app.slint:616 ui/app.slint:687
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
-#: ui/app.slint:764
+#: ui/app.slint:766
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-#: ui/app.slint:770
+#: ui/app.slint:772
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: ui/app.slint:780
+#: ui/app.slint:782
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-#: ui/app.slint:785
+#: ui/app.slint:787
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
@@ -90,7 +90,7 @@ msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
 
-#: ui/pages/list.slint:757
+#: ui/pages/list.slint:765
 msgctxt "ListPage"
 msgid "Settings"
 msgstr "Einstellungen"
@@ -172,55 +172,50 @@ msgctxt "ProjectPage"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/pages/settings.slint:103
+#: ui/pages/settings.slint:113
 msgctxt "SettingsPage"
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ui/pages/settings.slint:119
+#: ui/pages/settings.slint:132
 msgctxt "SettingsPage"
 msgid "Language"
 msgstr "Sprache"
 
-#: ui/pages/settings.slint:122 ui/pages/settings.slint:133
+#: ui/pages/settings.slint:134 ui/pages/settings.slint:145
 msgctxt "SettingsPage"
 msgid "System"
 msgstr "System"
 
-#: ui/pages/settings.slint:130
+#: ui/pages/settings.slint:143
 msgctxt "SettingsPage"
 msgid "Appearance"
 msgstr "Erscheinungsbild"
 
-#: ui/pages/settings.slint:133
+#: ui/pages/settings.slint:145
 msgctxt "SettingsPage"
 msgid "Light"
 msgstr "Hell"
 
-#: ui/pages/settings.slint:133
+#: ui/pages/settings.slint:145
 msgctxt "SettingsPage"
 msgid "Dark"
 msgstr "Dunkel"
 
-#: ui/pages/settings.slint:141
+#: ui/pages/settings.slint:155
 msgctxt "SettingsPage"
 msgid "Counting"
 msgstr "Zählen"
 
-#: ui/pages/settings.slint:158 ui/pages/settings.slint:172
+#: ui/pages/settings.slint:158
 msgctxt "SettingsPage"
 msgid "Keep screen on"
 msgstr "Bildschirm bleibt an"
 
-#: ui/pages/settings.slint:163
+#: ui/pages/settings.slint:159
 msgctxt "SettingsPage"
 msgid "While a project or pattern is open"
 msgstr "Solange ein Projekt oder eine Anleitung geöffnet ist"
-
-#: ui/pages/settings.slint:296
-msgctxt "SettingsPage"
-msgid "About"
-msgstr "Über"
 
 #: ui/pages/part.slint:18
 msgctxt "PartPage"
@@ -358,22 +353,22 @@ msgctxt "PartDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/app.slint:680
+#: ui/app.slint:682
 msgctxt "App"
 msgid "Delete part?"
 msgstr "Teil löschen?"
 
-#: ui/app.slint:681
+#: ui/app.slint:683
 msgctxt "App"
 msgid "“{}” and its row counter will be removed."
 msgstr "„{}“ und sein Reihenzähler werden gelöscht."
 
-#: ui/app.slint:766
+#: ui/app.slint:768
 msgctxt "App"
 msgid "The row counter of “{}” goes back to 0."
 msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
 
-#: ui/app.slint:781
+#: ui/app.slint:783
 msgctxt "App"
 msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
@@ -414,22 +409,22 @@ msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:695
+#: ui/app.slint:697
 msgctxt "App"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:734
+#: ui/app.slint:736
 msgctxt "App"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/app.slint:734
+#: ui/app.slint:736
 msgctxt "App"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/app.slint:752
+#: ui/app.slint:754
 msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -494,86 +489,67 @@ msgctxt "PdfPage"
 msgid "Reading line"
 msgstr "Leselinie"
 
-#: ui/pages/settings.slint:210
+#: ui/pages/settings.slint:173
 msgctxt "SettingsPage"
 msgid "Pattern"
 msgstr "Anleitung"
 
-#: ui/pages/settings.slint:220
+#: ui/pages/settings.slint:176
 msgctxt "SettingsPage"
 msgid "Reading line color"
 msgstr "Farbe der Leselinie"
 
-#: ui/pages/settings.slint:227
+#: ui/pages/settings.slint:180
 msgctxt "SettingsPage"
 msgid "Magenta"
 msgstr "Magenta"
 
-#: ui/pages/settings.slint:228
+#: ui/pages/settings.slint:181
 msgctxt "SettingsPage"
 msgid "Red"
 msgstr "Rot"
 
-#: ui/pages/settings.slint:229
+#: ui/pages/settings.slint:182
 msgctxt "SettingsPage"
 msgid "Orange"
 msgstr "Orange"
 
-#: ui/pages/settings.slint:230
+#: ui/pages/settings.slint:183
 msgctxt "SettingsPage"
 msgid "Blue"
 msgstr "Blau"
 
-#: ui/pages/settings.slint:231
+#: ui/pages/settings.slint:184
 msgctxt "SettingsPage"
 msgid "Green"
 msgstr "Grün"
 
-#: ui/pages/settings.slint:260
+#: ui/pages/settings.slint:196
 msgctxt "SettingsPage"
 msgid "Data"
 msgstr "Daten"
 
-#: ui/pages/settings.slint:270
-msgctxt "SettingsPage"
-msgid ""
-"Save projects, row counters and patterns as a ZIP file, for example before "
-"switching phones."
-msgstr ""
-"Projekte, Reihenzähler und Anleitungen als ZIP-Datei sichern, zum Beispiel "
-"vor einem Handywechsel."
-
-#: ui/pages/settings.slint:278
-msgctxt "SettingsPage"
-msgid "Export"
-msgstr "Exportieren"
-
-#: ui/pages/settings.slint:285
-msgctxt "SettingsPage"
-msgid "Import"
-msgstr "Importieren"
-
-#: ui/app.slint:584
+#: ui/app.slint:586
 msgctxt "App"
 msgid "Backup saved."
 msgstr "Sicherung gespeichert."
 
-#: ui/app.slint:585
+#: ui/app.slint:587
 msgctxt "App"
 msgid "The backup could not be saved."
 msgstr "Die Sicherung konnte nicht gespeichert werden."
 
-#: ui/app.slint:586
+#: ui/app.slint:588
 msgctxt "App"
 msgid "The file could not be read."
 msgstr "Die Datei konnte nicht gelesen werden."
 
-#: ui/app.slint:587
+#: ui/app.slint:589
 msgctxt "App"
 msgid "This file is not a Flausch backup."
 msgstr "Diese Datei ist keine Flausch-Sicherung."
 
-#: ui/app.slint:588
+#: ui/app.slint:590
 msgctxt "App"
 msgid ""
 "This backup is from a newer version of Flausch. Please update the app first."
@@ -581,24 +557,24 @@ msgstr ""
 "Diese Sicherung stammt aus einer neueren Flausch-Version. Bitte aktualisiere"
 " zuerst die App."
 
-#: ui/app.slint:589
+#: ui/app.slint:591
 msgctxt "App"
 msgid "Backup restored."
 msgstr "Sicherung wiederhergestellt."
 
-#: ui/app.slint:590
+#: ui/app.slint:592
 msgctxt "App"
 msgid "The backup could not be restored. Your data is unchanged."
 msgstr ""
 "Die Sicherung konnte nicht wiederhergestellt werden. Deine Daten sind "
 "unverändert."
 
-#: ui/app.slint:795
+#: ui/app.slint:797
 msgctxt "App"
 msgid "Restore backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: ui/app.slint:796
+#: ui/app.slint:798
 msgctxt "App"
 msgid ""
 "The backup contains {n} project. It replaces all projects and settings on "
@@ -613,7 +589,7 @@ msgstr[1] ""
 "Die Sicherung enthält {n} Projekte. Sie ersetzt alle Projekte und "
 "Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
 
-#: ui/app.slint:800
+#: ui/app.slint:802
 msgctxt "App"
 msgid "Restore"
 msgstr "Wiederherstellen"
@@ -638,12 +614,12 @@ msgctxt "ProjectCard"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/settings.slint:186 ui/pages/settings.slint:200
+#: ui/pages/settings.slint:165
 msgctxt "SettingsPage"
 msgid "Count with volume keys"
 msgstr "Mit Lautstärketasten zählen"
 
-#: ui/pages/settings.slint:191
+#: ui/pages/settings.slint:166
 msgctxt "SettingsPage"
 msgid "Volume up counts a row, volume down goes back"
 msgstr "Lauter zählt eine Reihe, leiser geht zurück"
@@ -703,27 +679,27 @@ msgctxt "NotesDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:624
+#: ui/app.slint:626
 msgctxt "App"
 msgid "Open PDF"
 msgstr "PDF öffnen"
 
-#: ui/app.slint:625
+#: ui/app.slint:627
 msgctxt "App"
 msgid "Create a new project with “{}” or add it to a project."
 msgstr "Leg mit „{}“ ein neues Projekt an oder füge es einem Projekt hinzu."
 
-#: ui/app.slint:626
+#: ui/app.slint:628
 msgctxt "App"
 msgid "Create a new project with “{}”."
 msgstr "Leg mit „{}“ ein neues Projekt an."
 
-#: ui/app.slint:643 ui/app.slint:660
+#: ui/app.slint:645 ui/app.slint:662
 msgctxt "App"
 msgid "Replaces its pattern"
 msgstr "Ersetzt die Anleitung"
 
-#: ui/app.slint:673
+#: ui/app.slint:675
 msgctxt "App"
 msgid "New project"
 msgstr "Neues Projekt"
@@ -738,7 +714,7 @@ msgctxt "PartDialog"
 msgid "How many, e.g. 4 legs"
 msgstr "Wie oft, z. B. 4 Beine"
 
-#: ui/app.slint:765
+#: ui/app.slint:767
 msgctxt "App"
 msgid ""
 "The row counter of “{}” goes back to 0, starting again with the first piece."
@@ -830,52 +806,37 @@ msgctxt "Store"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/about.slint:39
+#: ui/pages/about.slint:86
 msgctxt "AboutPage"
 msgid "About Flausch"
 msgstr "Über Flausch"
 
-#: ui/pages/about.slint:86
+#: ui/pages/about.slint:133
 msgctxt "AboutPage"
 msgid ""
 "A crochet companion. Flausch is German for fluff and sounds like “fl”, then "
 "“ow” as in “now”, then “sh”."
 msgstr "Dein Häkelbegleiter. Flausch kommt von flauschig."
 
-#: ui/pages/about.slint:116
+#: ui/pages/about.slint:163
 msgctxt "ChangelogPage"
 msgid "Changelog"
 msgstr "Versionsverlauf"
 
-#: ui/pages/about.slint:139
+#: ui/pages/about.slint:186
 msgctxt "ChangelogPage"
 msgid "Version {}"
 msgstr "Version {}"
 
-#: ui/pages/settings.slint:305
-msgctxt "SettingsPage"
-msgid "About Flausch"
-msgstr "Über Flausch"
-
-#: ui/pages/settings.slint:311
-msgctxt "SettingsPage"
-msgid "Changelog"
-msgstr "Versionsverlauf"
-
-#: ui/pages/about.slint:176
+#: ui/pages/about.slint:223
 msgctxt "DonatePage"
 msgid "Donate"
 msgstr "Spenden"
 
-#: ui/pages/about.slint:220
+#: ui/pages/about.slint:267
 msgctxt "DonatePage"
 msgid "Opens the page in your browser."
 msgstr "Öffnet die Seite in deinem Browser."
-
-#: ui/pages/settings.slint:316
-msgctxt "SettingsPage"
-msgid "Donate"
-msgstr "Spenden"
 
 #: ui/pages/about.slint:11
 msgctxt "MadeWithLove"
@@ -892,7 +853,7 @@ msgctxt "MadeWithLove"
 msgid "in the Black Forest"
 msgstr "aus dem Schwarzwald"
 
-#: ui/pages/about.slint:205
+#: ui/pages/about.slint:252
 msgctxt "DonatePage"
 msgid ""
 "I develop Flausch on my own, in my spare time, free and without ads or "
@@ -949,7 +910,7 @@ msgctxt "Store"
 msgid "Move down"
 msgstr "Nach unten verschieben"
 
-#: ui/pages/about.slint:93
+#: ui/pages/about.slint:140
 msgctxt "AboutPage"
 msgid "Logo font: Montez by Astigmatic, Apache License 2.0"
 msgstr "Logo-Schrift: Montez von Astigmatic, Apache-Lizenz 2.0"
@@ -1053,11 +1014,6 @@ msgctxt "ProjectDialog"
 msgid "Rows"
 msgstr "Reihen"
 
-#: ui/pages/settings.slint:321
-msgctxt "SettingsPage"
-msgid "Website"
-msgstr "Website"
-
 #: ui/app.slint:340
 msgctxt "FolderDialog"
 msgid "Rename folder"
@@ -1110,7 +1066,7 @@ msgctxt "FolderPicker"
 msgid "No folder"
 msgstr "Kein Ordner"
 
-#: ui/app.slint:591
+#: ui/app.slint:593
 msgctxt "App"
 msgid "Folder deleted. Its projects are back in the main list."
 msgstr "Ordner gelöscht. Seine Projekte sind zurück in der Hauptliste."
@@ -1214,16 +1170,6 @@ msgstr "Deutsch"
 
 #: ui/pages/pdf.slint:553
 msgctxt "PdfPage"
-msgid "Abbreviations"
-msgstr "Abkürzungen"
-
-#: ui/pages/settings.slint:243
-msgctxt "SettingsPage"
-msgid "Reference"
-msgstr "Nachschlagen"
-
-#: ui/pages/settings.slint:252
-msgctxt "SettingsPage"
 msgid "Abbreviations"
 msgstr "Abkürzungen"
 
@@ -1551,3 +1497,77 @@ msgstr "Art, z. B. ergonomisch oder tunesisch"
 msgctxt "ListPage"
 msgid "Crochet hooks"
 msgstr "Häkelnadeln"
+
+#: ui/pages/list.slint:757
+msgctxt "ListPage"
+msgid "Abbreviations"
+msgstr "Abkürzungen"
+
+#: ui/pages/list.slint:773
+msgctxt "ListPage"
+msgid "About"
+msgstr "Info"
+
+#: ui/pages/about.slint:40
+msgctxt "InfoPage"
+msgid "About"
+msgstr "Info"
+
+#: ui/pages/about.slint:57
+msgctxt "InfoPage"
+msgid "About Flausch"
+msgstr "Über Flausch"
+
+#: ui/pages/about.slint:63
+msgctxt "InfoPage"
+msgid "Changelog"
+msgstr "Versionsverlauf"
+
+#: ui/pages/about.slint:68
+msgctxt "InfoPage"
+msgid "Donate"
+msgstr "Spenden"
+
+#: ui/pages/about.slint:73
+msgctxt "InfoPage"
+msgid "Website"
+msgstr "Website"
+
+#: ui/pages/settings.slint:129
+msgctxt "SettingsPage"
+msgid "General"
+msgstr "Allgemein"
+
+#: ui/pages/settings.slint:199
+msgctxt "SettingsPage"
+msgid "Backup"
+msgstr "Datensicherung"
+
+#: ui/pages/settings.slint:200
+msgctxt "SettingsPage"
+msgid "ZIP file"
+msgstr "ZIP-Datei"
+
+#: ui/pages/settings.slint:213
+msgctxt "BackupPage"
+msgid "Backup"
+msgstr "Datensicherung"
+
+#: ui/pages/settings.slint:231
+msgctxt "BackupPage"
+msgid ""
+"Save projects, row counters, patterns, yarns and hooks as a ZIP file, for "
+"example before switching phones."
+msgstr ""
+"Projekte, Reihenzähler, Anleitungen, Garne und Häkelnadeln als ZIP-Datei "
+"sichern, zum Beispiel vor einem Handywechsel."
+
+#: ui/pages/settings.slint:239
+msgctxt "BackupPage"
+msgid "Export"
+msgstr "Exportieren"
+
+#: ui/pages/settings.slint:246
+msgctxt "BackupPage"
+msgid "Import"
+msgstr "Importieren"

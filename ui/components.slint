@@ -645,3 +645,68 @@ export component Sheet inherits Rectangle {
         }
     }
 }
+
+// Small heading above a group of rows.
+export component SectionTitle inherits Text {
+    color: Theme.text-muted;
+    font-size: Theme.font-small;
+    font-weight: 600;
+}
+
+// An entry that opens a sub-page.
+export component NavRow inherits Rectangle {
+    in property <string> text;
+    // Small text on the right, e.g. the version.
+    in property <string> detail;
+    callback clicked();
+
+    height: Theme.touch + 8px;
+    border-radius: Theme.radius-small;
+    background: touch.pressed ? Theme.surface-muted : transparent;
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-action-default => { root.clicked(); }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 6px;
+        spacing: 8px;
+
+        Text {
+            text: root.text;
+            color: Theme.text;
+            font-size: Theme.font-body;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        Text {
+            text: root.detail;
+            color: Theme.text-muted;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+        VerticalLayout {
+            alignment: center;
+            Icon {
+                source: @image-url("icons/chevron-right.svg");
+                color: Theme.text-muted;
+                width: 20px;
+                height: 20px;
+            }
+        }
+    }
+}
+
+// A thin line between the rows of a card.
+export component Divider inherits Rectangle {
+    height: 1px;
+
+    Rectangle {
+        x: 12px;
+        width: parent.width - 24px;
+        background: Theme.border;
+    }
+}

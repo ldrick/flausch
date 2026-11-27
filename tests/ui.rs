@@ -463,7 +463,8 @@ fn the_language_setting_is_applied_and_kept() {
 fn donating_opens_the_page_in_the_browser() {
     let (app, _dir) = fresh();
     app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    menu(&app, "Settings");
+    menu(&app, "About");
+    assert_eq!(store(&app).get_screen(), Screen::Info);
     tap(&app, "Donate");
     assert_eq!(store(&app).get_screen(), Screen::Donate);
     // Don't start a browser in the test.
@@ -480,29 +481,27 @@ fn donating_opens_the_page_in_the_browser() {
         ]
     );
     go_back(&app);
-    assert_eq!(store(&app).get_screen(), Screen::Settings);
+    assert_eq!(store(&app).get_screen(), Screen::Info);
 }
 
 #[test]
 fn the_website_opens_in_the_browser() {
     let (app, _dir) = fresh();
-    app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    menu(&app, "Settings");
+    menu(&app, "About");
     let opened = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
     let log = opened.clone();
     store(&app).on_open_url(move |url| log.borrow_mut().push(url.to_string()));
     tap(&app, "Website");
     assert_eq!(*opened.borrow(), ["https://ldrick.github.io/flausch/"]);
-    assert_eq!(store(&app).get_screen(), Screen::Settings);
+    assert_eq!(store(&app).get_screen(), Screen::Info);
 }
 
 #[test]
 fn about_pages_show_the_app_and_the_changelog() {
     let (app, _dir) = fresh();
     assert_eq!(store(&app).get_dialog(), DialogKind::None);
-    // The element tree only holds what is visible, and About is at the end of the settings.
-    app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    menu(&app, "Settings");
+    app.window().set_size(slint::LogicalSize::new(412., 924.));
+    menu(&app, "About");
     tap(&app, "About Flausch");
     assert_eq!(store(&app).get_screen(), Screen::About);
     let description = "A crochet companion. Flausch is German for fluff and sounds like “fl”, then “ow” as in “now”, then “sh”.";
@@ -516,7 +515,7 @@ fn about_pages_show_the_app_and_the_changelog() {
         .is_some()
     );
     go_back(&app);
-    assert_eq!(store(&app).get_screen(), Screen::Settings);
+    assert_eq!(store(&app).get_screen(), Screen::Info);
 
     let text = "Longer text that has to wrap onto several lines on the page, ".repeat(3);
     let points = |points: &[&str]| {
@@ -556,15 +555,15 @@ fn about_pages_show_the_app_and_the_changelog() {
         );
     }
     go_back(&app);
-    assert_eq!(store(&app).get_screen(), Screen::Settings);
+    assert_eq!(store(&app).get_screen(), Screen::Info);
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::List);
 }
 
 #[test]
 fn the_abbreviation_table_translates_and_searches() {
     let (app, _dir) = fresh();
-    app.window().set_size(slint::LogicalSize::new(412., 2000.));
-    menu(&app, "Settings");
-    tap(&app, "Abbreviations");
+    menu(&app, "Abbreviations");
     assert_eq!(store(&app).get_screen(), Screen::Abbreviations);
     let chain = "Luftmasche (Lm). US: ch, chain. UK: ch, chain";
     assert!(find(&app, AccessibleRole::Text, chain).is_some());
@@ -594,9 +593,46 @@ fn the_abbreviation_table_translates_and_searches() {
     assert!(find(&app, AccessibleRole::Text, "No matching abbreviations").is_some());
 
     go_back(&app);
-    assert_eq!(store(&app).get_screen(), Screen::Settings);
-    tap(&app, "Abbreviations");
+    assert_eq!(store(&app).get_screen(), Screen::List);
+    menu(&app, "Abbreviations");
     assert_eq!(rows(&app).len(), 34, "the search starts over");
+}
+
+#[test]
+fn the_settings_hold_only_settings() {
+    let (app, _dir) = fresh();
+    // Everything fits on a phone screen (Pixel 9a), without scrolling.
+    app.window().set_size(slint::LogicalSize::new(412., 924.));
+    menu(&app, "Settings");
+    for label in [
+        "Deutsch",
+        "Keep screen on",
+        "Count with volume keys",
+        "Green",
+        "Backup",
+    ] {
+        assert!(
+            ElementHandle::find_by_accessible_label(&app, label)
+                .next()
+                .is_some(),
+            "{label} is there"
+        );
+    }
+    for label in ["Abbreviations", "About Flausch", "Donate", "Website"] {
+        assert!(!exists(&app, label), "{label} is in the menu now");
+    }
+
+    // On by default.
+    find(&app, AccessibleRole::Switch, "Keep screen on")
+        .unwrap()
+        .invoke_accessible_default_action();
+    settle();
+    assert!(!store(&app).get_keep_screen_on());
+    tap(&app, "Backup");
+    assert_eq!(store(&app).get_screen(), Screen::Backup);
+    assert!(exists(&app, "Export") && exists(&app, "Import"));
+    go_back(&app);
+    assert_eq!(store(&app).get_screen(), Screen::Settings);
 }
 
 #[test]

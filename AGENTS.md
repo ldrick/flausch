@@ -64,7 +64,7 @@ tests/ui.rs           UI tests: drive the app through accessibility labels; fixt
   storage.rs          JSON persistence (projects.json, settings.json, pdfs/, covers/) with atomic writes, ZIP backups – no slint
   abbreviations.rs    crochet abbreviations DE / US / UK (`TERMS`, ranked `search`) – no slint; for the
                       abbreviation page now and the pattern parser later
-  changes.rs          changelog (Settings → About → Changelog): the F-Droid changelogs embedded by build.rs, version codes
+  changes.rs          changelog (⋮ → About → Changelog): the F-Droid changelogs embedded by build.rs, version codes
   a11y.rs             Android only: TalkBack bridge (walks the Slint element tree, sends virtual views to Java)
   pdf.rs              render workers: viewer pages (newest request only) and PNG covers of page 1
   platform/mod.rs     picks android.rs or desktop.rs via cfg
@@ -77,9 +77,9 @@ ui/
   app.slint           root window App: page switch, dialogs, notice, Back key, safe-area insets
   store.slint         Store global = the Rust↔UI contract (state properties, enums, structs, callbacks)
   theme.slint         Theme global: colors (light/dark), sizes, radii, fonts
-  components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Sheet, Field, Segmented, Switch…)
+  components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Sheet, Field, Segmented, Switch, NavRow, Divider…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
-  pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings, about (About and Changelog sub-pages),
+  pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings (and backup), about (the About hub and its sub-pages),
                       abbreviations, stash (yarn stash and its form), hooks (crochet hooks and their form)
   icons/              SVG icons
   fonts/              Montez (Apache 2.0) for the wordmark "Flausch"
@@ -116,16 +116,21 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   list → project → part → pdf (pdf also from project, and from the list's continue button, where Back returns to
   the list). Tapping a part makes it active and opens the PDF view if the project has a PDF, otherwise the part
   screen. The pencil on a part card opens the edit dialog (with delete) for that part via `Store.edited`, without
-  changing the active part. Settings → About lists sub-pages (`NavRow` → `Store.open-page(Screen)`): About
-  Flausch, Changelog and Donate (GitHub Sponsors and Liberapay, opened in the browser through
+  changing the active part. The ⋮ menu of the project list (`TopMenu`/`MenuItem`) holds, in this order, the yarn
+  stash, the crochet hooks, Abbreviations, Settings and About. About (`Screen.info`, `InfoPage` in
+  `pages/about.slint`) lists sub-pages (`NavRow` → `Store.open-page(Screen)`): About Flausch, Changelog and Donate
+  (GitHub Sponsors and Liberapay, opened in the browser through
   `Store.open-url` → `platform::open_url`; the same links are in `.github/FUNDING.yml` and the F-Droid recipe),
-  plus a Website row that opens the browser directly. Settings → Reference → Abbreviations and the ⋮ menu of the PDF view
+  plus a Website row that opens the browser directly. The settings (`pages/settings.slint`) hold only real
+  settings, in groups (`Group`: a `SectionTitle` over a `Card`) of uniform rows (`ChoiceRow` with a control below,
+  `SwitchRow`, `NavRow`; `Divider` between them); anything bigger gets a sub-page behind a `NavRow`, like the backup
+  (`Screen.backup`, `BackupPage`). The page must fit on the design window without scrolling; a UI test checks that.
+  Reference and info pages go into the ⋮ menu, not the settings. Both ⋮ menus (project list, PDF view)
   open the abbreviation table (`Screen.abbreviations`, `pages/abbreviations.slint`): German, US and UK side by
   side, UK terms that differ from US in pink (UK stitches are one taller), searched in Rust
   (`Store.abbreviation-query` → `abbreviations::search`), the search starting over each time it opens.
-  New info pages get a `Screen` value and a row there. The ⋮ menu of the project list (the same `TopMenu`) holds
-  the yarn stash (`Screen.stash`, `pages/stash.slint`), the crochet hooks (`Screen.hooks`, `pages/hooks.slint`) and
-  the settings. Yarns live in
+  New info pages get a `Screen` value and a row on the About page. The yarn stash is `Screen.stash`
+  (`pages/stash.slint`), the crochet hooks `Screen.hooks` (`pages/hooks.slint`). Yarns live in
   `Library::yarns` (so backups include them, ids from `next_id`), sorted by brand, yarn line and color
   (`Library::sorted_yarns`); a yarn needs a brand, yarn line or color. Tapping a card opens its form (`Sheet`,
   `Store.edited-yarn`), where deleting asks inline instead of in a dialog. Hooks (`Library::hooks`) work the same
@@ -161,7 +166,7 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   upgrades old data, e.g. version 1 rows per project become one part; add a test for every migration.
   Imported PDFs are copied to `pdfs/`; `covers/<pdf>.png` holds a thumbnail of page 1 for the project list,
   created after import and on start if missing. `Storage::remove_pdf` removes both.
-- Backups (Settings → Data) are ZIP files with `projects.json`, `settings.json` and `pdfs/`, but no covers.
+- Backups (Settings → Backup) are ZIP files with `projects.json`, `settings.json` and `pdfs/`, but no covers.
   `Storage::read_backup` refuses newer versions and runs `migrate`; `Storage::restore` replaces everything. The
   Android side goes through the Storage Access Framework (`platform::pick_document` / `save_document`, no storage
   permission), via temporary `export.zip` / `import.zip` files in the data directory.
@@ -351,7 +356,7 @@ and `cargo deny` must pass, no force push. Release tags `v*` can't be moved or d
   (`prepare --keep`): new features and fixes are appended, and the German one gets `TODO` again. Other edits in the
   PR are overwritten. The German changelog
   starts with `TODO` and `cargo test` fails until it doesn't. These texts are also the changelog in the app
-  (Settings → About → Changelog, all releases up to the running build; `src/changes.rs`, embedded by `build.rs`).
+  (⋮ → About → Changelog, all releases up to the running build; `src/changes.rs`, embedded by `build.rs`).
 - Merging the release PR runs the `publish` job: it creates a draft release with the `CHANGELOG.md` section, builds
   and attaches the signed APK (secrets `RELEASE_KEYSTORE`, base64, and `RELEASE_KEYSTORE_PASSWORD`) and then
   publishes it, which creates the tag `vX.Y.Z`. Releases are immutable once published, so nothing can be added or
