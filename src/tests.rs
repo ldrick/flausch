@@ -938,3 +938,20 @@ fn hook_sizes_are_parsed_and_formatted() {
     assert_eq!(format_hook_size(1205, false), "12.05");
     assert_eq!(format_hook_size(400, true), "4");
 }
+
+#[test]
+fn skeins_have_one_decimal() {
+    // Tenths of a skein, without a weight.
+    assert_eq!(format_skeins(24, 10, false), "2.4");
+    assert_eq!(format_skeins(24, 10, true), "2,4");
+    assert_eq!(format_skeins(30, 10, true), "3");
+    // Grams of 50 g skeins: 83 g are 1.66 skeins, a little is at least 0.1.
+    assert_eq!(format_skeins(83, 50, false), "1.7");
+    assert_eq!(format_skeins(2, 50, false), "0.1");
+    assert_eq!(format_skeins(0, 50, false), "0");
+
+    assert_eq!(parse_decimal(" 1,5 "), Some(1.5));
+    assert_eq!(parse_decimal("2"), Some(2.0));
+    assert_eq!(parse_decimal("-1"), None);
+    assert_eq!(parse_decimal("x"), None);
+}

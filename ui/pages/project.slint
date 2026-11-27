@@ -1,6 +1,7 @@
 import { Theme } from "../theme.slint";
-import { Store, DialogKind, PartItem, ProjectStatus } from "../store.slint";
-import { Card, Icon, IconButton, PillButton, ButtonKind, ProgressBar, Segmented, TopBar } from "../components.slint";
+import { Store, DialogKind, HookItem, PartItem, ProjectStatus, ProjectYarnItem, YarnAmount, YarnItem } from "../store.slint";
+import { Card, Field, Icon, IconButton, PillButton, ButtonKind, ProgressBar, Segmented, Sheet, TopBar } from "../components.slint";
+import { HookText } from "hooks.slint";
 
 export component PatternCard inherits Card {
     // Shows a button to remove the PDF from the project.
@@ -148,6 +149,305 @@ component PartCard inherits Card {
     }
 }
 
+global Materials {
+    // "a · b", leaving out empty parts.
+    public pure function join(a: string, b: string) -> string {
+        return a == "" ? b : b == "" ? a : a + " · " + b;
+    }
+
+    // Brand and yarn line, or the color if neither is known.
+    public pure function yarn-title(yarn: YarnItem) -> string {
+        return yarn.title != "" ? yarn.title : yarn.form.color;
+    }
+
+    // "1,4 skeins" or "80 g".
+    public pure function amount(a: YarnAmount) -> string {
+        return a.in-grams ? @tr("{} g", a.grams) : @tr("{} skein" | "{} skeins" % (a.one ? 1 : 2), a.skeins);
+    }
+
+    // The color (unless it is the title) and what is left in the stash.
+    public pure function yarn-detail(yarn: YarnItem) -> string {
+        return self.join(yarn.title != "" ? yarn.form.color : "", @tr("{} left", self.amount(yarn.amount)));
+    }
+
+    // "3.5 mm · US E-4".
+    public pure function hook-size(hook: HookItem) -> string {
+        return self.join(@tr("{} mm", hook.size), HookText.us(hook.us));
+    }
+}
+
+// Text on the left of a material card.
+component MaterialText inherits VerticalLayout {
+    in property <string> title;
+    in property <string> detail;
+
+    alignment: center;
+    spacing: 2px;
+    horizontal-stretch: 1;
+
+    Text {
+        text: root.title;
+        color: Theme.text;
+        font-size: Theme.font-body;
+        font-weight: 600;
+        overflow: elide;
+    }
+    if root.detail != "": Text {
+        text: root.detail;
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        overflow: elide;
+    }
+}
+
+// A yarn of the project. A tap on the amount types it in (skeins like "1,5", or grams when counting in
+// grams). In skeins, − puts a skein back into the stash and + takes one more; in grams, ✕ takes the yarn
+// off the project.
+component ProjectYarnCard inherits Card {
+    in property <ProjectYarnItem> item;
+
+    property <YarnAmount> used: root.item.used;
+
+    height: max(72px, row.preferred-height);
+    accessible-role: groupbox;
+    accessible-label: Materials.yarn-title(root.item.yarn) + ", " + Materials.amount(root.used);
+
+    row := HorizontalLayout {
+        padding: 12px;
+        padding-left: 18px;
+        spacing: 4px;
+
+        MaterialText {
+            title: Materials.yarn-title(root.item.yarn);
+            detail: Materials.yarn-detail(root.item.yarn);
+        }
+
+        if !root.used.in-grams: VerticalLayout {
+            alignment: center;
+            IconButton {
+                icon: @image-url("../icons/minus.svg");
+                label: root.used.units > root.used.unit ? @tr("Put one skein back") : @tr("Take off the project");
+                clicked => { Store.set-project-yarn(root.item.yarn.id, max(0, root.used.units - root.used.unit)); }
+            }
+        }
+        Rectangle {
+            min-width: 48px;
+            border-radius: Theme.radius-small;
+            background: amount-touch.pressed ? Theme.surface-muted : transparent;
+            accessible-role: button;
+            accessible-label: @tr("Change amount used");
+            accessible-description: Materials.amount(root.used);
+            accessible-action-default => {
+                Store.edited-project-yarn = root.item;
+                Store.dialog = DialogKind.yarn-grams;
+            }
+
+            amount-touch := TouchArea {
+                clicked => {
+                    Store.edited-project-yarn = root.item;
+                    Store.dialog = DialogKind.yarn-grams;
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                padding-left: 6px;
+                padding-right: 6px;
+                Text {
+                    text: root.used.in-grams ? root.used.grams : root.used.skeins;
+                    color: Theme.text;
+                    font-size: 20px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: root.used.in-grams ? @tr("g") : @tr("skein" | "skeins" % (root.used.one ? 1 : 2));
+                    color: Theme.accent-text;
+                    font-size: 10px;
+                    horizontal-alignment: center;
+                }
+            }
+        }
+        if !root.used.in-grams: VerticalLayout {
+            alignment: center;
+            IconButton {
+                icon: @image-url("../icons/plus.svg");
+                label: @tr("Take one more skein");
+                enabled: root.item.yarn.amount.units > 0;
+                clicked => { Store.set-project-yarn(root.item.yarn.id, root.used.units + root.used.unit); }
+            }
+        }
+        if root.used.in-grams: VerticalLayout {
+            alignment: center;
+            IconButton {
+                icon: @image-url("../icons/close.svg");
+                label: @tr("Take off the project");
+                clicked => { Store.set-project-yarn(root.item.yarn.id, 0); }
+            }
+        }
+    }
+}
+
+// Types in how much of a yarn the current project used: grams when counting in grams, else skeins like
+// "1,5". The rest stays in the stash.
+export component YarnGramsDialog inherits Sheet {
+    callback done();
+
+    property <ProjectYarnItem> item: Store.edited-project-yarn;
+    property <bool> in-grams: root.item.used.in-grams;
+    property <bool> valid: Store.valid-yarn-amount(amount.text);
+
+    title: @tr("Yarn used");
+    subtitle: Materials.yarn-title(root.item.yarn);
+    confirm-text: @tr("Save");
+    confirm-enabled: root.valid;
+    cancel => { root.done(); }
+    confirm => { root.submit(); }
+
+    function submit() {
+        if !root.valid {
+            return;
+        }
+        Store.set-project-yarn-text(root.item.yarn.id, amount.text);
+        root.done();
+    }
+
+    init => {
+        if root.item.used.units > 0 {
+            amount.text = root.in-grams ? root.item.used.grams : root.item.used.skeins;
+        }
+        amount.focus-input();
+    }
+
+    amount := Field {
+        label: root.in-grams ? @tr("Grams used") : @tr("Skeins used");
+        placeholder: root.in-grams ? @tr("Grams used") : @tr("Skeins used, e.g. 1.5");
+        input-type: root.in-grams ? InputType.number : InputType.decimal;
+        accepted => { root.submit(); }
+    }
+    Text {
+        text: root.in-grams ? @tr("{} more in the stash. Tip: weigh what is left and subtract it from what you started with.", Materials.amount(root.item.yarn.amount))
+            : @tr("{} more in the stash.", Materials.amount(root.item.yarn.amount));
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        wrap: word-wrap;
+    }
+}
+
+// A hook of the project.
+component ProjectHookCard inherits Card {
+    in property <HookItem> hook;
+
+    height: max(72px, row.preferred-height);
+    accessible-role: groupbox;
+    accessible-label: Materials.join(Materials.hook-size(root.hook), root.hook.title);
+
+    row := HorizontalLayout {
+        padding: 12px;
+        padding-left: 18px;
+        spacing: 4px;
+
+        MaterialText {
+            title: Materials.hook-size(root.hook);
+            detail: root.hook.title;
+        }
+        VerticalLayout {
+            alignment: center;
+            IconButton {
+                icon: @image-url("../icons/close.svg");
+                label: @tr("Take hook off the project");
+                clicked => { Store.set-project-hook(root.hook.id, false); }
+            }
+        }
+    }
+}
+
+// A row of the material picker.
+component PickRow inherits Rectangle {
+    in property <string> title;
+    in property <string> detail;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    height: max(Theme.touch + 16px, text.preferred-height + 16px);
+    border-radius: Theme.radius-small;
+    background: touch.pressed ? Theme.surface-muted : Theme.surface;
+    opacity: root.enabled ? 1 : 0.45;
+    accessible-role: button;
+    accessible-label: Materials.join(root.title, root.detail);
+    accessible-enabled: root.enabled;
+    accessible-action-default => {
+        if root.enabled {
+            root.clicked();
+        }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+    text := MaterialText {
+        x: 16px;
+        width: parent.width - 32px;
+        height: parent.height;
+        title: root.title;
+        detail: root.detail;
+    }
+}
+
+// Adds a yarn (one skein, out of the stash) or a hook to the current project. A tap adds and closes.
+export component MaterialPicker inherits Sheet {
+    callback done();
+
+    title: @tr("Add yarn or hook");
+    subtitle: Store.current.name;
+    cancel => { root.done(); }
+
+    if Store.other-yarns.length == 0 && Store.other-hooks.length == 0: Text {
+        text: @tr("Nothing left to add. New yarns go into the yarn stash and new hooks under crochet hooks, both in the menu of the project list.");
+        color: Theme.text-muted;
+        font-size: Theme.font-body;
+        wrap: word-wrap;
+    }
+    if Store.other-yarns.length > 0: Text {
+        text: @tr("Yarn stash");
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        font-weight: 600;
+    }
+    for yarn in Store.other-yarns: PickRow {
+        title: Materials.yarn-title(yarn);
+        detail: Materials.yarn-detail(yarn);
+        clicked => {
+            if yarn.amount.in-grams {
+                // Asks for the grams right away; replaces the picker.
+                Store.edited-project-yarn = {
+                    yarn: yarn,
+                    used: { unit: yarn.amount.unit, skeins: "0", in-grams: true },
+                };
+                Store.dialog = DialogKind.yarn-grams;
+            } else {
+                // One skein, or what is left.
+                Store.set-project-yarn(yarn.id, yarn.amount.unit);
+                root.done();
+            }
+        }
+    }
+    if Store.other-hooks.length > 0: Text {
+        text: @tr("Crochet hooks");
+        color: Theme.text-muted;
+        font-size: Theme.font-small;
+        font-weight: 600;
+    }
+    for hook in Store.other-hooks: PickRow {
+        title: Materials.hook-size(hook);
+        detail: hook.title;
+        clicked => {
+            Store.set-project-hook(hook.id, true);
+            root.done();
+        }
+    }
+}
+
 export component ProjectPage inherits Rectangle {
     VerticalLayout {
         TopBar {
@@ -236,6 +536,26 @@ export component ProjectPage inherits Rectangle {
                     clicked => { Store.pick-pdf(); }
                 }
                 if Store.current.has-pdf: PatternCard { }
+
+                Rectangle {
+                    height: 8px;
+                }
+                SectionTitle {
+                    text: @tr("Yarn & hooks");
+                }
+                for item in Store.current-yarns: ProjectYarnCard {
+                    item: item;
+                }
+                for hook in Store.current-hooks: ProjectHookCard {
+                    hook: hook;
+                }
+                PillButton {
+                    kind: ButtonKind.secondary;
+                    text: @tr("Add yarn or hook");
+                    icon: @image-url("../icons/plus.svg");
+                    has-icon: true;
+                    clicked => { Store.dialog = DialogKind.pick-material; }
+                }
 
                 Rectangle {
                     height: 8px;

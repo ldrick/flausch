@@ -2,7 +2,7 @@ import { Theme } from "../theme.slint";
 import { Store, DialogKind, HookItem, UsHookSize } from "../store.slint";
 import { ButtonKind, Card, Field, Icon, PillButton, Sheet, TopBar } from "../components.slint";
 
-global HookText {
+export global HookText {
     // "US E-4", "US 8 (steel)", or empty without a US size.
     public pure function us(us: UsHookSize) -> string {
         return us.name == "" ? "" : us.steel ? @tr("US {} (steel)", us.name) : @tr("US {}", us.name);

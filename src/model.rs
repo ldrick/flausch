@@ -252,6 +252,12 @@ pub struct Project {
     /// The folder it is in; `None` is the top level of the list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub folder: Option<u64>,
+    /// Yarns from the stash, in the order they were added. Their skeins are taken out of the stash.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub yarns: Vec<ProjectYarn>,
+    /// Hooks (ids), in the order they were added.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hooks: Vec<u64>,
     /// Version 1 counted rows per project. Only read for the migration.
     #[serde(default, skip_serializing, rename = "row")]
     legacy_row: Option<u32>,
@@ -298,6 +304,29 @@ impl Project {
     }
 }
 
+/// A yarn used in a project: full `skeins` and part of one (`opened`, in the yarn's units: grams or
+/// tenths of a skein) came out of the stash.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProjectYarn {
+    pub yarn: u64,
+    pub skeins: u32,
+    /// Development builds called it `grams`.
+    #[serde(default, skip_serializing_if = "is_zero", alias = "grams")]
+    pub opened: u32,
+}
+
+impl ProjectYarn {
+    /// All of it in units, with the units per skein.
+    pub fn units(&self, unit: u32) -> u32 {
+        self.skeins.saturating_mul(unit).saturating_add(self.opened)
+    }
+
+    fn set_units(&mut self, units: u32, unit: u32) {
+        self.skeins = units / unit;
+        self.opened = units % unit;
+    }
+}
+
 /// What the yarn form sets. Text is trimmed; empty fields and zeros mean unknown.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct YarnSpec<'a> {
@@ -310,8 +339,23 @@ pub struct YarnSpec<'a> {
     pub weight: Option<u32>,
     /// Meters per skein.
     pub length: Option<u32>,
-    /// Skeins in the stash.
-    pub quantity: u32,
+    /// What is in the stash, in units of this spec's weight (`units_per_skein`).
+    pub amount: u32,
+}
+
+/// Yarn is counted in grams if the weight of a skein is known, else in tenths of a skein. Returns how
+/// many of these units make a skein.
+pub fn units_per_skein(weight: Option<u32>) -> u32 {
+    weight.filter(|w| *w > 0).unwrap_or(10)
+}
+
+/// Converts an amount of yarn when the units change, e.g. when the weight becomes known.
+fn convert_units(units: u32, from: u32, to: u32) -> u32 {
+    if from == to {
+        return units;
+    }
+    let units = (u64::from(units) * u64::from(to) + u64::from(from) / 2) / u64::from(from);
+    u32::try_from(units).unwrap_or(u32::MAX)
 }
 
 /// A yarn in the stash: one color (and dye lot) of a yarn line.
@@ -337,15 +381,47 @@ pub struct Yarn {
     /// Meters per skein.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub length: Option<u32>,
-    /// Skeins in the stash.
+    /// Full skeins in the stash.
     #[serde(default)]
     pub quantity: u32,
+    /// What is left of an opened skein, in units (`units_per_skein`): grams, or tenths of a skein.
+    /// Development builds called it `rest` (grams).
+    #[serde(default, skip_serializing_if = "is_zero", alias = "rest")]
+    pub opened: u32,
     /// Unix timestamp in seconds.
     #[serde(default)]
     pub created: u64,
 }
 
 impl Yarn {
+    /// Units (grams or tenths) per skein.
+    pub fn unit(&self) -> u32 {
+        units_per_skein(self.weight)
+    }
+
+    /// What is in the stash, in units.
+    pub fn units(&self) -> u32 {
+        self.quantity
+            .saturating_mul(self.unit())
+            .saturating_add(self.opened)
+    }
+
+    fn set_units(&mut self, units: u32) {
+        let unit = self.unit();
+        self.quantity = units / unit;
+        self.opened = units % unit;
+    }
+
+    /// Grams in the stash, if the weight of a skein is known.
+    pub fn grams(&self) -> Option<u32> {
+        self.weight.map(|_| self.units())
+    }
+
+    /// Nothing left in the stash.
+    pub fn used_up(&self) -> bool {
+        self.units() == 0
+    }
+
     fn edit(&mut self, spec: &YarnSpec) {
         self.brand = clean_name(spec.brand);
         self.name = clean_name(spec.name);
@@ -354,7 +430,7 @@ impl Yarn {
         self.fiber = clean_name(spec.fiber);
         self.weight = spec.weight.filter(|w| *w > 0);
         self.length = spec.length.filter(|l| *l > 0);
-        self.quantity = spec.quantity;
+        self.set_units(spec.amount);
     }
 
     /// Brand and yarn line, e.g. "Schachenmayr Catania".
@@ -530,6 +606,13 @@ impl Library {
                 self.projects[i].folder = None;
             }
         }
+        // Links to yarns and hooks that are gone.
+        let yarns: Vec<u64> = self.yarns.iter().map(|y| y.id).collect();
+        let hooks: Vec<u64> = self.hooks.iter().map(|h| h.id).collect();
+        for project in &mut self.projects {
+            project.yarns.retain(|y| yarns.contains(&y.yarn));
+            project.hooks.retain(|h| hooks.contains(h));
+        }
         self.version = LIBRARY_VERSION;
     }
 
@@ -555,6 +638,8 @@ impl Library {
             updated: now,
             position,
             folder: None,
+            yarns: Vec::new(),
+            hooks: Vec::new(),
             legacy_row: None,
             legacy_row_goal: None,
         });
@@ -761,6 +846,7 @@ impl Library {
             weight: None,
             length: None,
             quantity: 0,
+            opened: 0,
             created: now,
         };
         yarn.edit(spec);
@@ -773,16 +859,83 @@ impl Library {
         if !has_yarn_name(spec) {
             return false;
         }
-        self.yarns
-            .iter_mut()
-            .find(|y| y.id == id)
-            .map(|y| y.edit(spec))
-            .is_some()
+        let Some(yarn) = self.yarns.iter_mut().find(|y| y.id == id) else {
+            return false;
+        };
+        let (from, to) = (yarn.unit(), units_per_skein(spec.weight));
+        yarn.edit(spec);
+        // With a new weight, what projects used changes its units, too.
+        for project in &mut self.projects {
+            for used in project.yarns.iter_mut().filter(|u| u.yarn == id) {
+                let units = convert_units(used.units(from), from, to);
+                used.set_units(units, to);
+            }
+        }
+        true
     }
 
+    /// Removes a yarn from the stash and from the projects that use it.
     pub fn remove_yarn(&mut self, id: u64) -> Option<Yarn> {
         let index = self.yarns.iter().position(|y| y.id == id)?;
+        for project in &mut self.projects {
+            project.yarns.retain(|y| y.yarn != id);
+        }
         Some(self.yarns.remove(index))
+    }
+
+    /// Sets how much of a stash yarn a project uses, in the yarn's units (`Yarn::unit`), taking it out of
+    /// the stash or putting it back. It can't take more than the stash has; 0 takes the yarn off the
+    /// project. Returns what the project uses now, or `None` if the project or the yarn doesn't exist.
+    pub fn set_project_yarn(
+        &mut self,
+        project: u64,
+        yarn: u64,
+        units: u32,
+        now: u64,
+    ) -> Option<ProjectYarn> {
+        let stash = self.yarns.iter().find(|y| y.id == yarn)?;
+        let (unit, in_stash) = (stash.unit(), stash.units());
+        let used = self
+            .get(project)?
+            .yarns
+            .iter()
+            .find(|y| y.yarn == yarn)
+            .map_or(0, |y| y.units(unit));
+        let available = in_stash.saturating_add(used);
+        let units = units.min(available);
+        let mut new = ProjectYarn {
+            yarn,
+            skeins: 0,
+            opened: 0,
+        };
+        new.set_units(units, unit);
+
+        self.yarns
+            .iter_mut()
+            .find(|y| y.id == yarn)?
+            .set_units(available - units);
+        let project = self.touch(project, now)?;
+        let index = project.yarns.iter().position(|y| y.yarn == yarn);
+        match index {
+            Some(i) if units == 0 => {
+                project.yarns.remove(i);
+            }
+            Some(i) => project.yarns[i] = new,
+            None if units > 0 => project.yarns.push(new),
+            None => {}
+        }
+        Some(new)
+    }
+
+    /// The projects that use a yarn, by name.
+    pub fn projects_with_yarn(&self, yarn: u64) -> Vec<&Project> {
+        let mut projects: Vec<_> = self
+            .projects
+            .iter()
+            .filter(|p| p.yarns.iter().any(|y| y.yarn == yarn))
+            .collect();
+        projects.sort_by_cached_key(|p| p.name.to_lowercase());
+        projects
     }
 
     /// The stash by brand, yarn line and color.
@@ -832,9 +985,35 @@ impl Library {
             .is_some()
     }
 
+    /// Removes a hook, also from the projects that use it.
     pub fn remove_hook(&mut self, id: u64) -> Option<Hook> {
         let index = self.hooks.iter().position(|h| h.id == id)?;
+        for project in &mut self.projects {
+            project.hooks.retain(|h| *h != id);
+        }
         Some(self.hooks.remove(index))
+    }
+
+    /// Adds a hook to a project or takes it off. Returns false if nothing changed.
+    pub fn set_project_hook(&mut self, project: u64, hook: u64, used: bool, now: u64) -> bool {
+        if !self.hooks.iter().any(|h| h.id == hook) {
+            return false;
+        }
+        let Some(p) = self.get(project) else {
+            return false;
+        };
+        if p.hooks.contains(&hook) == used {
+            return false;
+        }
+        let Some(project) = self.touch(project, now) else {
+            return false;
+        };
+        if used {
+            project.hooks.push(hook);
+        } else {
+            project.hooks.retain(|h| *h != hook);
+        }
+        true
     }
 
     /// The hooks from the smallest, then by brand and kind.
@@ -974,6 +1153,9 @@ pub struct Settings {
     /// Volume up and down count rows while a counter is shown (Android).
     #[serde(default)]
     pub volume_keys: bool,
+    /// Yarn is counted in grams instead of skeins (yarns with a known weight only).
+    #[serde(default)]
+    pub yarn_in_grams: bool,
     #[serde(default)]
     pub project_filter: StatusFilter,
     #[serde(default)]
@@ -993,6 +1175,7 @@ impl Default for Settings {
             keep_screen_on: true,
             line_color: LineColor::default(),
             volume_keys: false,
+            yarn_in_grams: false,
             project_filter: StatusFilter::default(),
             project_sort: ProjectSort::default(),
         }
@@ -1241,7 +1424,8 @@ mod tests {
             fiber: "100% cotton",
             weight: Some(50),
             length: Some(125),
-            quantity: 3,
+            // In grams, since the weight is known.
+            amount: 170,
         };
         let catania = lib.add_yarn(&spec, 5).unwrap();
         assert_ne!(catania, hat, "ids are shared with projects");
@@ -1249,8 +1433,8 @@ mod tests {
         assert_eq!(yarn.title(), "Schachenmayr Catania");
         assert_eq!(yarn.color, "Rosa 0222");
         assert_eq!(
-            (yarn.weight, yarn.length, yarn.quantity),
-            (Some(50), Some(125), 3)
+            (yarn.weight, yarn.length, yarn.quantity, yarn.opened),
+            (Some(50), Some(125), 3, 20)
         );
 
         // Only a color is enough, but nothing at all is not.
@@ -1284,11 +1468,11 @@ mod tests {
         assert!(lib.edit_yarn(
             catania,
             &YarnSpec {
-                quantity: 2,
+                amount: 100,
                 ..spec
             }
         ));
-        assert_eq!(lib.yarn(catania).unwrap().quantity, 2);
+        assert_eq!(lib.yarn(catania).unwrap().units(), 100);
         assert!(lib.remove_yarn(catania).is_some());
         assert!(lib.yarn(catania).is_none());
         assert!(!lib.edit_yarn(catania, &spec));
@@ -1389,6 +1573,157 @@ mod tests {
     }
 
     #[test]
+    fn projects_take_yarn_out_of_the_stash() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let scarf = lib.create("Scarf", 1);
+        // No weight: counted in tenths of a skein.
+        let catania = lib
+            .add_yarn(
+                &YarnSpec {
+                    name: "Catania",
+                    amount: 30,
+                    ..YarnSpec::default()
+                },
+                1,
+            )
+            .unwrap();
+        let stash = |lib: &Library| lib.yarn(catania).unwrap().units();
+        let used = |lib: &mut Library, project, units| {
+            lib.set_project_yarn(project, catania, units, 5)
+                .map(|u| (u.skeins, u.opened))
+        };
+
+        assert_eq!(used(&mut lib, hat, 15), Some((1, 5)), "1.5 skeins");
+        assert_eq!(stash(&lib), 15);
+        assert_eq!(lib.get(hat).unwrap().updated, 5);
+        // No more than the stash has.
+        assert_eq!(used(&mut lib, scarf, 40), Some((1, 5)));
+        assert!(lib.yarn(catania).unwrap().used_up());
+        assert_eq!(used(&mut lib, hat, 30), Some((1, 5)), "none left");
+        let users: Vec<_> = lib
+            .projects_with_yarn(catania)
+            .iter()
+            .map(|p| p.id)
+            .collect();
+        assert_eq!(users, [hat, scarf]);
+
+        // Giving some back, and 0 takes the yarn off the project.
+        assert_eq!(used(&mut lib, hat, 5), Some((0, 5)));
+        assert_eq!(stash(&lib), 10);
+        assert_eq!(used(&mut lib, scarf, 0), Some((0, 0)));
+        assert_eq!(stash(&lib), 25);
+        assert_eq!(lib.get(scarf).unwrap().yarns, []);
+        assert_eq!(used(&mut lib, 99, 1), None);
+        assert_eq!(lib.set_project_yarn(hat, 99, 1, 6), None);
+
+        // Deleting the yarn takes it off the projects.
+        lib.remove_yarn(catania);
+        assert_eq!(lib.get(hat).unwrap().yarns, []);
+    }
+
+    #[test]
+    fn yarn_with_a_weight_is_counted_in_grams() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let spec = YarnSpec {
+            name: "Paris",
+            amount: 24,
+            ..YarnSpec::default()
+        };
+        let paris = lib.add_yarn(&spec, 1).unwrap();
+        lib.set_project_yarn(hat, paris, 10, 2);
+        let stash = |lib: &Library| {
+            let y = lib.yarn(paris).unwrap();
+            (y.quantity, y.opened, y.grams())
+        };
+        assert_eq!(stash(&lib), (1, 4, None), "1.4 skeins");
+
+        // The weight becomes known: what the hat used turns into grams, too.
+        assert!(lib.edit_yarn(
+            paris,
+            &YarnSpec {
+                weight: Some(50),
+                amount: 70,
+                ..spec
+            }
+        ));
+        assert_eq!(stash(&lib), (1, 20, Some(70)));
+        assert_eq!(lib.get(hat).unwrap().yarns[0].units(50), 50);
+
+        let used = lib.set_project_yarn(hat, paris, 83, 3).unwrap();
+        assert_eq!((used.skeins, used.opened), (1, 33));
+        assert_eq!(stash(&lib), (0, 37, Some(37)));
+        assert_eq!(convert_units(83, 50, 10), 17, "1.66 skeins are 1.7");
+    }
+
+    #[test]
+    fn projects_use_hooks() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let hook = lib
+            .add_hook(
+                &HookSpec {
+                    size: Some(350),
+                    ..HookSpec::default()
+                },
+                1,
+            )
+            .unwrap();
+        assert!(lib.set_project_hook(hat, hook, true, 2));
+        assert!(!lib.set_project_hook(hat, hook, true, 3), "already there");
+        assert_eq!(lib.get(hat).unwrap().hooks, [hook]);
+        assert!(!lib.set_project_hook(hat, 99, true, 3));
+        assert!(lib.set_project_hook(hat, hook, false, 3));
+        assert_eq!(lib.get(hat).unwrap().hooks, Vec::<u64>::new());
+
+        lib.set_project_hook(hat, hook, true, 4);
+        lib.remove_hook(hook);
+        assert_eq!(lib.get(hat).unwrap().hooks, Vec::<u64>::new());
+    }
+
+    #[test]
+    fn materials_are_kept_and_links_to_missing_ones_dropped() {
+        let mut lib = Library::default();
+        let hat = lib.create("Hat", 1);
+        let json = serde_json::to_string(&lib).unwrap();
+        assert!(!json.contains("hooks"), "{json}");
+        let yarn = lib
+            .add_yarn(
+                &YarnSpec {
+                    color: "Blue",
+                    amount: 20,
+                    ..YarnSpec::default()
+                },
+                1,
+            )
+            .unwrap();
+        let hook = lib
+            .add_hook(
+                &HookSpec {
+                    size: Some(400),
+                    ..HookSpec::default()
+                },
+                1,
+            )
+            .unwrap();
+        lib.set_project_yarn(hat, yarn, 15, 2);
+        lib.set_project_hook(hat, hook, true, 2);
+        let json = serde_json::to_string(&lib).unwrap();
+        let mut again: Library = serde_json::from_str(&json).unwrap();
+        again.migrate();
+        assert_eq!(again, lib);
+
+        // E.g. edited by hand: links to a yarn or hook that is gone are dropped.
+        let mut broken: Library = serde_json::from_str(&json).unwrap();
+        broken.yarns.clear();
+        broken.hooks.clear();
+        broken.migrate();
+        let project = broken.get(hat).unwrap();
+        assert!(project.yarns.is_empty() && project.hooks.is_empty());
+    }
+
+    #[test]
     fn yarns_are_kept_and_optional_on_disk() {
         let mut lib = Library::default();
         lib.create("Hat", 1);
@@ -1398,7 +1733,7 @@ mod tests {
         let spec = YarnSpec {
             name: "Catania",
             weight: Some(50),
-            quantity: 1,
+            amount: 50,
             ..YarnSpec::default()
         };
         lib.add_yarn(&spec, 2);

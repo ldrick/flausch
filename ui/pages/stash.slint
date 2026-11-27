@@ -22,13 +22,17 @@ component YarnCard inherits Card {
     property <string> title: root.yarn.title != "" ? root.yarn.title : root.yarn.form.color;
     property <string> lot: root.yarn.form.dye-lot == "" ? "" : @tr("Lot {}", root.yarn.form.dye-lot);
     property <string> line1: root.join(root.yarn.title != "" ? root.yarn.form.color : "", root.lot);
+    property <bool> in-grams: root.yarn.amount.in-grams;
+    property <bool> has-some: root.yarn.amount.units > 0;
     property <string> line2: root.join(root.yarn.form.fiber, root.skein-size(root.yarn));
+    property <string> used-in: root.yarn.projects == "" ? "" : @tr("Used in {}", root.yarn.projects);
 
     height: max(88px, content.preferred-height);
     background: touch.pressed ? Theme.surface-muted : Theme.surface;
     accessible-role: button;
-    accessible-label: @tr("{}, {n} skein" | "{}, {n} skeins" % root.yarn.quantity, root.join(root.title, root.line1));
-    accessible-description: root.line2;
+    accessible-label: root.in-grams ? @tr("{}, {} g", root.join(root.title, root.line1), root.yarn.amount.grams)
+        : @tr("{}, {} skein" | "{}, {} skeins" % (root.yarn.amount.one ? 1 : 2), root.join(root.title, root.line1), root.yarn.amount.skeins);
+    accessible-description: root.join(root.line2, root.used-in);
     accessible-action-default => { root.clicked(); }
 
     touch := TouchArea {
@@ -40,27 +44,27 @@ component YarnCard inherits Card {
         padding-right: 18px;
         spacing: 16px;
 
-        // Round badge with the number of skeins.
+        // Round badge with the skeins, or the grams when yarn is counted in grams.
         VerticalLayout {
             alignment: center;
             Rectangle {
                 width: 56px;
                 height: 56px;
                 border-radius: self.height / 2;
-                background: root.yarn.quantity > 0 ? Theme.accent : Theme.surface-muted;
+                background: root.has-some ? Theme.accent : Theme.surface-muted;
 
                 VerticalLayout {
                     alignment: center;
                     Text {
-                        text: root.yarn.quantity;
-                        color: root.yarn.quantity > 0 ? Theme.on-accent : Theme.text-muted;
-                        font-size: 20px;
+                        text: root.in-grams ? root.yarn.amount.grams : root.yarn.amount.skeins;
+                        color: root.has-some ? Theme.on-accent : Theme.text-muted;
+                        font-size: self.text.character-count > 3 ? 16px : 20px;
                         font-weight: 700;
                         horizontal-alignment: center;
                     }
                     Text {
-                        text: @tr("skein" | "skeins" % root.yarn.quantity);
-                        color: root.yarn.quantity > 0 ? Theme.on-accent : Theme.text-muted;
+                        text: root.in-grams ? @tr("g") : @tr("skein" | "skeins" % (root.yarn.amount.one ? 1 : 2));
+                        color: root.has-some ? Theme.on-accent : Theme.text-muted;
                         font-size: 10px;
                         horizontal-alignment: center;
                     }
@@ -92,6 +96,12 @@ component YarnCard inherits Card {
                 font-size: Theme.font-small;
                 overflow: elide;
             }
+            if root.used-in != "": Text {
+                text: root.used-in;
+                color: Theme.accent-text;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
         }
     }
 }
@@ -103,7 +113,7 @@ export component StashPage inherits Rectangle {
             back => { Store.back(); }
         }
 
-        if Store.yarns.length > 0: Flickable {
+        if Store.yarns.length + Store.used-up-yarns.length > 0: Flickable {
             vertical-stretch: 1;
             content-height: list.preferred-height;
 
@@ -116,8 +126,8 @@ export component StashPage inherits Rectangle {
                 alignment: start;
 
                 Text {
-                    text: Store.yarn-grams > 0 ? @tr("{n} skein, {} g in total" | "{n} skeins, {} g in total" % Store.yarn-skeins, Store.yarn-grams)
-                        : @tr("{n} skein in total" | "{n} skeins in total" % Store.yarn-skeins);
+                    text: Store.yarn-grams > 0 ? @tr("{} skein, {} g in total" | "{} skeins, {} g in total" % (Store.yarn-skeins == "1" ? 1 : 2), Store.yarn-skeins, Store.yarn-grams)
+                        : @tr("{} skein in total" | "{} skeins in total" % (Store.yarn-skeins == "1" ? 1 : 2), Store.yarn-skeins);
                     color: Theme.text-muted;
                     font-size: Theme.font-small;
                     font-weight: 600;
@@ -129,10 +139,54 @@ export component StashPage inherits Rectangle {
                         Store.dialog = DialogKind.edit-yarn;
                     }
                 }
+                // Yarns without skeins left, e.g. all in projects: out of the way, but still there.
+                if Store.used-up-yarns.length > 0: Rectangle {
+                    height: 32px;
+                    accessible-role: button;
+                    accessible-label: Store.used-up-open ? @tr("Hide used up yarns ({})", Store.used-up-yarns.length) : @tr("Show used up yarns ({})", Store.used-up-yarns.length);
+                    accessible-expandable: true;
+                    accessible-expanded: Store.used-up-open;
+                    accessible-action-default => { Store.used-up-open = !Store.used-up-open; }
+
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: @tr("Used up ({})", Store.used-up-yarns.length);
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                            horizontal-stretch: 0;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            Icon {
+                                source: Store.used-up-open ? @image-url("../icons/chevron-up.svg") : @image-url("../icons/chevron-down.svg");
+                                color: Theme.text-muted;
+                                width: 18px;
+                                height: 18px;
+                            }
+                        }
+                        Rectangle { }
+                    }
+                    TouchArea {
+                        clicked => { Store.used-up-open = !Store.used-up-open; }
+                    }
+                }
+                if Store.used-up-open: VerticalLayout {
+                    spacing: Theme.spacing;
+                    for yarn in Store.used-up-yarns: YarnCard {
+                        yarn: yarn;
+                        clicked => {
+                            Store.edited-yarn = yarn;
+                            Store.dialog = DialogKind.edit-yarn;
+                        }
+                    }
+                }
             }
         }
 
-        if Store.yarns.length == 0: VerticalLayout {
+        if Store.yarns.length + Store.used-up-yarns.length == 0: VerticalLayout {
             vertical-stretch: 1;
             alignment: center;
             padding: 40px;
@@ -310,8 +364,8 @@ export component YarnDialog inherits Sheet {
     }
     quantity := Field {
         label: @tr("Skeins");
-        placeholder: @tr("Skeins (1 if empty)");
-        input-type: InputType.number;
+        placeholder: @tr("Skeins, e.g. 2.5 (1 if empty)");
+        input-type: InputType.decimal;
         accepted => { root.submit(); }
     }
 }

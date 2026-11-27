@@ -24,6 +24,7 @@
 <li>Large buttons for one-handed use, count with the volume keys, the screen stays on while you work</li>
 <li>Yarn stash with brand, color, dye lot, fiber and the skeins left</li>
 <li>Crochet hooks by size, with the US size added</li>
+<li>Yarn and hooks per project; what is used (in skeins or grams) comes out of the stash</li>
 <li>Backup and restore of all data as a ZIP file, e.g. when you switch phones</li>
 <li>Light and dark mode, English and German, works with TalkBack</li>
 </ul>
