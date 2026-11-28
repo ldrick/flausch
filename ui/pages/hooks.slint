@@ -1,6 +1,6 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind, HookItem, UsHookSize } from "../store.slint";
-import { ButtonKind, Card, Field, Icon, PillButton, Sheet, TopBar } from "../components.slint";
+import { ButtonKind, Card, Field, Icon, PillButton, Sheet, Suggestions, TopBar } from "../components.slint";
 
 export global HookText {
     // "US E-4", "US 8 (steel)", or empty without a US size.
@@ -256,14 +256,49 @@ export component HookDialog inherits Sheet {
         accessible-role: text;
         accessible-label: self.text;
     }
+    // Brand and type suggest those of the other hooks, as most come in many sizes.
     brand := Field {
         label: @tr("Brand");
         placeholder: @tr("Brand, e.g. Clover");
         accepted => { kind.focus-input(); }
+        changed has-focus => {
+            if self.has-focus {
+                Store.suggest-hook-brand(self.text);
+            }
+        }
+        changed text => {
+            if self.has-focus {
+                Store.suggest-hook-brand(self.text);
+            }
+        }
+    }
+    if brand.has-focus && Store.suggestions.length > 0: Suggestions {
+        items: Store.suggestions;
+        pick(brand-name) => {
+            brand.text = brand-name;
+            kind.focus-input();
+        }
     }
     kind := Field {
         label: @tr("Type");
         placeholder: @tr("Type, e.g. ergonomic or Tunisian");
         accepted => { root.submit(); }
+        changed has-focus => {
+            if self.has-focus {
+                Store.suggest-hook-kind(brand.text, self.text);
+            }
+        }
+        changed text => {
+            if self.has-focus {
+                Store.suggest-hook-kind(brand.text, self.text);
+            }
+        }
+    }
+    if kind.has-focus && Store.suggestions.length > 0: Suggestions {
+        items: Store.suggestions;
+        pick(kind-name) => {
+            kind.text = kind-name;
+            kind.focus-input();
+        }
     }
 }

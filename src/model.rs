@@ -327,21 +327,61 @@ impl ProjectYarn {
     }
 }
 
-/// What the yarn form sets. Text is trimmed; empty fields and zeros mean unknown.
+/// What the form of a yarn line sets. Text is trimmed; empty fields and zeros mean unknown.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct YarnSpec<'a> {
+pub struct YarnLineSpec<'a> {
     pub brand: &'a str,
     pub name: &'a str,
-    pub color: &'a str,
-    pub dye_lot: &'a str,
     pub fiber: &'a str,
     /// Grams per skein.
     pub weight: Option<u32>,
     /// Meters per skein.
     pub length: Option<u32>,
-    /// What is in the stash, in units of this spec's weight (`units_per_skein`).
+    /// The hook sizes the maker suggests, in hundredths of a millimeter; one of them for a single size.
+    pub hooks: (Option<u32>, Option<u32>),
+    pub notes: &'a str,
+}
+
+/// What the form of a color sets. Text is trimmed.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct YarnSpec<'a> {
+    pub color: &'a str,
+    pub color_code: &'a str,
+    /// A key from `SWATCHES`.
+    pub swatch: Option<&'a str>,
+    pub notes: &'a str,
+    /// What is in the stash, in units of the line's weight (`units_per_skein`).
     pub amount: u32,
 }
+
+/// The colors of the swatch palette, in the order the form shows them. The keys are stored, so the
+/// palette can change; the UI has the colors in the same order (`Theme.yarn-colors`).
+pub const SWATCHES: [&str; 24] = [
+    "white",
+    "cream",
+    "beige",
+    "camel",
+    "brown",
+    "black",
+    "light-grey",
+    "grey",
+    "yellow",
+    "mustard",
+    "orange",
+    "coral",
+    "red",
+    "burgundy",
+    "light-pink",
+    "pink",
+    "lilac",
+    "purple",
+    "light-blue",
+    "blue",
+    "navy",
+    "turquoise",
+    "green",
+    "olive",
+];
 
 /// Yarn is counted in grams if the weight of a skein is known, else in tenths of a skein. Returns how
 /// many of these units make a skein.
@@ -358,20 +398,16 @@ fn convert_units(units: u32, from: u32, to: u32) -> u32 {
     u32::try_from(units).unwrap_or(u32::MAX)
 }
 
-/// A yarn in the stash: one color (and dye lot) of a yarn line.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Yarn {
+/// A yarn line in the stash, e.g. Schachenmayr Catania: what all its colors share. Without brand and
+/// name, it collects leftovers nobody knows more about (there is only one such line).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct YarnLine {
     pub id: u64,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub brand: String,
-    /// The yarn line, e.g. "Catania".
+    /// The name of the yarn, e.g. "Catania".
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
-    /// Color name or number.
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub color: String,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub dye_lot: String,
     /// Fiber content, e.g. "100% cotton".
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub fiber: String,
@@ -381,6 +417,74 @@ pub struct Yarn {
     /// Meters per skein.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub length: Option<u32>,
+    /// The hook sizes the maker suggests, from the smallest, in hundredths of a millimeter (equal for
+    /// a single size).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hooks: Option<(u32, u32)>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub notes: String,
+    /// Unix timestamp in seconds.
+    #[serde(default)]
+    pub created: u64,
+}
+
+impl YarnLine {
+    fn edit(&mut self, spec: &YarnLineSpec) {
+        self.brand = clean_name(spec.brand);
+        self.name = clean_name(spec.name);
+        self.fiber = clean_name(spec.fiber);
+        self.weight = spec.weight.filter(|w| *w > 0);
+        self.length = spec.length.filter(|l| *l > 0);
+        let (from, to) = (valid_hook_size(spec.hooks.0), valid_hook_size(spec.hooks.1));
+        self.hooks = match (from.or(to), to.or(from)) {
+            (Some(a), Some(b)) => Some((a.min(b), a.max(b))),
+            _ => None,
+        };
+        self.notes = spec.notes.trim().to_string();
+    }
+
+    /// Brand and name, e.g. "Schachenmayr Catania"; empty for leftovers.
+    pub fn title(&self) -> String {
+        [self.brand.as_str(), self.name.as_str()]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    /// Units (grams or tenths) per skein.
+    pub fn unit(&self) -> u32 {
+        units_per_skein(self.weight)
+    }
+
+    /// Case-insensitive search in brand, name, fiber and notes.
+    pub fn matches(&self, query: &str) -> bool {
+        contains(&[&self.brand, &self.name, &self.fiber, &self.notes], query)
+    }
+
+    fn is_named(&self, brand: &str, name: &str) -> bool {
+        same_name(&self.brand, brand) && same_name(&self.name, name)
+    }
+}
+
+/// One color of a yarn line in the stash.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Yarn {
+    pub id: u64,
+    /// The `YarnLine` it belongs to.
+    #[serde(default)]
+    pub line: u64,
+    /// Color name.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub color: String,
+    /// The maker's color number, e.g. "112".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub color_code: String,
+    /// A key from `SWATCHES`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub swatch: Option<String>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub notes: String,
     /// Full skeins in the stash.
     #[serde(default)]
     pub quantity: u32,
@@ -391,6 +495,20 @@ pub struct Yarn {
     /// Unix timestamp in seconds.
     #[serde(default)]
     pub created: u64,
+    /// The line's grams per skein, which set the units; `Library` keeps it in sync.
+    #[serde(skip)]
+    weight: Option<u32>,
+    /// Development builds kept everything in the yarn; `Library::migrate` makes lines of it.
+    #[serde(default, skip_serializing)]
+    brand: String,
+    #[serde(default, skip_serializing)]
+    name: String,
+    #[serde(default, skip_serializing)]
+    fiber: String,
+    #[serde(default, skip_serializing, rename = "weight")]
+    legacy_weight: Option<u32>,
+    #[serde(default, skip_serializing)]
+    length: Option<u32>,
 }
 
 impl Yarn {
@@ -417,29 +535,39 @@ impl Yarn {
         self.weight.map(|_| self.units())
     }
 
+    /// Whether the weight of a skein is known, so it can be counted in grams.
+    pub fn has_weight(&self) -> bool {
+        self.weight.is_some()
+    }
+
     /// Nothing left in the stash.
     pub fn used_up(&self) -> bool {
         self.units() == 0
     }
 
     fn edit(&mut self, spec: &YarnSpec) {
-        self.brand = clean_name(spec.brand);
-        self.name = clean_name(spec.name);
         self.color = clean_name(spec.color);
-        self.dye_lot = clean_name(spec.dye_lot);
-        self.fiber = clean_name(spec.fiber);
-        self.weight = spec.weight.filter(|w| *w > 0);
-        self.length = spec.length.filter(|l| *l > 0);
+        self.color_code = clean_name(spec.color_code);
+        self.swatch = spec
+            .swatch
+            .filter(|s| SWATCHES.contains(s))
+            .map(str::to_string);
+        self.notes = spec.notes.trim().to_string();
         self.set_units(spec.amount);
     }
 
-    /// Brand and yarn line, e.g. "Schachenmayr Catania".
-    pub fn title(&self) -> String {
-        [self.brand.as_str(), self.name.as_str()]
+    /// Color name and number, e.g. "Black 112".
+    pub fn label(&self) -> String {
+        [self.color.as_str(), self.color_code.as_str()]
             .into_iter()
             .filter(|s| !s.is_empty())
             .collect::<Vec<_>>()
             .join(" ")
+    }
+
+    /// Case-insensitive search in the color name, number and notes.
+    pub fn matches(&self, query: &str) -> bool {
+        contains(&[&self.color, &self.color_code, &self.notes], query)
     }
 }
 
@@ -560,7 +688,9 @@ pub struct Library {
     pub projects: Vec<Project>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub folders: Vec<Folder>,
-    /// The yarn stash.
+    /// The yarn stash: yarn lines and their colors.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub yarn_lines: Vec<YarnLine>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub yarns: Vec<Yarn>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -574,6 +704,7 @@ impl Default for Library {
             next_id: 1,
             projects: Vec::new(),
             folders: Vec::new(),
+            yarn_lines: Vec::new(),
             yarns: Vec::new(),
             hooks: Vec::new(),
         }
@@ -606,6 +737,7 @@ impl Library {
                 self.projects[i].folder = None;
             }
         }
+        self.migrate_yarn_lines();
         // Links to yarns and hooks that are gone.
         let yarns: Vec<u64> = self.yarns.iter().map(|y| y.id).collect();
         let hooks: Vec<u64> = self.hooks.iter().map(|h| h.id).collect();
@@ -825,48 +957,119 @@ impl Library {
             .count()
     }
 
-    #[cfg(test)]
+    /// Development builds kept brand, name, fiber and skein size in each yarn: those with the same
+    /// make one line now. Also, a number as the color was the color number.
+    fn migrate_yarn_lines(&mut self) {
+        for i in 0..self.yarns.len() {
+            let yarn = &mut self.yarns[i];
+            if yarn.color_code.is_empty()
+                && !yarn.color.is_empty()
+                && yarn.color.chars().all(|c| c.is_ascii_digit())
+            {
+                yarn.color_code = std::mem::take(&mut yarn.color);
+            }
+            let line = yarn.line;
+            if self.yarn_line(line).is_some() {
+                continue;
+            }
+            let yarn = &mut self.yarns[i];
+            let (brand, name, fiber) = (
+                std::mem::take(&mut yarn.brand),
+                std::mem::take(&mut yarn.name),
+                std::mem::take(&mut yarn.fiber),
+            );
+            let weight = yarn.legacy_weight.take().filter(|w| *w > 0);
+            let (length, created) = (yarn.length.take(), yarn.created);
+            let found = self
+                .yarn_lines
+                .iter()
+                .find(|l| l.is_named(&brand, &name) && l.weight == weight)
+                .map(|l| l.id);
+            let line = found.unwrap_or_else(|| {
+                let id = self.next_id();
+                let mut line = YarnLine {
+                    id,
+                    created,
+                    ..YarnLine::default()
+                };
+                line.edit(&YarnLineSpec {
+                    brand: &brand,
+                    name: &name,
+                    fiber: &fiber,
+                    weight,
+                    length,
+                    ..YarnLineSpec::default()
+                });
+                self.yarn_lines.push(line);
+                id
+            });
+            self.yarns[i].line = line;
+        }
+        self.sync_weights();
+    }
+
+    /// Copies the weight of each line into its colors, which count in its units.
+    fn sync_weights(&mut self) {
+        for i in 0..self.yarns.len() {
+            self.yarns[i].weight = self.yarn_line(self.yarns[i].line).and_then(|l| l.weight);
+        }
+    }
+
     pub fn yarn(&self, id: u64) -> Option<&Yarn> {
         self.yarns.iter().find(|y| y.id == id)
     }
 
-    /// Adds a yarn to the stash unless brand, name and color are all empty.
-    pub fn add_yarn(&mut self, spec: &YarnSpec, now: u64) -> Option<u64> {
-        if !has_yarn_name(spec) {
-            return None;
-        }
-        let id = self.next_id();
-        let mut yarn = Yarn {
-            id,
-            brand: String::new(),
-            name: String::new(),
-            color: String::new(),
-            dye_lot: String::new(),
-            fiber: String::new(),
-            weight: None,
-            length: None,
-            quantity: 0,
-            opened: 0,
-            created: now,
-        };
-        yarn.edit(spec);
-        self.yarns.push(yarn);
-        Some(id)
+    pub fn yarn_line(&self, id: u64) -> Option<&YarnLine> {
+        self.yarn_lines.iter().find(|l| l.id == id)
     }
 
-    /// Changes a yarn; like `add_yarn`, it needs a brand, name or color.
-    pub fn edit_yarn(&mut self, id: u64, spec: &YarnSpec) -> bool {
-        if !has_yarn_name(spec) {
-            return false;
+    /// Adds a yarn line, or finds the one with the same brand and name (also the one for leftovers,
+    /// without either).
+    pub fn add_yarn_line(&mut self, spec: &YarnLineSpec, now: u64) -> u64 {
+        if let Some(line) = self
+            .yarn_lines
+            .iter()
+            .find(|l| l.is_named(spec.brand, spec.name))
+        {
+            return line.id;
         }
-        let Some(yarn) = self.yarns.iter_mut().find(|y| y.id == id) else {
+        let id = self.next_id();
+        let mut line = YarnLine {
+            id,
+            created: now,
+            ..YarnLine::default()
+        };
+        line.edit(spec);
+        self.yarn_lines.push(line);
+        id
+    }
+
+    /// Changes a yarn line. With a new weight, the amounts of its colors, in the stash and in
+    /// projects, change their units, too.
+    pub fn edit_yarn_line(&mut self, id: u64, spec: &YarnLineSpec) -> bool {
+        let Some(line) = self.yarn_lines.iter_mut().find(|l| l.id == id) else {
             return false;
         };
-        let (from, to) = (yarn.unit(), units_per_skein(spec.weight));
-        yarn.edit(spec);
-        // With a new weight, what projects used changes its units, too.
+        let from = line.unit();
+        line.edit(spec);
+        let (to, weight) = (line.unit(), line.weight);
+        let colors: Vec<u64> = self
+            .yarns
+            .iter()
+            .filter(|y| y.line == id)
+            .map(|y| y.id)
+            .collect();
+        for yarn in self.yarns.iter_mut().filter(|y| y.line == id) {
+            let units = convert_units(yarn.units(), from, to);
+            yarn.weight = weight;
+            yarn.set_units(units);
+        }
         for project in &mut self.projects {
-            for used in project.yarns.iter_mut().filter(|u| u.yarn == id) {
+            for used in project
+                .yarns
+                .iter_mut()
+                .filter(|u| colors.contains(&u.yarn))
+            {
                 let units = convert_units(used.units(from), from, to);
                 used.set_units(units, to);
             }
@@ -874,7 +1077,63 @@ impl Library {
         true
     }
 
-    /// Removes a yarn from the stash and from the projects that use it.
+    /// Removes a yarn line with its colors, also from the projects.
+    pub fn remove_yarn_line(&mut self, id: u64) -> Option<YarnLine> {
+        let index = self.yarn_lines.iter().position(|l| l.id == id)?;
+        let colors: Vec<u64> = self
+            .yarns
+            .iter()
+            .filter(|y| y.line == id)
+            .map(|y| y.id)
+            .collect();
+        for color in colors {
+            self.remove_yarn(color);
+        }
+        Some(self.yarn_lines.remove(index))
+    }
+
+    /// Adds a color to a yarn line unless the line is missing or the color has neither name nor
+    /// number.
+    pub fn add_yarn(&mut self, line: u64, spec: &YarnSpec, now: u64) -> Option<u64> {
+        let weight = self.yarn_line(line)?.weight;
+        if !has_color(spec) {
+            return None;
+        }
+        let id = self.next_id();
+        let mut yarn = Yarn {
+            id,
+            line,
+            created: now,
+            weight,
+            ..Yarn::default()
+        };
+        yarn.edit(spec);
+        self.yarns.push(yarn);
+        Some(id)
+    }
+
+    /// Changes a color; like `add_yarn`, it needs a name or number.
+    pub fn edit_yarn(&mut self, id: u64, spec: &YarnSpec) -> bool {
+        if !has_color(spec) {
+            return false;
+        }
+        self.yarns
+            .iter_mut()
+            .find(|y| y.id == id)
+            .map(|y| y.edit(spec))
+            .is_some()
+    }
+
+    /// Sets what is in the stash of a color, in its units.
+    pub fn set_yarn_units(&mut self, id: u64, units: u32) -> bool {
+        self.yarns
+            .iter_mut()
+            .find(|y| y.id == id)
+            .map(|y| y.set_units(units))
+            .is_some()
+    }
+
+    /// Removes a color from the stash and from the projects that use it.
     pub fn remove_yarn(&mut self, id: u64) -> Option<Yarn> {
         let index = self.yarns.iter().position(|y| y.id == id)?;
         for project in &mut self.projects {
@@ -938,18 +1197,52 @@ impl Library {
         projects
     }
 
-    /// The stash by brand, yarn line and color.
+    /// The yarn lines by brand and name, leftovers first.
+    pub fn sorted_yarn_lines(&self) -> Vec<&YarnLine> {
+        let mut lines: Vec<_> = self.yarn_lines.iter().collect();
+        lines.sort_by_cached_key(|l| (l.brand.to_lowercase(), l.name.to_lowercase(), l.id));
+        lines
+    }
+
+    /// The colors of a yarn line, by number (numerically where it is one), then by name.
+    pub fn line_colors(&self, line: u64) -> Vec<&Yarn> {
+        let mut colors: Vec<_> = self.yarns.iter().filter(|y| y.line == line).collect();
+        colors.sort_by_cached_key(|y| (color_key(y), y.id));
+        colors
+    }
+
+    /// All colors, line by line as `sorted_yarn_lines` and `line_colors` sort them.
     pub fn sorted_yarns(&self) -> Vec<&Yarn> {
-        let mut yarns: Vec<_> = self.yarns.iter().collect();
-        yarns.sort_by_cached_key(|y| {
-            (
-                y.brand.to_lowercase(),
-                y.name.to_lowercase(),
-                y.color.to_lowercase(),
-                y.id,
-            )
-        });
-        yarns
+        self.sorted_yarn_lines()
+            .into_iter()
+            .flat_map(|l| self.line_colors(l.id))
+            .collect()
+    }
+
+    /// The brands in the stash, by name. Spelled as most lines spell them.
+    pub fn brands(&self) -> Vec<String> {
+        common_spellings(self.yarn_lines.iter().map(|l| l.brand.as_str()))
+    }
+
+    /// The brands of the hooks, like [`Library::brands`] for yarn.
+    pub fn hook_brands(&self) -> Vec<String> {
+        common_spellings(self.hooks.iter().map(|h| h.brand.as_str()))
+    }
+
+    /// The types of the hooks: those of hooks by `brand` if there are any, else all.
+    pub fn hook_kinds(&self, brand: &str) -> Vec<String> {
+        let brand = brand.trim().to_lowercase();
+        let of_brand = || {
+            self.hooks
+                .iter()
+                .filter(|h| h.brand.to_lowercase() == brand)
+        };
+        let kinds = common_spellings(of_brand().map(|h| h.kind.as_str()));
+        if kinds.is_empty() {
+            common_spellings(self.hooks.iter().map(|h| h.kind.as_str()))
+        } else {
+            kinds
+        }
     }
 
     #[cfg(test)]
@@ -1084,10 +1377,31 @@ fn progress_key(project: &Project) -> Option<u64> {
     (total > 0).then(|| u64::from(done) * 1000 / u64::from(total))
 }
 
-fn has_yarn_name(spec: &YarnSpec) -> bool {
-    [spec.brand, spec.name, spec.color]
+fn has_color(spec: &YarnSpec) -> bool {
+    [spec.color, spec.color_code]
         .iter()
         .any(|s| !s.trim().is_empty())
+}
+
+/// Sorts colors by number (numerically where it is one), then by name; colors without a number last.
+fn color_key(yarn: &Yarn) -> (bool, u64, String, String) {
+    (
+        yarn.color_code.is_empty(),
+        yarn.color_code.parse().unwrap_or(u64::MAX),
+        yarn.color_code.to_lowercase(),
+        yarn.color.to_lowercase(),
+    )
+}
+
+/// Case-insensitive search in some texts.
+fn contains(texts: &[&String], query: &str) -> bool {
+    let query = query.trim().to_lowercase();
+    query.is_empty() || texts.iter().any(|s| s.to_lowercase().contains(&query))
+}
+
+/// Equal names, ignoring case and extra spaces.
+pub fn same_name(a: &str, b: &str) -> bool {
+    clean_name(a).to_lowercase() == clean_name(b).to_lowercase()
 }
 
 fn clean_name(name: &str) -> String {
@@ -1180,6 +1494,27 @@ impl Default for Settings {
             project_sort: ProjectSort::default(),
         }
     }
+}
+
+/// The distinct non-empty names, ignoring case, sorted, each in the spelling used most.
+fn common_spellings<'a>(names: impl Iterator<Item = &'a str>) -> Vec<String> {
+    let mut seen: BTreeMap<String, BTreeMap<&str, usize>> = BTreeMap::new();
+    for name in names.filter(|n| !n.is_empty()) {
+        *seen
+            .entry(name.to_lowercase())
+            .or_default()
+            .entry(name)
+            .or_default() += 1;
+    }
+    seen.into_values()
+        .filter_map(|spellings| {
+            let (name, _) = spellings
+                .into_iter()
+                .rev()
+                .max_by_key(|(_, count)| *count)?;
+            Some(name.to_string())
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -1412,70 +1747,109 @@ mod tests {
         assert_eq!(again, lib);
     }
 
+    /// A yarn line for tests.
+    fn add_line(lib: &mut Library, brand: &str, name: &str, weight: Option<u32>) -> u64 {
+        let spec = YarnLineSpec {
+            brand,
+            name,
+            weight,
+            ..YarnLineSpec::default()
+        };
+        lib.add_yarn_line(&spec, 1)
+    }
+
+    /// A color for tests.
+    fn add_color(lib: &mut Library, line: u64, color: &str, amount: u32) -> u64 {
+        let spec = YarnSpec {
+            color,
+            amount,
+            ..YarnSpec::default()
+        };
+        lib.add_yarn(line, &spec, 1).unwrap()
+    }
+
     #[test]
-    fn the_stash_holds_yarns() {
+    fn the_stash_holds_yarn_lines_with_colors() {
         let mut lib = Library::default();
         let hat = lib.create("Hat", 1);
-        let spec = YarnSpec {
+        let spec = YarnLineSpec {
             brand: " Schachenmayr ",
             name: "Catania",
-            color: "Rosa  0222",
-            dye_lot: "4711",
             fiber: "100% cotton",
             weight: Some(50),
             length: Some(125),
-            // In grams, since the weight is known.
-            amount: 170,
+            // In any order.
+            hooks: (Some(400), Some(250)),
+            notes: " Soft\n",
         };
-        let catania = lib.add_yarn(&spec, 5).unwrap();
+        let catania = lib.add_yarn_line(&spec, 5);
         assert_ne!(catania, hat, "ids are shared with projects");
-        let yarn = lib.yarn(catania).unwrap();
-        assert_eq!(yarn.title(), "Schachenmayr Catania");
-        assert_eq!(yarn.color, "Rosa 0222");
+        let line = lib.yarn_line(catania).unwrap();
+        assert_eq!(line.title(), "Schachenmayr Catania");
         assert_eq!(
-            (yarn.weight, yarn.length, yarn.quantity, yarn.opened),
-            (Some(50), Some(125), 3, 20)
+            (line.hooks, line.notes.as_str()),
+            (Some((250, 400)), "Soft")
+        );
+        // One size, and sizes that aren't hook sizes.
+        for (hooks, expected) in [
+            ((None, Some(350)), Some((350, 350))),
+            ((Some(0), Some(350)), Some((350, 350))),
+            ((Some(0), None), None),
+        ] {
+            assert!(lib.edit_yarn_line(catania, &YarnLineSpec { hooks, ..spec }));
+            assert_eq!(lib.yarn_line(catania).unwrap().hooks, expected);
+        }
+        // The same brand and name find the line.
+        let again = YarnLineSpec {
+            brand: "schachenmayr",
+            name: " CATANIA",
+            ..YarnLineSpec::default()
+        };
+        assert_eq!(lib.add_yarn_line(&again, 6), catania);
+
+        let spec = YarnSpec {
+            color: "Rosa  ",
+            color_code: "0222",
+            // In grams, since the line's weight is known.
+            amount: 170,
+            ..YarnSpec::default()
+        };
+        let rosa = lib.add_yarn(catania, &spec, 5).unwrap();
+        let yarn = lib.yarn(rosa).unwrap();
+        assert_eq!(yarn.label(), "Rosa 0222");
+        assert_eq!(
+            (yarn.quantity, yarn.opened, yarn.grams()),
+            (3, 20, Some(170))
         );
 
-        // Only a color is enough, but nothing at all is not.
-        let blue = lib
-            .add_yarn(
-                &YarnSpec {
-                    color: "Blue",
-                    weight: Some(0),
-                    ..YarnSpec::default()
-                },
-                6,
-            )
-            .unwrap();
-        assert_eq!(lib.yarn(blue).unwrap().weight, None, "0 g means unknown");
-        assert_eq!(lib.yarn(blue).unwrap().title(), "");
-        assert_eq!(
-            lib.add_yarn(
-                &YarnSpec {
-                    fiber: "Wool",
-                    ..YarnSpec::default()
-                },
-                7
-            ),
-            None
-        );
-        assert!(!lib.edit_yarn(blue, &YarnSpec::default()));
+        // A name or a number is needed, and a line.
+        assert_eq!(lib.add_yarn(catania, &YarnSpec::default(), 7), None);
+        assert_eq!(lib.add_yarn(99, &spec, 7), None);
+        assert!(!lib.edit_yarn(rosa, &YarnSpec::default()));
+        assert!(lib.set_yarn_units(rosa, 100));
+        assert_eq!(lib.yarn(rosa).unwrap().units(), 100);
 
+        // Leftovers: one line without brand and name, first in the list.
+        let other = add_line(&mut lib, "", "", Some(0));
+        assert_eq!(
+            lib.yarn_line(other).unwrap().weight,
+            None,
+            "0 g means unknown"
+        );
+        assert_eq!(add_line(&mut lib, " ", "", None), other);
+        let green = add_color(&mut lib, other, "Green", 10);
+        let lines: Vec<_> = lib.sorted_yarn_lines().iter().map(|l| l.id).collect();
+        assert_eq!(lines, [other, catania]);
         let sorted: Vec<_> = lib.sorted_yarns().iter().map(|y| y.id).collect();
-        assert_eq!(sorted, [blue, catania], "no brand comes first");
+        assert_eq!(sorted, [green, rosa]);
 
-        assert!(lib.edit_yarn(
-            catania,
-            &YarnSpec {
-                amount: 100,
-                ..spec
-            }
-        ));
-        assert_eq!(lib.yarn(catania).unwrap().units(), 100);
-        assert!(lib.remove_yarn(catania).is_some());
-        assert!(lib.yarn(catania).is_none());
-        assert!(!lib.edit_yarn(catania, &spec));
+        // Deleting a line deletes its colors, also in projects.
+        lib.set_project_yarn(hat, rosa, 50, 8);
+        assert!(lib.remove_yarn_line(catania).is_some());
+        assert!(lib.yarn(rosa).is_none());
+        assert_eq!(lib.get(hat).unwrap().yarns, []);
+        assert!(lib.remove_yarn(green).is_some());
+        assert!(!lib.edit_yarn(green, &spec));
     }
 
     #[test]
@@ -1578,16 +1952,8 @@ mod tests {
         let hat = lib.create("Hat", 1);
         let scarf = lib.create("Scarf", 1);
         // No weight: counted in tenths of a skein.
-        let catania = lib
-            .add_yarn(
-                &YarnSpec {
-                    name: "Catania",
-                    amount: 30,
-                    ..YarnSpec::default()
-                },
-                1,
-            )
-            .unwrap();
+        let line = add_line(&mut lib, "", "Catania", None);
+        let catania = add_color(&mut lib, line, "Rosa", 30);
         let stash = |lib: &Library| lib.yarn(catania).unwrap().units();
         let used = |lib: &mut Library, project, units| {
             lib.set_project_yarn(project, catania, units, 5)
@@ -1626,12 +1992,9 @@ mod tests {
     fn yarn_with_a_weight_is_counted_in_grams() {
         let mut lib = Library::default();
         let hat = lib.create("Hat", 1);
-        let spec = YarnSpec {
-            name: "Paris",
-            amount: 24,
-            ..YarnSpec::default()
-        };
-        let paris = lib.add_yarn(&spec, 1).unwrap();
+        let line = add_line(&mut lib, "Drops", "Paris", None);
+        let paris = add_color(&mut lib, line, "Black", 24);
+        let white = add_color(&mut lib, line, "White", 10);
         lib.set_project_yarn(hat, paris, 10, 2);
         let stash = |lib: &Library| {
             let y = lib.yarn(paris).unwrap();
@@ -1639,22 +2002,24 @@ mod tests {
         };
         assert_eq!(stash(&lib), (1, 4, None), "1.4 skeins");
 
-        // The weight becomes known: what the hat used turns into grams, too.
-        assert!(lib.edit_yarn(
-            paris,
-            &YarnSpec {
-                weight: Some(50),
-                amount: 70,
-                ..spec
-            }
-        ));
+        // The weight of the line becomes known: all its colors and what the hat used turn into
+        // grams.
+        let spec = YarnLineSpec {
+            brand: "Drops",
+            name: "Paris",
+            weight: Some(50),
+            ..YarnLineSpec::default()
+        };
+        assert!(lib.edit_yarn_line(line, &spec));
         assert_eq!(stash(&lib), (1, 20, Some(70)));
+        assert_eq!(lib.yarn(white).unwrap().grams(), Some(50));
         assert_eq!(lib.get(hat).unwrap().yarns[0].units(50), 50);
 
         let used = lib.set_project_yarn(hat, paris, 83, 3).unwrap();
         assert_eq!((used.skeins, used.opened), (1, 33));
         assert_eq!(stash(&lib), (0, 37, Some(37)));
         assert_eq!(convert_units(83, 50, 10), 17, "1.66 skeins are 1.7");
+        assert!(!lib.edit_yarn_line(99, &spec));
     }
 
     #[test]
@@ -1688,16 +2053,8 @@ mod tests {
         let hat = lib.create("Hat", 1);
         let json = serde_json::to_string(&lib).unwrap();
         assert!(!json.contains("hooks"), "{json}");
-        let yarn = lib
-            .add_yarn(
-                &YarnSpec {
-                    color: "Blue",
-                    amount: 20,
-                    ..YarnSpec::default()
-                },
-                1,
-            )
-            .unwrap();
+        let line = add_line(&mut lib, "", "", None);
+        let yarn = add_color(&mut lib, line, "Blue", 20);
         let hook = lib
             .add_hook(
                 &HookSpec {
@@ -1717,6 +2074,7 @@ mod tests {
         // E.g. edited by hand: links to a yarn or hook that is gone are dropped.
         let mut broken: Library = serde_json::from_str(&json).unwrap();
         broken.yarns.clear();
+        broken.yarn_lines.clear();
         broken.hooks.clear();
         broken.migrate();
         let project = broken.get(hat).unwrap();
@@ -1728,23 +2086,23 @@ mod tests {
         let mut lib = Library::default();
         lib.create("Hat", 1);
         let json = serde_json::to_string(&lib).unwrap();
-        assert!(!json.contains("yarns"), "{json}");
+        assert!(!json.contains("yarn"), "{json}");
 
-        let spec = YarnSpec {
-            name: "Catania",
-            weight: Some(50),
-            amount: 50,
-            ..YarnSpec::default()
-        };
-        lib.add_yarn(&spec, 2);
+        let catania = add_line(&mut lib, "", "Catania", Some(50));
+        add_color(&mut lib, catania, "Rosa", 50);
         let json = serde_json::to_string(&lib).unwrap();
         assert!(
-            !json.contains("dye_lot"),
+            !json.contains("brand") && !json.contains("color_code"),
             "empty fields are left out: {json}"
+        );
+        assert!(
+            !json.contains("\"weight\":50,\"quantity"),
+            "the weight is the line's: {json}"
         );
         let mut again: Library = serde_json::from_str(&json).unwrap();
         again.migrate();
         assert_eq!(again, lib);
+        assert_eq!(again.yarns[0].grams(), Some(50));
     }
 
     #[test]
@@ -1756,6 +2114,171 @@ mod tests {
         lib.migrate();
         assert_eq!(lib.get(1).unwrap().folder, None);
         assert_eq!(lib.get(3).unwrap().folder, Some(2));
+    }
+
+    #[test]
+    fn migrate_makes_yarn_lines() {
+        // Development builds kept everything in the yarn.
+        let json = r#"{"version":2,"next_id":6,"projects":[
+            {"id":5,"name":"Hat","created":0,"updated":0,"yarns":[{"yarn":2,"skeins":1}]}],"yarns":[
+            {"id":1,"brand":"Drops","name":"Paris","color":"001","fiber":"Cotton","weight":50,"quantity":2},
+            {"id":2,"brand":"drops","name":"paris","color":"Black 112","weight":50,"opened":20},
+            {"id":3,"brand":"Drops","name":"Paris","color":"7","color_code":"8"},
+            {"id":4,"color":"Green","quantity":1}]}"#;
+        let mut lib: Library = serde_json::from_str(json).unwrap();
+        lib.migrate();
+        let lines: Vec<_> = lib
+            .sorted_yarn_lines()
+            .iter()
+            .map(|l| (l.title(), l.fiber.as_str(), l.weight))
+            .collect();
+        // Without the same weight, they don't share the units, so they stay apart.
+        assert_eq!(
+            lines,
+            [
+                (String::new(), "", None),
+                ("Drops Paris".to_string(), "Cotton", Some(50)),
+                ("Drops Paris".to_string(), "", None),
+            ]
+        );
+        let colors: Vec<_> = lib
+            .sorted_yarns()
+            .iter()
+            .map(|y| (y.color.as_str(), y.color_code.as_str(), y.units()))
+            .collect();
+        // A number as the color is the color number.
+        assert_eq!(
+            colors,
+            [
+                ("Green", "", 10),
+                ("", "001", 100),
+                ("Black 112", "", 20),
+                ("7", "8", 0)
+            ]
+        );
+        assert_eq!(lib.yarns[0].line, lib.yarns[1].line);
+        assert_eq!(lib.get(5).unwrap().yarns[0].units(50), 50);
+        assert!(lib.next_id > 6);
+
+        let json = serde_json::to_string(&lib).unwrap();
+        let mut again: Library = serde_json::from_str(&json).unwrap();
+        again.migrate();
+        assert_eq!(again, lib, "only once");
+    }
+
+    #[test]
+    fn yarns_keep_a_swatch_and_a_color_number() {
+        let mut lib = Library::default();
+        let line = add_line(&mut lib, "Drops", "Paris", None);
+        let spec = YarnSpec {
+            color: "Black",
+            color_code: " 112 ",
+            swatch: Some("black"),
+            ..YarnSpec::default()
+        };
+        let black = lib.add_yarn(line, &spec, 1).unwrap();
+        let yarn = lib.yarn(black).unwrap();
+        assert_eq!(
+            (yarn.color_code.as_str(), yarn.swatch.as_deref()),
+            ("112", Some("black"))
+        );
+        let json = serde_json::to_string(&lib).unwrap();
+        let again: Library = serde_json::from_str(&json).unwrap();
+        assert_eq!(again, lib);
+
+        // Unknown swatches are dropped; a number alone names a color.
+        let spec = YarnSpec {
+            color_code: "001",
+            swatch: Some("chartreuse"),
+            ..YarnSpec::default()
+        };
+        assert!(lib.edit_yarn(black, &spec));
+        assert_eq!(lib.yarn(black).unwrap().swatch, None);
+    }
+
+    #[test]
+    fn yarns_match_a_search() {
+        let line = YarnLine {
+            brand: "Drops".into(),
+            name: "Paris".into(),
+            fiber: "Cotton".into(),
+            notes: "Soft".into(),
+            ..YarnLine::default()
+        };
+        for query in ["", " drops ", "PAR", "cott", "soft"] {
+            assert!(line.matches(query), "{query}");
+        }
+        assert!(!line.matches("wool"));
+        let yarn = Yarn {
+            color: "Black".into(),
+            color_code: "112".into(),
+            notes: "For skin".into(),
+            ..Yarn::default()
+        };
+        for query in ["", "black", "11", "skin"] {
+            assert!(yarn.matches(query), "{query}");
+        }
+        assert!(!yarn.matches("drops"));
+    }
+
+    #[test]
+    fn hook_brands_and_kinds_are_suggested() {
+        let mut lib = Library::default();
+        for (size, brand, kind) in [
+            (300, "Clover", "Amour"),
+            (350, "clover", "Amour"),
+            (400, "Clover", "Soft Touch"),
+            (450, "Prym", "Ergonomics"),
+            (500, "", ""),
+        ] {
+            let spec = HookSpec {
+                size: Some(size),
+                brand,
+                kind,
+            };
+            lib.add_hook(&spec, 0);
+        }
+        // Not the yarn brands, and spelled as most hooks spell them.
+        add_line(&mut lib, "Drops", "Paris", None);
+        assert_eq!(lib.hook_brands(), ["Clover", "Prym"]);
+        // The types of that brand, or all for a new one.
+        assert_eq!(lib.hook_kinds(" CLOVER"), ["Amour", "Soft Touch"]);
+        assert_eq!(
+            lib.hook_kinds("Tulip"),
+            ["Amour", "Ergonomics", "Soft Touch"]
+        );
+    }
+
+    #[test]
+    fn brands_and_colors_are_sorted() {
+        let mut lib = Library::default();
+        let paris = add_line(&mut lib, "Drops", "Paris", None);
+        add_line(&mut lib, "drops", "Air", None);
+        add_line(&mut lib, "drops", "Safran", None);
+        add_line(&mut lib, "Schachenmayr", "Catania", None);
+        add_line(&mut lib, "", "Wool", None);
+        // The spelling most lines use.
+        assert_eq!(lib.brands(), ["drops", "Schachenmayr"]);
+
+        for (name, code) in [
+            ("Black", "112"),
+            ("White", "001"),
+            ("Pink", ""),
+            ("Red", "A3"),
+        ] {
+            let spec = YarnSpec {
+                color: name,
+                color_code: code,
+                ..YarnSpec::default()
+            };
+            lib.add_yarn(paris, &spec, 1);
+        }
+        let colors: Vec<_> = lib
+            .line_colors(paris)
+            .iter()
+            .map(|y| y.color.as_str())
+            .collect();
+        assert_eq!(colors, ["White", "Black", "Red", "Pink"], "by number");
     }
 
     #[test]

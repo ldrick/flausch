@@ -932,11 +932,11 @@ fn hook_sizes_are_parsed_and_formatted() {
     assert_eq!(parse_hook_size("E-4"), None);
     assert_eq!(parse_hook_size("inf"), None);
 
-    assert_eq!(format_hook_size(350, false), "3.5");
-    assert_eq!(format_hook_size(350, true), "3,5");
+    assert_eq!(format_hook_size(350, false), "3.50");
+    assert_eq!(format_hook_size(350, true), "3,50");
     assert_eq!(format_hook_size(225, true), "2,25");
     assert_eq!(format_hook_size(1205, false), "12.05");
-    assert_eq!(format_hook_size(400, true), "4");
+    assert_eq!(format_hook_size(400, true), "4,00");
 }
 
 #[test]

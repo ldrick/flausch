@@ -1,6 +1,6 @@
 import { Theme } from "../theme.slint";
 import { Store, DialogKind, HookItem, PartItem, ProjectStatus, ProjectYarnItem, YarnAmount, YarnItem } from "../store.slint";
-import { Card, Field, Icon, IconButton, PillButton, ButtonKind, ProgressBar, Segmented, Sheet, TopBar } from "../components.slint";
+import { Card, Field, Icon, IconButton, PillButton, ButtonKind, ProgressBar, Segmented, Sheet, SwatchDot, TopBar } from "../components.slint";
 import { HookText } from "hooks.slint";
 
 export component PatternCard inherits Card {
@@ -157,7 +157,7 @@ global Materials {
 
     // Brand and yarn line, or the color if neither is known.
     public pure function yarn-title(yarn: YarnItem) -> string {
-        return yarn.title != "" ? yarn.title : yarn.form.color;
+        return yarn.title != "" ? yarn.title : yarn.color;
     }
 
     // "1,4 skeins" or "80 g".
@@ -167,7 +167,7 @@ global Materials {
 
     // The color (unless it is the title) and what is left in the stash.
     public pure function yarn-detail(yarn: YarnItem) -> string {
-        return self.join(yarn.title != "" ? yarn.form.color : "", @tr("{} left", self.amount(yarn.amount)));
+        return self.join(yarn.title != "" ? yarn.color : "", @tr("{} left", self.amount(yarn.amount)));
     }
 
     // "3.5 mm · US E-4".
@@ -180,17 +180,29 @@ global Materials {
 component MaterialText inherits VerticalLayout {
     in property <string> title;
     in property <string> detail;
+    // The yarn's color, -1 for none.
+    in property <int> swatch: -1;
 
     alignment: center;
     spacing: 2px;
     horizontal-stretch: 1;
 
-    Text {
-        text: root.title;
-        color: Theme.text;
-        font-size: Theme.font-body;
-        font-weight: 600;
-        overflow: elide;
+    HorizontalLayout {
+        spacing: 8px;
+        if root.swatch >= 0: VerticalLayout {
+            alignment: center;
+            SwatchDot {
+                swatch: root.swatch;
+            }
+        }
+        Text {
+            text: root.title;
+            color: Theme.text;
+            font-size: Theme.font-body;
+            font-weight: 600;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
     }
     if root.detail != "": Text {
         text: root.detail;
@@ -220,6 +232,7 @@ component ProjectYarnCard inherits Card {
         MaterialText {
             title: Materials.yarn-title(root.item.yarn);
             detail: Materials.yarn-detail(root.item.yarn);
+            swatch: root.item.yarn.form.swatch;
         }
 
         if !root.used.in-grams: VerticalLayout {
@@ -365,6 +378,7 @@ component ProjectHookCard inherits Card {
 component PickRow inherits Rectangle {
     in property <string> title;
     in property <string> detail;
+    in property <int> swatch: -1;
     in property <bool> enabled: true;
     callback clicked();
 
@@ -391,6 +405,7 @@ component PickRow inherits Rectangle {
         height: parent.height;
         title: root.title;
         detail: root.detail;
+        swatch: root.swatch;
     }
 }
 
@@ -417,6 +432,7 @@ export component MaterialPicker inherits Sheet {
     for yarn in Store.other-yarns: PickRow {
         title: Materials.yarn-title(yarn);
         detail: Materials.yarn-detail(yarn);
+        swatch: yarn.form.swatch;
         clicked => {
             if yarn.amount.in-grams {
                 // Asks for the grams right away; replaces the picker.

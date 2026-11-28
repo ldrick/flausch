@@ -125,6 +125,7 @@ export component Field inherits Rectangle {
     // Shows the label above a filled-in value, so it stays clear what the value is.
     in property <bool> show-label: true;
     in-out property <string> text <=> input.text;
+    out property <bool> has-focus: input.has-focus;
     callback accepted();
 
     property <bool> label-shown: root.show-label && input.text != "";
@@ -284,6 +285,38 @@ export component Segmented inherits Rectangle {
     }
 }
 
+// A filter chip.
+export component Chip inherits Rectangle {
+    in property <string> label;
+    in property <bool> selected;
+    callback clicked();
+
+    border-radius: self.height / 2;
+    background: root.selected ? Theme.accent : Theme.surface;
+    border-width: 1px;
+    border-color: root.selected ? Theme.accent : Theme.border;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-checked: root.selected;
+    accessible-action-default => { root.clicked(); }
+    animate background { duration: Theme.animation; }
+
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 14px;
+        Text {
+            text: root.label;
+            color: root.selected ? Theme.on-accent : Theme.text-muted;
+            font-size: Theme.font-small + 1px;
+            font-weight: root.selected ? 600 : 400;
+            vertical-alignment: center;
+        }
+    }
+    TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
 // A row of filter chips that scrolls sideways when it doesn't fit.
 export component Chips inherits Flickable {
     in property <[SegmentOption]> options;
@@ -298,30 +331,57 @@ export component Chips inherits Flickable {
         padding-left: Theme.padding;
         padding-right: Theme.padding;
         spacing: 8px;
-        for option[index] in root.options: Rectangle {
+        for option[index] in root.options: Chip {
+            label: option.label;
+            selected: index == root.selected;
+            clicked => { root.select(index); }
+        }
+    }
+}
+
+// The color of a yarn as a small dot; `swatch` indexes `Theme.yarn-colors`.
+export component SwatchDot inherits Rectangle {
+    in property <int> swatch;
+    width: 14px;
+    height: self.width;
+    border-radius: self.width / 2;
+    background: Theme.yarn-colors[root.swatch];
+    border-width: 1px;
+    border-color: Theme.border;
+}
+
+// Suggestions under a field: chips that scroll sideways. A tap picks one.
+export component Suggestions inherits Flickable {
+    in property <[string]> items;
+    callback pick(string);
+
+    height: 36px;
+    content-width: row.preferred-width;
+    content-height: self.height;
+
+    row := HorizontalLayout {
+        spacing: 8px;
+        for item in root.items: Rectangle {
             border-radius: self.height / 2;
-            background: index == root.selected ? Theme.accent : Theme.surface;
+            background: touch.pressed ? Theme.surface-muted : Theme.surface;
             border-width: 1px;
-            border-color: index == root.selected ? Theme.accent : Theme.border;
+            border-color: Theme.border;
             accessible-role: button;
-            accessible-label: option.label;
-            accessible-checked: index == root.selected;
-            accessible-action-default => { root.select(index); }
-            animate background { duration: Theme.animation; }
+            accessible-label: @tr("Use {}", item);
+            accessible-action-default => { root.pick(item); }
 
             HorizontalLayout {
                 padding-left: 14px;
                 padding-right: 14px;
                 Text {
-                    text: option.label;
-                    color: index == root.selected ? Theme.on-accent : Theme.text-muted;
+                    text: item;
+                    color: Theme.text;
                     font-size: Theme.font-small + 1px;
-                    font-weight: index == root.selected ? 600 : 400;
                     vertical-alignment: center;
                 }
             }
-            TouchArea {
-                clicked => { root.select(index); }
+            touch := TouchArea {
+                clicked => { root.pick(item); }
             }
         }
     }

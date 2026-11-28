@@ -80,7 +80,7 @@ ui/
   components.slint    shared widgets (Card, PillButton, IconButton, TopBar, Dialog, Sheet, Field, Segmented, Switch, NavRow, Divider…)
   counter.slint       row counter blocks (RowCount, CounterButtons) for the part screen and the PDF view
   pages/*.slint       list, project (parts + pattern), part (row counter), pdf, settings (and backup), about (the About hub and its sub-pages),
-                      abbreviations, stash (yarn stash and its form), hooks (crochet hooks and their form)
+                      abbreviations, stash (yarn stash, the page of a yarn line and their forms), hooks (crochet hooks and their form)
   icons/              SVG icons
   fonts/              Montez (Apache 2.0) for the wordmark "Flausch"
 tools/release.py      prepares a release (version bump, CHANGELOG.md, F-Droid changelogs) and prints release notes
@@ -130,26 +130,39 @@ lang/de/LC_MESSAGES/flausch.po   German translations (bundled at build time)
   side, UK terms that differ from US in pink (UK stitches are one taller), searched in Rust
   (`Store.abbreviation-query` → `abbreviations::search`), the search starting over each time it opens.
   New info pages get a `Screen` value and a row on the About page. The yarn stash is `Screen.stash`
-  (`pages/stash.slint`), the crochet hooks `Screen.hooks` (`pages/hooks.slint`). Yarns live in
-  `Library::yarns` (so backups include them, ids from `next_id`), sorted by brand, yarn line and color
-  (`Library::sorted_yarns`); a yarn needs a brand, yarn line or color. Tapping a card opens its form (`Sheet`,
-  `Store.edited-yarn`), where deleting asks inline instead of in a dialog. Hooks (`Library::hooks`) work the same
-  way (`Store.edited-hook`): a size in hundredths of a millimeter (the form takes "3.5" or "3,5", German shows a
-  comma: `Controller::decimal_comma`), brand and type, sorted by size; the US size comes from the Craft Yarn Council
+  (`pages/stash.slint`), the crochet hooks `Screen.hooks` (`pages/hooks.slint`). The stash has two levels: a
+  `YarnLine` (`Library::yarn_lines`: brand, name, fiber, grams and meters per skein, the suggested hook sizes
+  `YarnLine::hooks` and notes, entered once) and its colors (`Library::yarns`, `Yarn::line`: color name, maker's
+  color number, a swatch from `model::SWATCHES` = `Theme.yarn-colors`, notes, the skeins left); backups include both, ids from `next_id`. There is no dye lot on purpose
+  (add it when users ask). A line without brand and name collects leftovers ("Other yarn", only one); adding a
+  line with the brand and name of an existing one opens that one (`Library::add_yarn_line`), a new one opens the
+  form for its first color. A color needs a name or number; colors sort by number (`Library::line_colors`), lines
+  by brand and name. `Yarn` keeps a copy of its line's weight for its units (`Library::sync_weights`, after
+  `migrate`); `migrate` turns the flat yarns of development builds into lines. The stash (`Store.yarn-lines`)
+  shows a card per line with its colors; the line page (`Screen.yarn-line`, `Store.current-yarn-line`,
+  `Controller::yarn_line`) lists all colors with −/+ (`Store.set-yarn-units`), a tap edits one (`Store.edited-yarn`).
+  The stash search (`Store.yarn-query`, Back closes it) matches lines and colors (a line matching only through a
+  color shows only those colors), brand chips filter (`Store.yarn-brand-filter`); both start over when the stash
+  opens. The brand field suggests brands from the stash (`Store.suggest-brand` → `suggestions`, `Suggestions`
+  chips). Forms delete inline (`DeleteQuestion`) instead of in a dialog. Hooks (`Library::hooks`) work the same
+  way (`Store.edited-hook`; brand and type suggest those of the other hooks, only the types of the typed brand if it has any:
+  `suggest-hook-brand`, `suggest-hook-kind`): a size in hundredths of a millimeter (the form takes "3.5" or "3,5"; shown with two
+  decimals, "3,00" or "1,25", and a comma in German: `format_hook_size`, `Controller::decimal_comma`), brand and type, sorted by size; the US size comes from the Craft Yarn Council
   table in `model::us_hook_size` (steel hooks for thread count the other way), and the form shows it while typing
   (`Store.us-hook-size`, a pure callback). Projects use yarns and hooks from the stash (`Project::yarns` with the
   skeins, `Project::hooks`; "Yarn & hooks" on the project screen, added through `MaterialPicker`, a `Sheet` with
   `Store.other-yarns`/`other-hooks`). The yarn comes out of the stash right away (`Library::set_project_yarn`,
   never more than the stash has). Each yarn counts in units (`model::units_per_skein`): grams with grams per
   skein, else tenths of a skein; `Yarn::quantity`/`opened` and `ProjectYarn::skeins`/`opened` are full skeins plus
-  the opened one, and a new weight converts them (`Library::edit_yarn`). The UI gets `YarnAmount`s: skeins with one
+  the opened one, and a new weight of the line converts them (`Library::edit_yarn_line`). The UI gets `YarnAmount`s: skeins with one
   decimal ("1,4", `format_skeins`), or grams. `Settings::yarn_in_grams` (Settings → Yarn) picks how to count, so the
   two never mix on a screen: in skeins with −/+ (one skein) or in grams with ✕ (only yarns with grams per skein); a
-  tap on the amount types it in either way (`YarnGramsDialog`, in grams also right after picking a yarn). The yarn
+  tap on the amount types it in either way (`YarnGramsDialog`, in grams also right after picking a yarn). The color
   form takes decimal skeins and keeps the exact amount if they are saved unchanged (`skeins_to_units`). Deleting a
-  project keeps the stash as it is (the yarn counts as used). Deleting a yarn or hook takes it off the projects,
-  and `migrate` drops links to missing ones. Stash cards show the projects that use a yarn; used up yarns sit in a
-  collapsed section (`Store.used-up-yarns`) and aren't offered to projects. A project also has a `Status` (planned, in progress, paused, finished; shown as a
+  project keeps the stash as it is (the yarn counts as used). Deleting a yarn (line or color) or hook takes it off the
+  projects, and `migrate` drops links to missing ones. The line page shows the projects that use a color; lines
+  with nothing left sit in a collapsed section (`Store.used-up-lines`), and used up colors aren't offered to
+  projects. A project also has a `Status` (planned, in progress, paused, finished; shown as a
   badge in the list) and free-text `notes`. The list has filter chips (`Settings::project_filter`) and is grouped by status
   (`Library::sorted`: in progress, then planned and paused, then finished; within a group by
   `Settings::project_sort`: last used, name, newest, progress or custom, chosen in the sort dialog). Holding a

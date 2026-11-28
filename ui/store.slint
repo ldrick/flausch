@@ -1,10 +1,10 @@
 import { Appearance, LineColor } from "theme.slint";
 
-export enum Screen { list, project, part, pdf, settings, about, changelog, donate, abbreviations, stash, hooks, info, backup }
+export enum Screen { list, project, part, pdf, settings, about, changelog, donate, abbreviations, stash, yarn-line, hooks, info, backup }
 
 export enum Language { system, de, en }
 
-export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder, add-yarn, edit-yarn, add-hook, edit-hook, pick-material, yarn-grams }
+export enum DialogKind { none, create, edit, delete, notes, add-part, edit-part, delete-part, pick-part, sort, reset, remove-pdf, restore-backup, incoming-pdf, create-folder, edit-folder, pick-folder, add-yarn-line, edit-yarn-line, add-yarn, edit-yarn, add-hook, edit-hook, pick-material, yarn-grams }
 
 // One release in the changelog.
 export struct ChangeItem {
@@ -83,18 +83,30 @@ export struct FolderItem {
     count: int,
 }
 
-// The fields of the yarn form, as typed; empty number fields mean unknown.
-export struct YarnForm {
+// The fields of the form of a yarn line, as typed; empty number fields mean unknown.
+export struct YarnLineForm {
     brand: string,
     name: string,
-    color: string,
-    dye-lot: string,
     fiber: string,
     // Grams and meters per skein.
     weight: string,
     length: string,
+    // The hook sizes in millimeters, e.g. "2,5" to "4"; one of them for a single size.
+    hook-from: string,
+    hook-to: string,
+    notes: string,
+}
+
+// The fields of the color form, as typed.
+export struct YarnForm {
+    color: string,
+    // The maker's color number, e.g. "112".
+    color-code: string,
+    // Index in `Theme.yarn-colors`; -1 for none.
+    swatch: int,
     // Skeins, e.g. "2.4"; empty counts as 1.
     quantity: string,
+    notes: string,
 }
 
 // An amount of yarn: in the stash or used in a project. Yarn is counted in units: grams with grams per
@@ -113,19 +125,41 @@ export struct YarnAmount {
     in-grams: bool,
 }
 
-// A yarn in the stash.
+// A color of a yarn line in the stash.
 export struct YarnItem {
     id: int,
-    // Brand and yarn line; empty if neither is known.
+    // Brand and name of the yarn line; empty for leftovers.
     title: string,
+    // Color name and number, e.g. "Black 112".
+    color: string,
     form: YarnForm,
     // What is in the stash.
     amount: YarnAmount,
+    // The projects that use it, e.g. "Hat, Scarf".
+    projects: string,
+}
+
+// A yarn line in the stash with its colors.
+export struct YarnLineItem {
+    id: int,
+    // Brand and name; empty for leftovers.
+    title: string,
+    form: YarnLineForm,
     // Grams and meters per skein; 0 if unknown.
     weight: int,
     length: int,
-    // The projects that use it, e.g. "Hat, Scarf".
-    projects: string,
+    // The hook sizes, e.g. "2,5–4 mm"; empty if unknown.
+    hooks: string,
+    // All of its colors in the stash, e.g. "4,5" skeins, and grams if the weight is known.
+    skeins: string,
+    grams: int,
+    // Shown in grams (setting, and the weight is known).
+    in-grams: bool,
+    // In the stash list, the colors with something left (matching the search); on the page of
+    // the line, all of them.
+    colors: [YarnItem],
+    // Number of colors, also the used up ones.
+    color-count: int,
 }
 
 // A yarn of the current project, with the skeins it took out of the stash.
@@ -254,15 +288,26 @@ export global Store {
     in property <PdfView> pdf: { zoom: 1, aspect: 1.414 };
     in property <Notice> notice: Notice.none;
     in property <A11yFocus> a11y-focus;
-    // The yarn stash by brand, yarn line and color: the yarns with skeins left, and the used up ones
-    // (no skeins left) in a collapsed section.
-    in property <[YarnItem]> yarns;
-    in property <[YarnItem]> used-up-yarns;
+    // The yarn stash by brand and name: lines with yarn left (or no colors yet), and the used up
+    // ones in a collapsed section.
+    in property <[YarnLineItem]> yarn-lines;
+    in property <[YarnLineItem]> used-up-lines;
     in-out property <bool> used-up-open;
+    // Stash search and brand filter ("" for all); both start over when the stash opens.
+    in-out property <bool> yarn-searching;
+    in-out property <string> yarn-query;
+    in property <[string]> yarn-brands;
+    in property <string> yarn-brand-filter;
+    // The stash has yarn, regardless of the search and the filter.
+    in property <bool> has-yarn;
+    // Suggestions for the field being typed in (`suggest-brand`, `suggest-hook-brand`, `suggest-hook-kind`).
+    in property <[string]> suggestions;
+    // The yarn line on its page (`open-yarn-line`).
+    in property <YarnLineItem> current-yarn-line;
     // Skeins in the stash (e.g. "4,5"), and the grams of those whose weight is known.
     in property <string> yarn-skeins;
     in property <int> yarn-grams;
-    // The yarn the edit form acts on; set before opening it.
+    // The color the edit form acts on; set before opening it.
     in-out property <YarnItem> edited-yarn;
     // The hooks from the smallest.
     in property <[HookItem]> hooks;
@@ -348,9 +393,24 @@ export global Store {
     callback edit-part(int, PartForm);
     callback delete-part(int);
 
+    // Adds a yarn line, or opens the one with this brand and name, on its page.
+    callback add-yarn-line(YarnLineForm);
+    callback edit-yarn-line(int, YarnLineForm);
+    callback delete-yarn-line(int);
+    callback open-yarn-line(int);
+    // Adds a color to the current yarn line.
     callback add-yarn(YarnForm);
     callback edit-yarn(int, YarnForm);
     callback delete-yarn(int);
+    // What is in the stash of a color, in its units.
+    callback set-yarn-units(int, int);
+    callback yarn-query-changed();
+    callback set-yarn-brand-filter(string);
+    // Fill `suggestions` with what matches the typed text: yarn brands, hook brands, and the hook
+    // types of a brand (brand, typed).
+    callback suggest-brand(string);
+    callback suggest-hook-brand(string);
+    callback suggest-hook-kind(string, string);
 
     callback add-hook(HookForm);
     callback edit-hook(int, HookForm);

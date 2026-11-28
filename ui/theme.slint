@@ -55,6 +55,14 @@ export global Theme {
     // Reading line in the PDF view. It is drawn on the page, so the colors don't follow `dark`.
     out property <length> line-width: 3px;
     out property <color> on-line: #ffffff;
+
+    // Yarn swatches, in the order of `model::SWATCHES`. Real yarn colors, the same in both themes.
+    out property <[color]> yarn-colors: [
+        #ffffff, #f4ecd8, #d9c4a5, #c08a55, #6e4a2f, #1f1b1c,
+        #cfcccc, #8a8586, #f5d547, #d4a72c, #ef8a33, #f27b6b,
+        #d32f3a, #7d1f33, #f6c6d4, #e66a9a, #c3a6dd, #7b3f9e,
+        #a9d1ef, #3a7cc9, #22325e, #2fb5b0, #3f9a4b, #7c7d3a,
+    ];
     public pure function line-color(color: LineColor) -> color {
         if color == LineColor.red {
             return #e53935;
