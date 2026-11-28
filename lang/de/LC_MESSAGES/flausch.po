@@ -28,64 +28,64 @@ msgctxt "ProjectDialog"
 msgid "Create"
 msgstr "Anlegen"
 
-#: ui/app.slint:592
+#: ui/app.slint:598
 msgctxt "App"
 msgid "This file could not be opened as a PDF."
 msgstr "Diese Datei konnte nicht als PDF geöffnet werden."
 
-#: ui/app.slint:593
+#: ui/app.slint:599
 msgctxt "App"
 msgid "The page could not be displayed."
 msgstr "Die Seite konnte nicht angezeigt werden."
 
-#: ui/app.slint:602
+#: ui/app.slint:608
 msgctxt "App"
 msgid "The PDF could not be imported."
 msgstr "Das PDF konnte nicht importiert werden."
 
-#: ui/app.slint:619
+#: ui/app.slint:625
 msgctxt "App"
 msgid "Delete project?"
 msgstr "Projekt löschen?"
 
-#: ui/app.slint:620
+#: ui/app.slint:626
 msgctxt "App"
 msgid "“{}” and its pattern will be removed. This cannot be undone."
 msgstr ""
 "„{}“ und die Anleitung werden entfernt. Das kann nicht rückgängig gemacht "
 "werden."
 
-#: ui/app.slint:624 ui/app.slint:695
+#: ui/app.slint:630 ui/app.slint:701
 msgctxt "App"
 msgid "Delete"
 msgstr "Löschen"
 
-#: ui/app.slint:774
+#: ui/app.slint:780
 msgctxt "App"
 msgid "Reset counter?"
 msgstr "Zähler zurücksetzen?"
 
-#: ui/app.slint:780
+#: ui/app.slint:786
 msgctxt "App"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: ui/app.slint:790
+#: ui/app.slint:796
 msgctxt "App"
 msgid "Remove pattern?"
 msgstr "Anleitung entfernen?"
 
-#: ui/app.slint:795
+#: ui/app.slint:801
 msgctxt "App"
 msgid "Remove"
 msgstr "Entfernen"
 
-#: ui/components.slint:517
+#: ui/components.slint:577
 msgctxt "DialogButtons"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ui/components.slint:547
+#: ui/components.slint:607
 msgctxt "TopBar"
 msgid "Back"
 msgstr "Zurück"
@@ -157,17 +157,17 @@ msgctxt "PdfPage"
 msgid "Next row"
 msgstr "Nächste Reihe"
 
-#: ui/pages/project.slint:469
+#: ui/pages/project.slint:485
 msgctxt "ProjectPage"
 msgid "Delete project"
 msgstr "Projekt löschen"
 
-#: ui/pages/project.slint:533
+#: ui/pages/project.slint:549
 msgctxt "ProjectPage"
 msgid "Add PDF pattern"
 msgstr "PDF-Anleitung hinzufügen"
 
-#: ui/pages/project.slint:529
+#: ui/pages/project.slint:545
 msgctxt "ProjectPage"
 msgid "Pattern"
 msgstr "Anleitung"
@@ -284,17 +284,17 @@ msgctxt "PartCard"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/pages/project.slint:461
+#: ui/pages/project.slint:477
 msgctxt "ProjectPage"
 msgid "Rename project"
 msgstr "Projekt umbenennen"
 
-#: ui/pages/project.slint:500
+#: ui/pages/project.slint:516
 msgctxt "ProjectPage"
 msgid "Parts"
 msgstr "Teile"
 
-#: ui/pages/project.slint:503
+#: ui/pages/project.slint:519
 msgctxt "ProjectPage"
 msgid ""
 "Add the parts of your project, e.g. head, body and legs. Each part counts "
@@ -303,7 +303,7 @@ msgstr ""
 "Füge die Teile deines Projekts hinzu, z. B. Kopf, Körper und Beine. Jedes "
 "Teil zählt seine eigenen Reihen."
 
-#: ui/pages/project.slint:519
+#: ui/pages/project.slint:535
 msgctxt "ProjectPage"
 msgid "Add part"
 msgstr "Teil hinzufügen"
@@ -353,22 +353,22 @@ msgctxt "PartDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/app.slint:690
+#: ui/app.slint:696
 msgctxt "App"
 msgid "Delete part?"
 msgstr "Teil löschen?"
 
-#: ui/app.slint:691
+#: ui/app.slint:697
 msgctxt "App"
 msgid "“{}” and its row counter will be removed."
 msgstr "„{}“ und sein Reihenzähler werden gelöscht."
 
-#: ui/app.slint:776
+#: ui/app.slint:782
 msgctxt "App"
 msgid "The row counter of “{}” goes back to 0."
 msgstr "Der Reihenzähler von „{}“ wird auf 0 gesetzt."
 
-#: ui/app.slint:791
+#: ui/app.slint:797
 msgctxt "App"
 msgid "The PDF is removed from this project. The row counters stay."
 msgstr ""
@@ -409,22 +409,22 @@ msgctxt "PdfPage"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:705
+#: ui/app.slint:711
 msgctxt "App"
 msgid "Choose part"
 msgstr "Teil wählen"
 
-#: ui/app.slint:744
+#: ui/app.slint:750
 msgctxt "App"
 msgid "Row {} of {}"
 msgstr "Reihe {} von {}"
 
-#: ui/app.slint:744
+#: ui/app.slint:750
 msgctxt "App"
 msgid "Row {}"
 msgstr "Reihe {}"
 
-#: ui/app.slint:762
+#: ui/app.slint:768
 msgctxt "App"
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -529,27 +529,27 @@ msgctxt "SettingsPage"
 msgid "Data"
 msgstr "Daten"
 
-#: ui/app.slint:594
+#: ui/app.slint:600
 msgctxt "App"
 msgid "Backup saved."
 msgstr "Sicherung gespeichert."
 
-#: ui/app.slint:595
+#: ui/app.slint:601
 msgctxt "App"
 msgid "The backup could not be saved."
 msgstr "Die Sicherung konnte nicht gespeichert werden."
 
-#: ui/app.slint:596
+#: ui/app.slint:602
 msgctxt "App"
 msgid "The file could not be read."
 msgstr "Die Datei konnte nicht gelesen werden."
 
-#: ui/app.slint:597
+#: ui/app.slint:603
 msgctxt "App"
 msgid "This file is not a Flausch backup."
 msgstr "Diese Datei ist keine Flausch-Sicherung."
 
-#: ui/app.slint:598
+#: ui/app.slint:604
 msgctxt "App"
 msgid ""
 "This backup is from a newer version of Flausch. Please update the app first."
@@ -557,24 +557,24 @@ msgstr ""
 "Diese Sicherung stammt aus einer neueren Flausch-Version. Bitte aktualisiere"
 " zuerst die App."
 
-#: ui/app.slint:599
+#: ui/app.slint:605
 msgctxt "App"
 msgid "Backup restored."
 msgstr "Sicherung wiederhergestellt."
 
-#: ui/app.slint:600
+#: ui/app.slint:606
 msgctxt "App"
 msgid "The backup could not be restored. Your data is unchanged."
 msgstr ""
 "Die Sicherung konnte nicht wiederhergestellt werden. Deine Daten sind "
 "unverändert."
 
-#: ui/app.slint:805
+#: ui/app.slint:811
 msgctxt "App"
 msgid "Restore backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: ui/app.slint:806
+#: ui/app.slint:812
 msgctxt "App"
 msgid ""
 "The backup contains {n} project. It replaces all projects and settings on "
@@ -589,7 +589,7 @@ msgstr[1] ""
 "Die Sicherung enthält {n} Projekte. Sie ersetzt alle Projekte und "
 "Einstellungen auf diesem Gerät. Das kann nicht rückgängig gemacht werden."
 
-#: ui/app.slint:810
+#: ui/app.slint:816
 msgctxt "App"
 msgid "Restore"
 msgstr "Wiederherstellen"
@@ -624,42 +624,42 @@ msgctxt "SettingsPage"
 msgid "Volume up counts a row, volume down goes back"
 msgstr "Lauter zählt eine Reihe, leiser geht zurück"
 
-#: ui/pages/project.slint:486
+#: ui/pages/project.slint:502
 msgctxt "ProjectPage"
 msgid "Status"
 msgstr "Status"
 
-#: ui/pages/project.slint:489
+#: ui/pages/project.slint:505
 msgctxt "ProjectPage"
 msgid "Planned"
 msgstr "Geplant"
 
-#: ui/pages/project.slint:489
+#: ui/pages/project.slint:505
 msgctxt "ProjectPage"
 msgid "In progress"
 msgstr "In Arbeit"
 
-#: ui/pages/project.slint:489
+#: ui/pages/project.slint:505
 msgctxt "ProjectPage"
 msgid "Paused"
 msgstr "Pausiert"
 
-#: ui/pages/project.slint:489
+#: ui/pages/project.slint:505
 msgctxt "ProjectPage"
 msgid "Finished"
 msgstr "Fertig"
 
-#: ui/pages/project.slint:564
+#: ui/pages/project.slint:580
 msgctxt "ProjectPage"
 msgid "Notes"
 msgstr "Notizen"
 
-#: ui/pages/project.slint:568
+#: ui/pages/project.slint:584
 msgctxt "ProjectPage"
 msgid "Add notes"
 msgstr "Notizen hinzufügen"
 
-#: ui/pages/project.slint:577
+#: ui/pages/project.slint:593
 msgctxt "ProjectPage"
 msgid "Edit notes"
 msgstr "Notizen bearbeiten"
@@ -679,27 +679,27 @@ msgctxt "NotesDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/app.slint:634
+#: ui/app.slint:640
 msgctxt "App"
 msgid "Open PDF"
 msgstr "PDF öffnen"
 
-#: ui/app.slint:635
+#: ui/app.slint:641
 msgctxt "App"
 msgid "Create a new project with “{}” or add it to a project."
 msgstr "Leg mit „{}“ ein neues Projekt an oder füge es einem Projekt hinzu."
 
-#: ui/app.slint:636
+#: ui/app.slint:642
 msgctxt "App"
 msgid "Create a new project with “{}”."
 msgstr "Leg mit „{}“ ein neues Projekt an."
 
-#: ui/app.slint:653 ui/app.slint:670
+#: ui/app.slint:659 ui/app.slint:676
 msgctxt "App"
 msgid "Replaces its pattern"
 msgstr "Ersetzt die Anleitung"
 
-#: ui/app.slint:683
+#: ui/app.slint:689
 msgctxt "App"
 msgid "New project"
 msgstr "Neues Projekt"
@@ -714,7 +714,7 @@ msgctxt "PartDialog"
 msgid "How many, e.g. 4 legs"
 msgstr "Wie oft, z. B. 4 Beine"
 
-#: ui/app.slint:775
+#: ui/app.slint:781
 msgctxt "App"
 msgid ""
 "The row counter of “{}” goes back to 0, starting again with the first piece."
@@ -783,25 +783,25 @@ msgid "No projects with this status"
 msgstr "Keine Projekte mit diesem Status"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:237
+#: ui/store.slint:271
 msgctxt "Store"
 msgid "Planned"
 msgstr "Geplant"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:237
+#: ui/store.slint:271
 msgctxt "Store"
 msgid "In progress"
 msgstr "In Arbeit"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:237
+#: ui/store.slint:271
 msgctxt "Store"
 msgid "Paused"
 msgstr "Pausiert"
 
 #. For the search, in ProjectStatus order.
-#: ui/store.slint:237
+#: ui/store.slint:271
 msgctxt "Store"
 msgid "Finished"
 msgstr "Fertig"
@@ -900,12 +900,12 @@ msgid "Custom"
 msgstr "Eigene"
 
 #. Labels of the TalkBack actions on project cards.
-#: ui/store.slint:338
+#: ui/store.slint:383
 msgctxt "Store"
 msgid "Move up"
 msgstr "Nach oben verschieben"
 
-#: ui/store.slint:339
+#: ui/store.slint:384
 msgctxt "Store"
 msgid "Move down"
 msgstr "Nach unten verschieben"
@@ -1066,7 +1066,7 @@ msgctxt "FolderPicker"
 msgid "No folder"
 msgstr "Kein Ordner"
 
-#: ui/app.slint:601
+#: ui/app.slint:607
 msgctxt "App"
 msgid "Folder deleted. Its projects are back in the main list."
 msgstr "Ordner gelöscht. Seine Projekte sind zurück in der Hauptliste."
@@ -1095,7 +1095,7 @@ msgctxt "ListPage"
 msgid "New folder"
 msgstr "Neuer Ordner"
 
-#: ui/pages/project.slint:598
+#: ui/pages/project.slint:614
 msgctxt "ProjectPage"
 msgid "Move to folder"
 msgstr "In Ordner verschieben"
@@ -1123,7 +1123,7 @@ msgstr ""
 "Noch keine Projekte in diesem Ordner. Erstelle hier eines oder zieh ein "
 "Projekt in der Hauptliste auf den Ordner."
 
-#: ui/pages/project.slint:598
+#: ui/pages/project.slint:614
 msgctxt "ProjectPage"
 msgid "In folder {}"
 msgstr "Im Ordner {}"
@@ -1188,157 +1188,37 @@ msgctxt "ListPage"
 msgid "Yarn stash"
 msgstr "Garnvorrat"
 
-#: ui/pages/stash.slint:16
-msgctxt "YarnCard"
-msgid "{} g / {} m"
-msgstr "{} g / {} m"
-
-#: ui/pages/stash.slint:17
-msgctxt "YarnCard"
-msgid "{} g"
-msgstr "{} g"
-
-#: ui/pages/stash.slint:18
-msgctxt "YarnCard"
-msgid "{} m"
-msgstr "{} m"
-
-#: ui/pages/stash.slint:23
-msgctxt "YarnCard"
-msgid "Lot {}"
-msgstr "Partie {}"
-
-#: ui/pages/stash.slint:66
-msgctxt "YarnCard"
-msgid "skein"
-msgid_plural "skeins"
-msgstr[0] "Knäuel"
-msgstr[1] "Knäuel"
-
-#: ui/pages/stash.slint:112
+#: ui/pages/stash.slint:223
 msgctxt "StashPage"
 msgid "Yarn stash"
 msgstr "Garnvorrat"
 
-#: ui/pages/stash.slint:206
+#: ui/pages/stash.slint:330
 msgctxt "StashPage"
 msgid "No yarn yet"
 msgstr "Noch kein Garn"
 
-#: ui/pages/stash.slint:213
-msgctxt "StashPage"
-msgid ""
-"Note your yarn with brand, color, dye lot and how many skeins are left."
-msgstr ""
-"Notiere dein Garn mit Marke, Farbe, Partie und wie viele Knäuel noch übrig "
-"sind."
-
-#: ui/pages/stash.slint:226
+#: ui/pages/stash.slint:350
 msgctxt "StashPage"
 msgid "Add yarn"
 msgstr "Garn hinzufügen"
 
-#: ui/pages/stash.slint:243
-msgctxt "YarnDialog"
-msgid "Edit yarn"
-msgstr "Garn bearbeiten"
-
-#: ui/pages/stash.slint:243
-msgctxt "YarnDialog"
-msgid "New yarn"
-msgstr "Neues Garn"
-
-#: ui/pages/stash.slint:244
+#: ui/pages/stash.slint:803
 msgctxt "YarnDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/pages/stash.slint:244
+#: ui/pages/stash.slint:803
 msgctxt "YarnDialog"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ui/pages/stash.slint:246
-msgctxt "YarnDialog"
-msgid "Delete yarn"
-msgstr "Garn löschen"
-
-#: ui/pages/stash.slint:297
-msgctxt "YarnDialog"
-msgid "Delete this yarn from the stash?"
-msgstr "Dieses Garn aus dem Vorrat löschen?"
-
-#: ui/pages/stash.slint:307
-msgctxt "YarnDialog"
-msgid "Keep"
-msgstr "Behalten"
-
-#: ui/pages/stash.slint:312
-msgctxt "YarnDialog"
-msgid "Delete"
-msgstr "Löschen"
-
-#: ui/pages/stash.slint:323
-msgctxt "YarnDialog"
-msgid "Brand"
-msgstr "Marke"
-
-#: ui/pages/stash.slint:324
-msgctxt "YarnDialog"
-msgid "Brand, e.g. Drops"
-msgstr "Marke, z. B. Drops"
-
-#: ui/pages/stash.slint:328
-msgctxt "YarnDialog"
-msgid "Yarn"
-msgstr "Garn"
-
-#: ui/pages/stash.slint:329
-msgctxt "YarnDialog"
-msgid "Yarn, e.g. Paris"
-msgstr "Garn, z. B. Paris"
-
-#: ui/pages/stash.slint:335 ui/pages/stash.slint:336
+#: ui/pages/stash.slint:855
 msgctxt "YarnDialog"
 msgid "Color"
 msgstr "Farbe"
 
-#: ui/pages/stash.slint:340 ui/pages/stash.slint:341
-msgctxt "YarnDialog"
-msgid "Dye lot"
-msgstr "Partie"
-
-#: ui/pages/stash.slint:346
-msgctxt "YarnDialog"
-msgid "Fiber"
-msgstr "Material"
-
-#: ui/pages/stash.slint:347
-msgctxt "YarnDialog"
-msgid "Fiber, e.g. 100% cotton"
-msgstr "Material, z. B. 100 % Baumwolle"
-
-#: ui/pages/stash.slint:353
-msgctxt "YarnDialog"
-msgid "Grams per skein"
-msgstr "Gramm pro Knäuel"
-
-#: ui/pages/stash.slint:354
-msgctxt "YarnDialog"
-msgid "g per skein"
-msgstr "g pro Knäuel"
-
-#: ui/pages/stash.slint:359
-msgctxt "YarnDialog"
-msgid "Meters per skein"
-msgstr "Meter pro Knäuel"
-
-#: ui/pages/stash.slint:360
-msgctxt "YarnDialog"
-msgid "m per skein"
-msgstr "m pro Knäuel"
-
-#: ui/pages/stash.slint:366
+#: ui/pages/stash.slint:868
 msgctxt "YarnDialog"
 msgid "Skeins"
 msgstr "Knäuel"
@@ -1546,49 +1426,44 @@ msgctxt "BackupPage"
 msgid "Import"
 msgstr "Importieren"
 
-#: ui/pages/stash.slint:28
-msgctxt "YarnCard"
-msgid "Used in {}"
-msgstr "Verwendet in {}"
-
 #: ui/pages/project.slint:175
 msgctxt "Materials"
 msgid "{} mm"
 msgstr "{} mm"
 
-#: ui/pages/project.slint:229
+#: ui/pages/project.slint:242
 msgctxt "ProjectYarnCard"
 msgid "Put one skein back"
 msgstr "Ein Knäuel zurücklegen"
 
-#: ui/pages/project.slint:229 ui/pages/project.slint:283
+#: ui/pages/project.slint:242 ui/pages/project.slint:296
 msgctxt "ProjectYarnCard"
 msgid "Take off the project"
 msgstr "Aus dem Projekt nehmen"
 
-#: ui/pages/project.slint:263
+#: ui/pages/project.slint:276
 msgctxt "ProjectYarnCard"
 msgid "skein"
 msgid_plural "skeins"
 msgstr[0] "Knäuel"
 msgstr[1] "Knäuel"
 
-#: ui/pages/project.slint:274
+#: ui/pages/project.slint:287
 msgctxt "ProjectYarnCard"
 msgid "Take one more skein"
 msgstr "Noch ein Knäuel nehmen"
 
-#: ui/pages/project.slint:357
+#: ui/pages/project.slint:370
 msgctxt "ProjectHookCard"
 msgid "Take hook off the project"
 msgstr "Häkelnadel aus dem Projekt nehmen"
 
-#: ui/pages/project.slint:401
+#: ui/pages/project.slint:416
 msgctxt "MaterialPicker"
 msgid "Add yarn or hook"
 msgstr "Garn oder Nadel hinzufügen"
 
-#: ui/pages/project.slint:406
+#: ui/pages/project.slint:421
 msgctxt "MaterialPicker"
 msgid ""
 "Nothing left to add. New yarns go into the yarn stash and new hooks under "
@@ -1597,65 +1472,55 @@ msgstr ""
 "Nichts mehr zum Hinzufügen. Neue Garne kommen in den Garnvorrat, neue Nadeln"
 " zu den Häkelnadeln, beides im Menü der Projektliste."
 
-#: ui/pages/project.slint:412
+#: ui/pages/project.slint:427
 msgctxt "MaterialPicker"
 msgid "Yarn stash"
 msgstr "Garnvorrat"
 
-#: ui/pages/project.slint:436
+#: ui/pages/project.slint:452
 msgctxt "MaterialPicker"
 msgid "Crochet hooks"
 msgstr "Häkelnadeln"
 
-#: ui/pages/project.slint:544
+#: ui/pages/project.slint:560
 msgctxt "ProjectPage"
 msgid "Yarn & hooks"
 msgstr "Garn & Nadeln"
 
-#: ui/pages/project.slint:554
+#: ui/pages/project.slint:570
 msgctxt "ProjectPage"
 msgid "Add yarn or hook"
 msgstr "Garn oder Nadel hinzufügen"
 
-#: ui/pages/stash.slint:146
+#: ui/pages/stash.slint:286
 msgctxt "StashPage"
 msgid "Hide used up yarns ({})"
 msgstr "Aufgebrauchte Garne ausblenden ({})"
 
-#: ui/pages/stash.slint:146
+#: ui/pages/stash.slint:285
 msgctxt "StashPage"
 msgid "Show used up yarns ({})"
 msgstr "Aufgebrauchte Garne zeigen ({})"
 
-#: ui/pages/stash.slint:154
+#: ui/pages/stash.slint:284
 msgctxt "StashPage"
 msgid "Used up ({})"
 msgstr "Aufgebraucht ({})"
 
-#: ui/pages/project.slint:299
+#: ui/pages/project.slint:312
 msgctxt "YarnGramsDialog"
 msgid "Yarn used"
 msgstr "Garnverbrauch"
 
-#: ui/pages/project.slint:301
+#: ui/pages/project.slint:314
 msgctxt "YarnGramsDialog"
 msgid "Save"
 msgstr "Speichern"
 
-#: ui/pages/project.slint:322 ui/pages/project.slint:323
+#: ui/pages/project.slint:335 ui/pages/project.slint:336
 msgctxt "YarnGramsDialog"
 msgid "Grams used"
 msgstr "Gramm verbraucht"
-
-#: ui/pages/stash.slint:33
-msgctxt "YarnCard"
-msgid "{}, {} g"
-msgstr "{}, {} g"
-
-#: ui/pages/stash.slint:66
-msgctxt "YarnCard"
-msgid "g"
-msgstr "g"
 
 #: ui/pages/settings.slint:173
 msgctxt "SettingsPage"
@@ -1677,31 +1542,19 @@ msgctxt "SettingsPage"
 msgid "Grams"
 msgstr "Gramm"
 
-#: ui/pages/stash.slint:34
-msgctxt "YarnCard"
-msgid "{}, {} skein"
-msgid_plural "{}, {} skeins"
-msgstr[0] "{}, {} Knäuel"
-msgstr[1] "{}, {} Knäuel"
-
-#: ui/pages/stash.slint:129
+#: ui/pages/stash.slint:272
 msgctxt "StashPage"
 msgid "{} skein, {} g in total"
 msgid_plural "{} skeins, {} g in total"
 msgstr[0] "{} Knäuel, {} g insgesamt"
 msgstr[1] "{} Knäuel, {} g insgesamt"
 
-#: ui/pages/stash.slint:130
+#: ui/pages/stash.slint:273
 msgctxt "StashPage"
 msgid "{} skein in total"
 msgid_plural "{} skeins in total"
 msgstr[0] "{} Knäuel insgesamt"
 msgstr[1] "{} Knäuel insgesamt"
-
-#: ui/pages/stash.slint:367
-msgctxt "YarnDialog"
-msgid "Skeins, e.g. 2.5 (1 if empty)"
-msgstr "Knäuel, z. B. 2,5 (leer = 1)"
 
 #: ui/pages/project.slint:165
 msgctxt "Materials"
@@ -1720,27 +1573,27 @@ msgctxt "Materials"
 msgid "{} left"
 msgstr "{} übrig"
 
-#: ui/pages/project.slint:238
+#: ui/pages/project.slint:251
 msgctxt "ProjectYarnCard"
 msgid "Change amount used"
 msgstr "Verbrauch ändern"
 
-#: ui/pages/project.slint:263
+#: ui/pages/project.slint:276
 msgctxt "ProjectYarnCard"
 msgid "g"
 msgstr "g"
 
-#: ui/pages/project.slint:322
+#: ui/pages/project.slint:335
 msgctxt "YarnGramsDialog"
 msgid "Skeins used"
 msgstr "Knäuel verbraucht"
 
-#: ui/pages/project.slint:323
+#: ui/pages/project.slint:336
 msgctxt "YarnGramsDialog"
 msgid "Skeins used, e.g. 1.5"
 msgstr "Knäuel verbraucht, z. B. 1,5"
 
-#: ui/pages/project.slint:328
+#: ui/pages/project.slint:341
 msgctxt "YarnGramsDialog"
 msgid ""
 "{} more in the stash. Tip: weigh what is left and subtract it from what you "
@@ -1749,7 +1602,436 @@ msgstr ""
 "Noch {} im Vorrat. Tipp: Wiege, was übrig ist, und zieh es vom "
 "Anfangsgewicht ab."
 
-#: ui/pages/project.slint:329
+#: ui/pages/project.slint:342
 msgctxt "YarnGramsDialog"
 msgid "{} more in the stash."
 msgstr "Noch {} im Vorrat."
+
+#: ui/components.slint:370
+msgctxt "Suggestions"
+msgid "Use {}"
+msgstr "{} übernehmen"
+
+#: ui/pages/stash.slint:13
+msgctxt "YarnText"
+msgid "Other yarn"
+msgstr "Ohne Angabe"
+
+#: ui/pages/stash.slint:18
+msgctxt "YarnText"
+msgid "{} g / {} m"
+msgstr "{} g / {} m"
+
+#: ui/pages/stash.slint:19 ui/pages/stash.slint:30 ui/pages/stash.slint:35
+msgctxt "YarnText"
+msgid "{} g"
+msgstr "{} g"
+
+#: ui/pages/stash.slint:20
+msgctxt "YarnText"
+msgid "{} m"
+msgstr "{} m"
+
+#: ui/pages/stash.slint:31 ui/pages/stash.slint:36
+msgctxt "YarnText"
+msgid "{} skein"
+msgid_plural "{} skeins"
+msgstr[0] "{} Knäuel"
+msgstr[1] "{} Knäuel"
+
+#: ui/pages/stash.slint:103
+msgctxt "YarnLineCard"
+msgid "No colors yet"
+msgstr "Noch keine Farben"
+
+#: ui/pages/stash.slint:135
+msgctxt "YarnLineCard"
+msgid "and {} more"
+msgstr "und {} weitere"
+
+#: ui/pages/stash.slint:203
+msgctxt "StashPage"
+msgid "Close search"
+msgstr "Suche schließen"
+
+#: ui/pages/stash.slint:213 ui/pages/stash.slint:230
+msgctxt "StashPage"
+msgid "Search"
+msgstr "Suchen"
+
+#: ui/pages/stash.slint:214
+msgctxt "StashPage"
+msgid "Search yarn"
+msgstr "Garn suchen"
+
+#: ui/pages/stash.slint:247
+msgctxt "StashPage"
+msgid "All"
+msgstr "Alle"
+
+#: ui/pages/stash.slint:305
+msgctxt "StashPage"
+msgid "No matching yarn"
+msgstr "Kein passendes Garn"
+
+#: ui/pages/stash.slint:337
+msgctxt "StashPage"
+msgid ""
+"Note your yarn once with brand, fiber and skein size, then its colors and "
+"how many skeins of each are left."
+msgstr ""
+"Trag dein Garn einmal mit Marke, Material und Lauflänge ein, dann seine "
+"Farben und wie viele Knäuel du von jeder hast."
+
+#: ui/pages/stash.slint:364
+msgctxt "ColorRow"
+msgid "Used in {}"
+msgstr "Verwendet in {}"
+
+#: ui/pages/stash.slint:378
+msgctxt "ColorRow"
+msgid "Edit {}"
+msgstr "{} bearbeiten"
+
+#: ui/pages/stash.slint:424
+msgctxt "ColorRow"
+msgid "One skein less of {}"
+msgstr "Ein Knäuel weniger von {}"
+
+#: ui/pages/stash.slint:442
+msgctxt "ColorRow"
+msgid "One skein more of {}"
+msgstr "Ein Knäuel mehr von {}"
+
+#: ui/pages/stash.slint:468 ui/pages/stash.slint:491
+msgctxt "YarnLinePage"
+msgid "Edit yarn"
+msgstr "Garn bearbeiten"
+
+#: ui/pages/stash.slint:509
+msgctxt "YarnLinePage"
+msgid "{} in total"
+msgstr "{} insgesamt"
+
+#: ui/pages/stash.slint:515
+msgctxt "YarnLinePage"
+msgid ""
+"Add the colors you have of this yarn, e.g. Black 112, and how many skeins of"
+" each."
+msgstr ""
+"Füge die Farben hinzu, die du von diesem Garn hast, z. B. Schwarz 112, und "
+"wie viele Knäuel von jeder."
+
+#: ui/pages/stash.slint:531
+msgctxt "YarnLinePage"
+msgid "Add color"
+msgstr "Farbe hinzufügen"
+
+#: ui/pages/stash.slint:564
+msgctxt "DeleteQuestion"
+msgid "Keep"
+msgstr "Behalten"
+
+#: ui/pages/stash.slint:569
+msgctxt "DeleteQuestion"
+msgid "Delete"
+msgstr "Löschen"
+
+#: ui/pages/stash.slint:585
+msgctxt "YarnLineDialog"
+msgid "Edit yarn"
+msgstr "Garn bearbeiten"
+
+#: ui/pages/stash.slint:585
+msgctxt "YarnLineDialog"
+msgid "New yarn"
+msgstr "Neues Garn"
+
+#: ui/pages/stash.slint:587
+msgctxt "YarnLineDialog"
+msgid "Save"
+msgstr "Speichern"
+
+#: ui/pages/stash.slint:587
+msgctxt "YarnLineDialog"
+msgid "Add"
+msgstr "Hinzufügen"
+
+#: ui/pages/stash.slint:589
+msgctxt "YarnLineDialog"
+msgid "Delete yarn"
+msgstr "Garn löschen"
+
+#: ui/pages/stash.slint:635
+msgctxt "YarnLineDialog"
+msgid "Delete this yarn and its {n} color from the stash?"
+msgid_plural "Delete this yarn and its {n} colors from the stash?"
+msgstr[0] "Dieses Garn und seine {n} Farbe aus dem Vorrat löschen?"
+msgstr[1] "Dieses Garn und seine {n} Farben aus dem Vorrat löschen?"
+
+#: ui/pages/stash.slint:636
+msgctxt "YarnLineDialog"
+msgid "Delete this yarn from the stash?"
+msgstr "Dieses Garn aus dem Vorrat löschen?"
+
+#: ui/pages/stash.slint:645
+msgctxt "YarnLineDialog"
+msgid "Brand"
+msgstr "Marke"
+
+#: ui/pages/stash.slint:646
+msgctxt "YarnLineDialog"
+msgid "Brand, e.g. Drops"
+msgstr "Marke, z. B. Drops"
+
+#: ui/pages/stash.slint:667
+msgctxt "YarnLineDialog"
+msgid "Yarn"
+msgstr "Garn"
+
+#: ui/pages/stash.slint:668
+msgctxt "YarnLineDialog"
+msgid "Yarn, e.g. Paris"
+msgstr "Garn, z. B. Paris"
+
+#: ui/pages/stash.slint:672
+msgctxt "YarnLineDialog"
+msgid "Fiber"
+msgstr "Material"
+
+#: ui/pages/stash.slint:673
+msgctxt "YarnLineDialog"
+msgid "Fiber, e.g. 100% cotton"
+msgstr "Material, z. B. 100 % Baumwolle"
+
+#: ui/pages/stash.slint:679
+msgctxt "YarnLineDialog"
+msgid "Grams per skein"
+msgstr "Gramm pro Knäuel"
+
+#: ui/pages/stash.slint:680
+msgctxt "YarnLineDialog"
+msgid "g per skein"
+msgstr "g pro Knäuel"
+
+#: ui/pages/stash.slint:685
+msgctxt "YarnLineDialog"
+msgid "Meters per skein"
+msgstr "Meter pro Knäuel"
+
+#: ui/pages/stash.slint:686
+msgctxt "YarnLineDialog"
+msgid "m per skein"
+msgstr "m pro Knäuel"
+
+#: ui/pages/stash.slint:718
+msgctxt "YarnLineDialog"
+msgid ""
+"Without brand and name, the colors go to “Other yarn”, e.g. for leftovers."
+msgstr ""
+"Ohne Marke und Namen landen die Farben unter „Ohne Angabe“, z. B. für Reste."
+
+#: ui/pages/stash.slint:734
+msgctxt "SwatchPicker"
+msgid "White"
+msgstr "Weiß"
+
+#: ui/pages/stash.slint:734
+msgctxt "SwatchPicker"
+msgid "Cream"
+msgstr "Creme"
+
+#: ui/pages/stash.slint:734
+msgctxt "SwatchPicker"
+msgid "Beige"
+msgstr "Beige"
+
+#: ui/pages/stash.slint:734
+msgctxt "SwatchPicker"
+msgid "Camel"
+msgstr "Camel"
+
+#: ui/pages/stash.slint:734
+msgctxt "SwatchPicker"
+msgid "Brown"
+msgstr "Braun"
+
+#: ui/pages/stash.slint:734
+msgctxt "SwatchPicker"
+msgid "Black"
+msgstr "Schwarz"
+
+#: ui/pages/stash.slint:735
+msgctxt "SwatchPicker"
+msgid "Light gray"
+msgstr "Hellgrau"
+
+#: ui/pages/stash.slint:735
+msgctxt "SwatchPicker"
+msgid "Gray"
+msgstr "Grau"
+
+#: ui/pages/stash.slint:735
+msgctxt "SwatchPicker"
+msgid "Yellow"
+msgstr "Gelb"
+
+#: ui/pages/stash.slint:735
+msgctxt "SwatchPicker"
+msgid "Mustard"
+msgstr "Senf"
+
+#: ui/pages/stash.slint:735
+msgctxt "SwatchPicker"
+msgid "Orange"
+msgstr "Orange"
+
+#: ui/pages/stash.slint:735
+msgctxt "SwatchPicker"
+msgid "Coral"
+msgstr "Koralle"
+
+#: ui/pages/stash.slint:736
+msgctxt "SwatchPicker"
+msgid "Red"
+msgstr "Rot"
+
+#: ui/pages/stash.slint:736
+msgctxt "SwatchPicker"
+msgid "Burgundy"
+msgstr "Bordeaux"
+
+#: ui/pages/stash.slint:736
+msgctxt "SwatchPicker"
+msgid "Light pink"
+msgstr "Rosa"
+
+#: ui/pages/stash.slint:736
+msgctxt "SwatchPicker"
+msgid "Pink"
+msgstr "Pink"
+
+#: ui/pages/stash.slint:736
+msgctxt "SwatchPicker"
+msgid "Lilac"
+msgstr "Flieder"
+
+#: ui/pages/stash.slint:736
+msgctxt "SwatchPicker"
+msgid "Purple"
+msgstr "Lila"
+
+#: ui/pages/stash.slint:737
+msgctxt "SwatchPicker"
+msgid "Light blue"
+msgstr "Hellblau"
+
+#: ui/pages/stash.slint:737
+msgctxt "SwatchPicker"
+msgid "Blue"
+msgstr "Blau"
+
+#: ui/pages/stash.slint:737
+msgctxt "SwatchPicker"
+msgid "Navy"
+msgstr "Marine"
+
+#: ui/pages/stash.slint:737
+msgctxt "SwatchPicker"
+msgid "Turquoise"
+msgstr "Türkis"
+
+#: ui/pages/stash.slint:737
+msgctxt "SwatchPicker"
+msgid "Green"
+msgstr "Grün"
+
+#: ui/pages/stash.slint:737
+msgctxt "SwatchPicker"
+msgid "Olive"
+msgstr "Oliv"
+
+#: ui/pages/stash.slint:752
+msgctxt "SwatchPicker"
+msgid "No color"
+msgstr "Keine Farbe"
+
+#: ui/pages/stash.slint:801
+msgctxt "YarnDialog"
+msgid "Edit color"
+msgstr "Farbe bearbeiten"
+
+#: ui/pages/stash.slint:801
+msgctxt "YarnDialog"
+msgid "New color"
+msgstr "Neue Farbe"
+
+#: ui/pages/stash.slint:805
+msgctxt "YarnDialog"
+msgid "Delete color"
+msgstr "Farbe löschen"
+
+#: ui/pages/stash.slint:843
+msgctxt "YarnDialog"
+msgid "Delete this color from the stash?"
+msgstr "Diese Farbe aus dem Vorrat löschen?"
+
+#: ui/pages/stash.slint:856
+msgctxt "YarnDialog"
+msgid "Color, e.g. Black"
+msgstr "Farbe, z. B. Schwarz"
+
+#: ui/pages/stash.slint:861
+msgctxt "YarnDialog"
+msgid "Color no."
+msgstr "Farbnr."
+
+#: ui/pages/stash.slint:862
+msgctxt "YarnDialog"
+msgid "No."
+msgstr "Nr."
+
+#: ui/pages/stash.slint:869
+msgctxt "YarnDialog"
+msgid "Skeins, e.g. 2.5"
+msgstr "Knäuel, z. B. 2,5"
+
+#: ui/pages/stash.slint:21
+msgctxt "YarnText"
+msgid "Hook {}"
+msgstr "Nadel {}"
+
+#: ui/pages/stash.slint:695 ui/pages/stash.slint:696
+msgctxt "YarnLineDialog"
+msgid "Hook from (mm)"
+msgstr "Nadel von (mm)"
+
+#: ui/pages/stash.slint:701 ui/pages/stash.slint:702
+msgctxt "YarnLineDialog"
+msgid "Hook to (mm)"
+msgstr "Nadel bis (mm)"
+
+#: ui/pages/stash.slint:708
+msgctxt "YarnLineDialog"
+msgid "Not a hook size"
+msgstr "Keine Nadelstärke"
+
+#: ui/pages/stash.slint:714
+msgctxt "YarnLineDialog"
+msgid "Notes"
+msgstr "Notizen"
+
+#: ui/pages/stash.slint:715
+msgctxt "YarnLineDialog"
+msgid "Notes, e.g. washable at 40 °C"
+msgstr "Notizen, z. B. waschbar bei 40 °C"
+
+#: ui/pages/stash.slint:875
+msgctxt "YarnDialog"
+msgid "Notes"
+msgstr "Notizen"
+
+#: ui/pages/stash.slint:876
+msgctxt "YarnDialog"
+msgid "Notes, e.g. my favorite for skin"
+msgstr "Notizen, z. B. nehme ich gern als Hautfarbe"

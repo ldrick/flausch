@@ -13,7 +13,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use slint::{ComponentHandle, Image, Model, ModelRc, VecModel};
 
-use model::{HookSpec, Library, PartSpec, Pdf, Settings, YarnSpec};
+use model::{HookSpec, Library, PartSpec, Pdf, Settings, YarnLineSpec, YarnSpec};
 use platform::{DocumentKind, PickResult};
 use storage::{Backup, BackupError, Storage};
 
@@ -62,6 +62,7 @@ pub fn start(app: &App, data_dir: PathBuf) -> Result<(), slint::PlatformError> {
         nav: vec![Screen::List],
         current: None,
         folder: None,
+        yarn_line: None,
         pdf: PdfSession::default(),
         renderer,
         covers,
@@ -245,6 +246,18 @@ fn connect(app: &App) {
 
 /// The yarn stash and the crochet hooks.
 fn connect_materials(store: &Store) {
+    store.on_add_yarn_line(|form| {
+        with(|c| c.add_yarn_line(&form));
+    });
+    store.on_edit_yarn_line(|id, form| {
+        with(|c| c.edit_yarn_line(id as u64, &form));
+    });
+    store.on_delete_yarn_line(|id| {
+        with(|c| c.delete_yarn_line(id as u64));
+    });
+    store.on_open_yarn_line(|id| {
+        with(|c| c.open_yarn_line(id as u64));
+    });
     store.on_add_yarn(|form| {
         with(|c| c.add_yarn(&form));
     });
@@ -253,6 +266,27 @@ fn connect_materials(store: &Store) {
     });
     store.on_delete_yarn(|id| {
         with(|c| c.delete_yarn(id as u64));
+    });
+    store.on_yarn_query_changed(|| {
+        with(|c| c.refresh());
+    });
+    store.on_set_yarn_brand_filter(|brand| {
+        with(|c| {
+            c.app().global::<Store>().set_yarn_brand_filter(brand);
+            c.refresh();
+        });
+    });
+    store.on_set_yarn_units(|id, units| {
+        with(|c| c.set_yarn_units(id as u64, units.max(0) as u32));
+    });
+    store.on_suggest_brand(|typed| {
+        with(|c| c.suggest(c.library.brands(), &typed));
+    });
+    store.on_suggest_hook_brand(|typed| {
+        with(|c| c.suggest(c.library.hook_brands(), &typed));
+    });
+    store.on_suggest_hook_kind(|brand, typed| {
+        with(|c| c.suggest(c.library.hook_kinds(&brand), &typed));
     });
     store.on_add_hook(|form| {
         with(|c| c.add_hook(&form));
@@ -384,6 +418,8 @@ struct Controller {
     current: Option<u64>,
     /// The folder open on the project list; `None` is the top level.
     folder: Option<u64>,
+    /// The yarn line on its page.
+    yarn_line: Option<u64>,
     pdf: PdfSession,
     renderer: pdf::Renderer,
     covers: pdf::Covers,
@@ -556,6 +592,14 @@ impl Controller {
     }
 
     fn navigate(&mut self, screen: Screen) {
+        if screen == Screen::Stash {
+            let app = self.app();
+            let store = app.global::<Store>();
+            store.set_yarn_searching(false);
+            store.set_yarn_query("".into());
+            store.set_yarn_brand_filter("".into());
+            self.refresh();
+        }
         if screen == Screen::Abbreviations {
             self.app()
                 .global::<Store>()
@@ -621,6 +665,13 @@ impl Controller {
         if self.screen() == Screen::List && store.get_searching() {
             store.set_searching(false);
             store.set_query("".into());
+            self.last_back = Some(now);
+            self.refresh();
+            return true;
+        }
+        if self.screen() == Screen::Stash && store.get_yarn_searching() {
+            store.set_yarn_searching(false);
+            store.set_yarn_query("".into());
             self.last_back = Some(now);
             self.refresh();
             return true;
@@ -859,23 +910,66 @@ impl Controller {
 
     // Yarn stash
 
+    /// Adds a yarn line, or finds the one with the same brand and name, and opens it; without
+    /// colors yet, the form for its first one.
+    fn add_yarn_line(&mut self, form: &YarnLineForm) {
+        let id = self.library.add_yarn_line(&yarn_line_spec(form), now());
+        self.save();
+        self.open_yarn_line(id);
+        if self.library.line_colors(id).is_empty() {
+            self.app().global::<Store>().set_dialog(DialogKind::AddYarn);
+        }
+    }
+
+    fn edit_yarn_line(&mut self, id: u64, form: &YarnLineForm) {
+        if self.library.edit_yarn_line(id, &yarn_line_spec(form)) {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    fn delete_yarn_line(&mut self, id: u64) {
+        if self.library.remove_yarn_line(id).is_some() {
+            self.save();
+            if self.screen() == Screen::YarnLine {
+                self.nav.pop();
+                self.show();
+            }
+            self.yarn_line = None;
+            self.refresh();
+        }
+    }
+
+    fn open_yarn_line(&mut self, id: u64) {
+        if self.library.yarn_line(id).is_none() {
+            return;
+        }
+        self.yarn_line = Some(id);
+        self.refresh();
+        self.navigate(Screen::YarnLine);
+    }
+
+    /// Adds a color to the yarn line on its page.
     fn add_yarn(&mut self, form: &YarnForm) {
+        let Some(line) = self.yarn_line.and_then(|id| self.library.yarn_line(id)) else {
+            return;
+        };
         let spec = YarnSpec {
-            amount: skeins_to_units(form, None),
+            amount: skeins_to_units(form, line.unit(), None),
             ..yarn_spec(form)
         };
-        if self.library.add_yarn(&spec, now()).is_some() {
+        if self.library.add_yarn(line.id, &spec, now()).is_some() {
             self.save();
             self.refresh();
         }
     }
 
     fn edit_yarn(&mut self, id: u64, form: &YarnForm) {
-        let Some(yarn) = self.library.yarns.iter().find(|y| y.id == id) else {
+        let Some(yarn) = self.library.yarn(id) else {
             return;
         };
         let spec = YarnSpec {
-            amount: skeins_to_units(form, Some((yarn, self.decimal_comma))),
+            amount: skeins_to_units(form, yarn.unit(), Some((yarn, self.decimal_comma))),
             ..yarn_spec(form)
         };
         if self.library.edit_yarn(id, &spec) {
@@ -889,6 +983,35 @@ impl Controller {
             self.save();
             self.refresh();
         }
+    }
+
+    fn set_yarn_units(&mut self, id: u64, units: u32) {
+        if self.library.set_yarn_units(id, units) {
+            self.save();
+            self.refresh();
+        }
+    }
+
+    /// Suggestions for a field from `candidates`: those containing the typed text, the ones starting
+    /// with it first; not the one typed exactly.
+    fn suggest(&self, candidates: Vec<String>, typed: &str) {
+        let typed = typed.trim().to_lowercase();
+        let mut found: Vec<String> = candidates
+            .into_iter()
+            .filter(|c| {
+                let c = c.to_lowercase();
+                c.contains(&typed) && c != typed
+            })
+            .collect();
+        found.sort_by_key(|c| !c.to_lowercase().starts_with(&typed));
+        let found: Vec<slint::SharedString> = found
+            .into_iter()
+            .take(MAX_SUGGESTIONS)
+            .map(Into::into)
+            .collect();
+        self.app()
+            .global::<Store>()
+            .set_suggestions(ModelRc::new(VecModel::from(found)));
     }
 
     // Materials of a project
@@ -925,7 +1048,7 @@ impl Controller {
     }
 
     fn in_grams(&self, yarn: &model::Yarn) -> bool {
-        self.settings.yarn_in_grams && yarn.weight.is_some()
+        self.settings.yarn_in_grams && yarn.has_weight()
     }
 
     fn set_project_hook(&mut self, hook: u64, used: bool) {
@@ -944,25 +1067,66 @@ impl Controller {
             .into_iter()
             .map(|p| p.name.as_str())
             .collect();
-        let number = |n: Option<u32>| n.map_or_default(|n| n.to_string().into());
-        let skeins = format_skeins(yarn.units(), yarn.unit(), self.decimal_comma);
+        let title = self
+            .library
+            .yarn_line(yarn.line)
+            .map_or_default(model::YarnLine::title);
         YarnItem {
             id: yarn.id as i32,
-            title: yarn.title().into(),
+            title: title.into(),
+            color: yarn.label().into(),
             form: YarnForm {
-                brand: yarn.brand.as_str().into(),
-                name: yarn.name.as_str().into(),
                 color: yarn.color.as_str().into(),
-                dye_lot: yarn.dye_lot.as_str().into(),
-                fiber: yarn.fiber.as_str().into(),
-                weight: number(yarn.weight),
-                length: number(yarn.length),
-                quantity: skeins.as_str().into(),
+                color_code: yarn.color_code.as_str().into(),
+                swatch: swatch_index(yarn.swatch.as_deref()),
+                quantity: format_skeins(yarn.units(), yarn.unit(), self.decimal_comma).into(),
+                notes: yarn.notes.as_str().into(),
             },
             amount: self.amount(yarn.units(), yarn),
-            weight: yarn.weight.unwrap_or(0) as i32,
-            length: yarn.length.unwrap_or(0) as i32,
             projects: projects.join(", ").into(),
+        }
+    }
+
+    /// A yarn line with the given colors, and the total of them.
+    fn yarn_line_item(&self, line: &model::YarnLine, colors: &[&model::Yarn]) -> YarnLineItem {
+        let number = |n: Option<u32>| n.map_or_default(|n| n.to_string().into());
+        let hook =
+            |size: Option<u32>| size.map_or_default(|s| format_hook_size(s, self.decimal_comma));
+        let (from, to) = (line.hooks.map(|h| h.0), line.hooks.map(|h| h.1));
+        let hooks = match line.hooks {
+            Some((a, b)) if a == b => format!("{} mm", hook(from)),
+            Some(_) => format!("{}–{} mm", hook(from), hook(to)),
+            None => String::new(),
+        };
+        let all = self.library.line_colors(line.id);
+        let units: u32 = all.iter().map(|y| y.units()).sum();
+        YarnLineItem {
+            id: line.id as i32,
+            title: line.title().into(),
+            form: YarnLineForm {
+                brand: line.brand.as_str().into(),
+                name: line.name.as_str().into(),
+                fiber: line.fiber.as_str().into(),
+                weight: number(line.weight),
+                length: number(line.length),
+                hook_from: hook(from).into(),
+                hook_to: hook(to.filter(|_| from != to)).into(),
+                notes: line.notes.as_str().into(),
+            },
+            weight: line.weight.unwrap_or(0) as i32,
+            length: line.length.unwrap_or(0) as i32,
+            hooks: hooks.into(),
+            skeins: format_skeins(units, line.unit(), self.decimal_comma).into(),
+            grams: if line.weight.is_some() {
+                units as i32
+            } else {
+                0
+            },
+            in_grams: self.settings.yarn_in_grams && line.weight.is_some(),
+            colors: ModelRc::new(VecModel::from(
+                colors.iter().map(|y| self.yarn_item(y)).collect::<Vec<_>>(),
+            )),
+            color_count: all.len() as i32,
         }
     }
 
@@ -974,30 +1138,63 @@ impl Controller {
             unit: yarn.unit() as i32,
             one: skeins == "1",
             skeins: skeins.into(),
-            grams: if yarn.weight.is_some() {
-                units as i32
-            } else {
-                0
-            },
+            grams: if yarn.has_weight() { units as i32 } else { 0 },
             in_grams: self.in_grams(yarn),
         }
     }
 
-    /// The stash: yarns with something left, the used up ones, and the totals.
+    /// The stash: yarn lines with something left (or no colors yet), the used up ones, and the
+    /// totals, all filtered by the search and the brand. A line that doesn't match the search
+    /// itself shows only the matching colors.
     fn refresh_stash(&self, store: &Store) {
-        let yarns = self.library.sorted_yarns();
-        let tenths: u32 = yarns
-            .iter()
-            .map(|y| to_units(f64::from(y.units()) * 10.0 / f64::from(y.unit())))
-            .sum();
+        let brands = self.library.brands();
+        let mut brand = store.get_yarn_brand_filter();
+        if !brands.iter().any(|b| brand == *b) {
+            brand = "".into();
+            store.set_yarn_brand_filter(brand.clone());
+        }
+        let query = store.get_yarn_query();
+        let (mut left, mut used_up) = (Vec::new(), Vec::new());
+        let (mut tenths, mut grams) = (0, 0);
+        for line in self.library.sorted_yarn_lines() {
+            if !brand.is_empty() && !model::same_name(&line.brand, &brand) {
+                continue;
+            }
+            let all = self.library.line_colors(line.id);
+            let matching: Vec<_> = if line.matches(&query) {
+                all.clone()
+            } else {
+                all.iter().copied().filter(|y| y.matches(&query)).collect()
+            };
+            if matching.is_empty() && !(all.is_empty() && line.matches(&query)) {
+                continue;
+            }
+            for yarn in &matching {
+                tenths += to_units(f64::from(yarn.units()) * 10.0 / f64::from(yarn.unit()));
+                grams += yarn.grams().unwrap_or(0) as i32;
+            }
+            let colors: Vec<_> = matching.into_iter().filter(|y| !y.used_up()).collect();
+            if colors.is_empty() && !all.is_empty() {
+                used_up.push(self.yarn_line_item(line, &colors));
+            } else {
+                left.push(self.yarn_line_item(line, &colors));
+            }
+        }
+        store.set_has_yarn(!self.library.yarn_lines.is_empty());
+        store.set_yarn_brands(ModelRc::new(VecModel::from(
+            brands
+                .into_iter()
+                .map(slint::SharedString::from)
+                .collect::<Vec<_>>(),
+        )));
         store.set_yarn_skeins(format_skeins(tenths, 10, self.decimal_comma).into());
-        store.set_yarn_grams(yarns.iter().map(|y| y.grams().unwrap_or(0) as i32).sum());
-        let (left, used_up): (Vec<YarnItem>, Vec<YarnItem>) = yarns
-            .into_iter()
-            .map(|y| self.yarn_item(y))
-            .partition(|y| y.amount.units > 0);
-        store.set_yarns(ModelRc::new(VecModel::from(left)));
-        store.set_used_up_yarns(ModelRc::new(VecModel::from(used_up)));
+        store.set_yarn_grams(grams);
+        store.set_yarn_lines(ModelRc::new(VecModel::from(left)));
+        store.set_used_up_lines(ModelRc::new(VecModel::from(used_up)));
+        if let Some(line) = self.yarn_line.and_then(|id| self.library.yarn_line(id)) {
+            let colors = self.library.line_colors(line.id);
+            store.set_current_yarn_line(self.yarn_line_item(line, &colors));
+        }
     }
 
     /// The yarns of the current project, and the stash yarns it could still get.
@@ -1006,7 +1203,7 @@ impl Controller {
             .yarns
             .iter()
             .filter_map(|used| {
-                let yarn = self.library.yarns.iter().find(|y| y.id == used.yarn)?;
+                let yarn = self.library.yarn(used.yarn)?;
                 Some(ProjectYarnItem {
                     yarn: self.yarn_item(yarn),
                     used: self.amount(used.units(yarn.unit()), yarn),
@@ -1733,26 +1930,48 @@ fn part_spec(form: &PartForm) -> PartSpec<'_> {
     }
 }
 
-/// The yarn form without the amount, which depends on the weight (`skeins_to_units`).
-fn yarn_spec(form: &YarnForm) -> YarnSpec<'_> {
-    YarnSpec {
+/// How many suggestions a field shows at most.
+const MAX_SUGGESTIONS: usize = 8;
+
+/// The index of a swatch in `Theme.yarn-colors`, -1 for none.
+fn swatch_index(swatch: Option<&str>) -> i32 {
+    swatch
+        .and_then(|s| model::SWATCHES.iter().position(|k| *k == s))
+        .map_or(-1, |i| i as i32)
+}
+
+fn yarn_line_spec(form: &YarnLineForm) -> YarnLineSpec<'_> {
+    YarnLineSpec {
         brand: &form.brand,
         name: &form.name,
-        color: &form.color,
-        dye_lot: &form.dye_lot,
         fiber: &form.fiber,
         weight: parse_number(&form.weight),
         length: parse_number(&form.length),
+        hooks: (
+            parse_hook_size(&form.hook_from),
+            parse_hook_size(&form.hook_to),
+        ),
+        notes: &form.notes,
+    }
+}
+
+/// The color form without the amount (`skeins_to_units`).
+fn yarn_spec(form: &YarnForm) -> YarnSpec<'_> {
+    YarnSpec {
+        color: &form.color,
+        color_code: &form.color_code,
+        swatch: usize::try_from(form.swatch)
+            .ok()
+            .and_then(|i| model::SWATCHES.get(i).copied()),
+        notes: &form.notes,
         amount: 0,
     }
 }
 
-/// The skeins of the yarn form in units of its weight; empty means 1. When editing (`yarn`) and the
-/// skeins and the weight are unchanged, the exact amount stays, e.g. 83 g shown as "1.7" skeins.
-fn skeins_to_units(form: &YarnForm, yarn: Option<(&model::Yarn, bool)>) -> u32 {
-    let unit = model::units_per_skein(parse_number(&form.weight));
+/// The skeins of the color form in units of its line; empty means 1. When editing (`yarn`) and the
+/// skeins are unchanged, the exact amount stays, e.g. 83 g shown as "1.7" skeins.
+fn skeins_to_units(form: &YarnForm, unit: u32, yarn: Option<(&model::Yarn, bool)>) -> u32 {
     if let Some((yarn, decimal_comma)) = yarn
-        && yarn.unit() == unit
         && form.quantity.trim() == format_skeins(yarn.units(), unit, decimal_comma)
     {
         return yarn.units();
@@ -1802,14 +2021,9 @@ fn parse_hook_size(text: &str) -> Option<u32> {
     (mm.is_finite() && size >= 0.0 && size <= f64::from(u32::MAX)).then_some(size as u32)
 }
 
-/// "3.5", "4" or "2.25"; with a comma for German.
+/// "3.50", "4.00" or "1.25": always two decimals, with a comma for German.
 fn format_hook_size(size: u32, decimal_comma: bool) -> String {
-    let (whole, hundredths) = (size / 100, size % 100);
-    let text = match hundredths {
-        0 => whole.to_string(),
-        h if h % 10 == 0 => format!("{whole}.{}", h / 10),
-        h => format!("{whole}.{h:02}"),
-    };
+    let text = format!("{}.{:02}", size / 100, size % 100);
     if decimal_comma {
         text.replace('.', ",")
     } else {

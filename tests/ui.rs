@@ -59,6 +59,16 @@ fn type_into(app: &App, label: &str, text: &str) {
     settle();
 }
 
+/// Presses Enter in the focused field, which moves on to the next one.
+fn enter(app: &App) {
+    let key: slint::SharedString = Key::Return.into();
+    app.window()
+        .dispatch_event(WindowEvent::KeyPressed { text: key.clone() });
+    app.window()
+        .dispatch_event(WindowEvent::KeyReleased { text: key });
+    settle();
+}
+
 /// Taps Back in the top bar. Waits first, because the app drops a second Back within 300 ms
 /// (Android delivers one press twice).
 fn go_back(app: &App) {
@@ -637,9 +647,38 @@ fn the_settings_hold_only_settings() {
     assert_eq!(store(&app).get_screen(), Screen::Settings);
 }
 
+/// Adds a yarn line to the stash (open) and its first color; stays on the page of the line.
+fn add_yarn(app: &App, line: &[(&str, &str)], color: &[(&str, &str)]) {
+    tap(app, "Add yarn");
+    for (field, text) in line {
+        type_into(app, field, text);
+    }
+    tap(app, "Add");
+    assert_eq!(store(app).get_screen(), Screen::YarnLine);
+    assert_eq!(
+        store(app).get_dialog(),
+        DialogKind::AddYarn,
+        "asks for a color"
+    );
+    add_color(app, color);
+}
+
+/// Adds a color on the page of a yarn line.
+fn add_color(app: &App, color: &[(&str, &str)]) {
+    if store(app).get_dialog() != DialogKind::AddYarn {
+        tap(app, "Add color");
+    }
+    for (field, text) in color {
+        type_into(app, field, text);
+    }
+    tap(app, "Add");
+    assert_eq!(store(app).get_dialog(), DialogKind::None);
+}
+
 #[test]
-fn the_yarn_stash_keeps_yarns() {
+fn the_yarn_stash_keeps_yarn_lines_and_colors() {
     let (app, dir) = fresh();
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
     // The menu closes with Back, before anything else.
     tap(&app, "More options");
     assert!(store(&app).get_menu_open());
@@ -650,51 +689,168 @@ fn the_yarn_stash_keeps_yarns() {
     menu(&app, "Yarn stash");
     assert_eq!(store(&app).get_screen(), Screen::Stash);
     assert!(!store(&app).get_menu_open());
-    tap(&app, "Add yarn");
-    type_into(&app, "Brand", "Schachenmayr");
-    type_into(&app, "Yarn", "Catania");
-    type_into(&app, "Color", "Rosa 0222");
-    type_into(&app, "Dye lot", "4711");
-    type_into(&app, "Fiber", "100% cotton");
-    type_into(&app, "Grams per skein", "50");
-    type_into(&app, "Meters per skein", "125");
-    type_into(&app, "Skeins", "3");
+    add_yarn(
+        &app,
+        &[
+            ("Brand", "Schachenmayr"),
+            ("Yarn", "Catania"),
+            ("Fiber", "100% cotton"),
+            ("Grams per skein", "50"),
+            ("Meters per skein", "125"),
+            ("Hook from (mm)", "4"),
+            ("Hook to (mm)", "2,5"),
+            ("Notes", "Washable"),
+        ],
+        &[("Color", "Black"), ("Color no.", "112"), ("Skeins", "3")],
+    );
+    let line = store(&app).get_current_yarn_line();
+    assert_eq!(line.hooks, "2.50–4.00 mm", "from the smallest");
+    assert_eq!(line.form.notes, "Washable");
+    // Without a number of skeins, it is one; the swatch shows on the card.
+    tap(&app, "Add color");
+    type_into(&app, "Color", "White");
+    type_into(&app, "Color no.", "001");
+    tap(&app, "White");
     tap(&app, "Add");
-    // Without a number of skeins, it is one.
-    tap(&app, "Add yarn");
-    type_into(&app, "Color", "Leftover green");
-    tap(&app, "Add");
-    assert_eq!(store(&app).get_yarn_skeins(), "4");
-    assert_eq!(store(&app).get_yarn_grams(), 150);
+    let line = store(&app).get_current_yarn_line();
+    let colors: Vec<_> = line.colors.iter().map(|y| y.color.to_string()).collect();
+    assert_eq!(colors, ["White 001", "Black 112"], "by number");
+    assert_eq!(line.colors.row_data(0).unwrap().form.swatch, 0);
+    assert_eq!(line.skeins, "4");
 
-    // Kept after a restart, and edited from its card.
+    // −/+ count the skeins of a color right on the page.
+    tap(&app, "One skein more of White 001");
+    tap(&app, "One skein less of Black 112");
+    assert!(exists(&app, "Edit White 001"));
+    let line = store(&app).get_current_yarn_line();
+    assert_eq!(line.skeins, "4");
+    assert_eq!(line.colors.row_data(0).unwrap().amount.skeins, "2");
+
+    // The same yarn again opens it instead of a second one, and the brand is suggested.
+    go_back(&app);
+    assert!(exists(&app, "Schachenmayr Catania, 4 skeins"));
+    tap(&app, "Add yarn");
+    type_into(&app, "Brand", "sch");
+    tap(&app, "Use Schachenmayr");
+    type_into(&app, "Yarn", "catania");
+    tap(&app, "Add");
+    assert_eq!(store(&app).get_screen(), Screen::YarnLine);
+    assert_eq!(store(&app).get_dialog(), DialogKind::None, "it has colors");
+    go_back(&app);
+
+    // Leftovers without brand and name go to "Other yarn".
+    add_yarn(&app, &[], &[("Color", "Leftover green")]);
+    go_back(&app);
+    assert!(exists(&app, "Other yarn, 1 skein"));
+    assert_eq!(store(&app).get_yarn_skeins(), "5");
+    assert_eq!(store(&app).get_yarn_grams(), 200);
+
+    // Kept after a restart, and edited.
     let app = launch(dir.path());
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
     store(&app).invoke_set_language(Language::En);
     settle();
     menu(&app, "Yarn stash");
-    let catania = "Schachenmayr Catania · Rosa 0222 · Lot 4711, 3 skeins";
-    tap(&app, catania);
+    tap(&app, "Schachenmayr Catania, 4 skeins");
+    tap(&app, "Edit Black 112");
     assert_eq!(store(&app).get_dialog(), DialogKind::EditYarn);
-    type_into(&app, "Skeins", "2");
+    type_into(&app, "Skeins", "1.5");
     tap(&app, "Save");
-    assert!(exists(
-        &app,
-        "Schachenmayr Catania · Rosa 0222 · Lot 4711, 2 skeins"
-    ));
+    assert_eq!(store(&app).get_current_yarn_line().skeins, "3.5");
+    tap(&app, "Edit yarn");
+    type_into(&app, "Fiber", "Cotton");
+    tap(&app, "Save");
+    assert_eq!(store(&app).get_current_yarn_line().form.fiber, "Cotton");
 
     // Deleting asks first, right in the form.
-    tap(&app, "Leftover green, 1 skein");
-    tap(&app, "Delete yarn");
+    tap(&app, "Edit White 001");
+    tap(&app, "Delete color");
     tap(&app, "Keep");
-    assert_eq!(store(&app).get_yarns().row_count(), 2);
+    tap(&app, "Delete color");
+    tap(&app, "Delete");
+    assert_eq!(store(&app).get_current_yarn_line().colors.row_count(), 1);
+    tap(&app, "Edit yarn");
     tap(&app, "Delete yarn");
     tap(&app, "Delete");
-    assert_eq!(store(&app).get_dialog(), DialogKind::None);
-    assert_eq!(store(&app).get_yarns().row_count(), 1);
-    assert_eq!(store(&app).get_yarn_skeins(), "2");
+    assert_eq!(store(&app).get_screen(), Screen::Stash);
+    assert_eq!(store(&app).get_yarn_lines().row_count(), 1);
 
     go_back(&app);
     assert_eq!(store(&app).get_screen(), Screen::List);
+}
+
+#[test]
+fn the_yarn_stash_can_be_searched_and_filtered() {
+    let (app, _dir) = fresh();
+    app.window().set_size(slint::LogicalSize::new(412., 2000.));
+    menu(&app, "Yarn stash");
+    add_yarn(
+        &app,
+        &[
+            ("Brand", "Schachenmayr"),
+            ("Yarn", "Catania"),
+            ("Fiber", "100% cotton"),
+        ],
+        &[("Color", "Black"), ("Color no.", "112")],
+    );
+    add_color(
+        &app,
+        &[
+            ("Color", "White"),
+            ("Color no.", "001"),
+            ("Notes", "For skin"),
+        ],
+    );
+    go_back(&app);
+    add_yarn(&app, &[], &[("Color", "Leftover green")]);
+    go_back(&app);
+    add_yarn(
+        &app,
+        &[("Brand", "Drops"), ("Yarn", "Paris")],
+        &[("Color", "Pink")],
+    );
+    go_back(&app);
+    let titles = |app: &App| -> Vec<String> {
+        store(app)
+            .get_yarn_lines()
+            .iter()
+            .map(|l| {
+                format!(
+                    "{}: {}",
+                    l.title,
+                    l.colors
+                        .iter()
+                        .map(|y| y.color.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            })
+            .collect()
+    };
+    tap(&app, "Drops");
+    assert_eq!(titles(&app), ["Drops Paris: Pink"]);
+    tap(&app, "All");
+    tap(&app, "Search");
+    type_into(&app, "Search", "112");
+    assert_eq!(
+        titles(&app),
+        ["Schachenmayr Catania: Black 112"],
+        "only the matching color"
+    );
+    type_into(&app, "Search", "skin");
+    assert_eq!(
+        titles(&app),
+        ["Schachenmayr Catania: White 001"],
+        "notes, too"
+    );
+    type_into(&app, "Search", "cotton");
+    assert_eq!(titles(&app), ["Schachenmayr Catania: White 001, Black 112"]);
+    // Back closes the search first.
+    std::thread::sleep(Duration::from_millis(310));
+    assert!(store(&app).invoke_back());
+    assert!(!store(&app).get_yarn_searching());
+    assert_eq!(store(&app).get_screen(), Screen::Stash);
+    assert_eq!(store(&app).get_yarn_lines().row_count(), 3);
 }
 
 #[test]
@@ -718,18 +874,23 @@ fn crochet_hooks_get_their_us_size() {
     type_into(&app, "Size in mm", "3");
     assert!(find(&app, AccessibleRole::Text, "No US size").is_some());
     tap(&app, "Add");
+    // Brand and type suggest those of the other hooks.
     tap(&app, "Add hook");
     type_into(&app, "Size in mm", "2");
+    enter(&app);
+    type_into(&app, "Brand", "cl");
+    tap(&app, "Use Clover");
+    tap(&app, "Use Amour");
     tap(&app, "Add");
+    assert!(exists(&app, "2.00 mm, US 4 (steel), Clover Amour"));
 
     let labels: Vec<_> = store(&app)
         .get_hooks()
         .iter()
         .map(|h| h.form.size.to_string())
         .collect();
-    assert_eq!(labels, ["2", "3", "3.5"], "from the smallest");
-    assert!(exists(&app, "2 mm, US 4 (steel)"));
-    assert!(exists(&app, "3 mm"));
+    assert_eq!(labels, ["2.00", "3.00", "3.50"], "from the smallest");
+    assert!(exists(&app, "3.00 mm"));
 
     // Kept after a restart, in German with a comma, and edited from its card.
     let app = launch(dir.path());
@@ -737,16 +898,16 @@ fn crochet_hooks_get_their_us_size() {
     settle();
     store(&app).invoke_open_page(Screen::Hooks);
     settle();
-    tap(&app, "3,5 mm, US E-4, Clover Amour");
+    tap(&app, "3,50 mm, US E-4, Clover Amour");
     assert_eq!(store(&app).get_dialog(), DialogKind::EditHook);
     store(&app).invoke_set_language(Language::En);
     settle();
     type_into(&app, "Size in mm", "4");
     tap(&app, "Save");
-    assert!(exists(&app, "4 mm, US G-6, Clover Amour"));
+    assert!(exists(&app, "4.00 mm, US G-6, Clover Amour"));
 
     // Deleting asks first, right in the form.
-    tap(&app, "3 mm");
+    tap(&app, "3.00 mm");
     tap(&app, "Delete hook");
     tap(&app, "Keep");
     assert_eq!(store(&app).get_hooks().row_count(), 3);
@@ -764,11 +925,12 @@ fn projects_take_yarn_from_the_stash_and_use_hooks() {
     let (app, dir) = fresh();
     app.window().set_size(slint::LogicalSize::new(412., 2000.));
     menu(&app, "Yarn stash");
-    tap(&app, "Add yarn");
-    type_into(&app, "Yarn", "Catania");
-    type_into(&app, "Color", "Rosa");
-    type_into(&app, "Skeins", "3");
-    tap(&app, "Add");
+    add_yarn(
+        &app,
+        &[("Yarn", "Catania")],
+        &[("Color", "Rosa"), ("Skeins", "3")],
+    );
+    go_back(&app);
     go_back(&app);
     menu(&app, "Crochet hooks");
     tap(&app, "Add hook");
@@ -805,7 +967,7 @@ fn projects_take_yarn_from_the_stash_and_use_hooks() {
     assert_eq!(skeins(&app), pair("2.5", "0.5"));
 
     tap(&app, "Add yarn or hook");
-    tap(&app, "3.5 mm · US E-4");
+    tap(&app, "3.50 mm · US E-4");
     assert_eq!(store(&app).get_current_hooks().row_count(), 1);
     // Everything is in the project now.
     tap(&app, "Add yarn or hook");
@@ -819,8 +981,10 @@ fn projects_take_yarn_from_the_stash_and_use_hooks() {
     store(&app).invoke_set_language(Language::En);
     settle();
     menu(&app, "Yarn stash");
-    let card = control(&app, "Catania · Rosa, 0.5 skeins").unwrap();
-    assert_eq!(card.accessible_description().unwrap(), "Used in Hat");
+    tap(&app, "Catania, 0.5 skeins");
+    let color = control(&app, "Edit Rosa").unwrap();
+    assert_eq!(color.accessible_description().unwrap(), "Used in Hat");
+    go_back(&app);
     go_back(&app);
     tap(&app, "Hat");
     assert_eq!(skeins(&app), pair("2.5", "0.5"));
@@ -846,18 +1010,19 @@ fn yarn_is_counted_in_grams_and_used_up_yarn_is_tucked_away() {
     go_back(&app);
 
     menu(&app, "Yarn stash");
-    tap(&app, "Add yarn");
-    type_into(&app, "Yarn", "Paris");
-    type_into(&app, "Grams per skein", "50");
-    type_into(&app, "Skeins", "2.4");
-    tap(&app, "Add");
+    add_yarn(
+        &app,
+        &[("Yarn", "Paris"), ("Grams per skein", "50")],
+        &[("Color", "Black"), ("Skeins", "2.4")],
+    );
+    go_back(&app);
     assert!(exists(&app, "Paris, 120 g"));
     go_back(&app);
 
     // Adding asks for the grams right away.
     create_project(&app, "Hat");
     tap(&app, "Add yarn or hook");
-    tap(&app, "Paris · 120 g left");
+    tap(&app, "Paris · Black · 120 g left");
     assert_eq!(store(&app).get_dialog(), DialogKind::YarnGrams);
     type_into(&app, "Grams used", "80");
     tap(&app, "Save");
@@ -878,8 +1043,8 @@ fn yarn_is_counted_in_grams_and_used_up_yarn_is_tucked_away() {
 
     // Nothing left: the yarn moves into the collapsed "Used up" section.
     menu(&app, "Yarn stash");
-    assert_eq!(store(&app).get_yarns().row_count(), 0);
-    assert_eq!(store(&app).get_used_up_yarns().row_count(), 1);
+    assert_eq!(store(&app).get_yarn_lines().row_count(), 0);
+    assert_eq!(store(&app).get_used_up_lines().row_count(), 1);
     assert!(!exists(&app, "Paris, 0 g"));
     tap(&app, "Show used up yarns (1)");
     assert!(exists(&app, "Paris, 0 g"));
@@ -896,7 +1061,7 @@ fn yarn_is_counted_in_grams_and_used_up_yarn_is_tucked_away() {
     store(&app).invoke_set_yarn_in_grams(false);
     settle();
     tap(&app, "Add yarn or hook");
-    tap(&app, "Paris · 2.4 skeins left");
+    tap(&app, "Paris · Black · 2.4 skeins left");
     // One skein: the rest stays in the stash.
     assert_eq!(
         store(&app)

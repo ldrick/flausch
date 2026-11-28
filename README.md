@@ -27,7 +27,7 @@ Row counter and pattern viewer for crocheting – simple, offline, free. *Flausc
 **Made for crocheting**
 
 - Large buttons for one-handed use, counting with the volume keys, the screen stays on while you work
-- Yarn stash with brand, color, dye lot, fiber and the skeins left
+- Yarn stash: each yarn once with brand, fiber and skein size, hook sizes and notes, then its colors (name, number, swatch, notes) and the skeins left; search and brand filter
 - Crochet hooks by size, with the US size added
 - Yarn and hooks per project; what is used (in skeins or grams) comes out of the stash
 - Backup and restore of all data as a ZIP file, e.g. when you switch phones
