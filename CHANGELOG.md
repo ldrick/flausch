@@ -3,6 +3,19 @@
 All notable changes to Flausch. The format follows [Keep a Changelog](https://keepachangelog.com), versions
 follow [Semantic Versioning](https://semver.org). This file is written by `tools/release.py`.
 
+## [2.0.0](https://github.com/ldrick/flausch/releases/tag/v2.0.0) - 2026-11-28
+
+### Features
+
+- Yarn stash with yarn lines, colors, search and brand suggestions ([#40](https://github.com/ldrick/flausch/pull/40))
+- Yarn and hooks per project ([#38](https://github.com/ldrick/flausch/pull/38))
+- Tidier menu and settings ([#37](https://github.com/ldrick/flausch/pull/37))
+- Crochet hooks ([#36](https://github.com/ldrick/flausch/pull/36))
+- Yarn stash ([#34](https://github.com/ldrick/flausch/pull/34))
+- Abbreviation table German / US / UK English ([#31](https://github.com/ldrick/flausch/pull/31))
+- Folders for projects ([#30](https://github.com/ldrick/flausch/pull/30))
+- Project website, linked in the settings ([#26](https://github.com/ldrick/flausch/pull/26))
+
 ## [1.0.1](https://github.com/ldrick/flausch/releases/tag/v1.0.1) - 2026-11-18
 
 Maintenance release.

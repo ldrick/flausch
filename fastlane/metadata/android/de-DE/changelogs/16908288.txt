@@ -1,0 +1,9 @@
+TODO: translate
+• Yarn stash with yarn lines, colors, search and brand suggestions
+• Yarn and hooks per project
+• Tidier menu and settings
+• Crochet hooks
+• Yarn stash
+• Abbreviation table German / US / UK English
+• Folders for projects
+• Project website, linked in the settings
