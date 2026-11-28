@@ -1,6 +1,6 @@
 [package]
 name = "flausch"
-version = "1.0.1"
+version = "2.0.0"
 edition = "2024"
 description = "A crochet app for Android"
 license = "GPL-3.0-or-later"
@@ -73,7 +73,7 @@ strip = true
 # The Android versionCode that cargo-apk derives from `version` (1 << 24 | major << 16 | minor << 8 | patch; cargo-apk
 # doesn't let us set it). F-Droid's update check reads it from here; a test keeps it in sync.
 [package.metadata.fdroid]
-version_code = 16842753
+version_code = 16908288
 
 [package.metadata.android]
 package = "io.github.ldrick.flausch"
